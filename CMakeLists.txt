@@ -34,3 +34,4 @@ add_executable(silac
 )
 
 target_link_options(sila PRIVATE -static-libgcc -static-libstdc++)
+target_link_options(silac PRIVATE -static-libgcc -static-libstdc++)
