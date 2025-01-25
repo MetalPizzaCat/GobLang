@@ -1,224 +1,149 @@
 #include "Compiler.hpp"
-#include <cctype>
-#include <cstring>
-#include <sstream>
+#include "../execution/Machine.hpp"
 #include <iostream>
-#include <limits>
 
-void SimpleLang::Compiler::Compiler::skipWhitespace()
+void SimpleLang::Compiler::Compiler::compile()
 {
-    while (std::isspace(*m_rowIt) && m_rowIt != getEndOfTheLine())
+    for (std::vector<Token *>::const_iterator it = m_parser.getTokens().begin(); it != m_parser.getTokens().end(); it++)
     {
-        m_rowIt++;
-    }
-    if (m_rowIt == getEndOfTheLine())
-    {
-        m_lineIt++;
-    }
-}
-
-void SimpleLang::Compiler::Compiler::parse()
-{
-    while (m_rowIt != getEndOfTheLine() && m_lineIt != m_code.end())
-    {
-        skipWhitespace();
-        if (Token *token = parseKeywords(); token != nullptr)
+        if (dynamic_cast<IdToken *>(*it) != nullptr || dynamic_cast<IntToken *>(*it) != nullptr)
         {
-            m_tokens.push_back(token);
+            m_code.push_back(*it);
             continue;
         }
-        if (Token *token = parseInt(); token != nullptr)
+        if (dynamic_cast<OperatorToken *>(*it) != nullptr)
         {
-            m_tokens.push_back(token);
-            continue;
+            if ((*it)->getPriority() > getTopStackPriority())
+            {
+                m_stack.push_back(*it);
+                continue;
+            }
+            while (!m_stack.empty() && getTopStackPriority() >= (*it)->getPriority())
+            {
+                m_code.push_back(popStack());
+            }
+            m_stack.push_back(*it);
         }
-        if (Token *token = parseOperators(); token != nullptr)
-        {
-            m_tokens.push_back(token);
-            continue;
-        }
-        if (Token *token = parseId(); token != nullptr)
-        {
-            m_tokens.push_back(token);
-            continue;
-        }
-        throw ParsingError(m_rowIt - m_lineIt->begin(), m_code.begin() - m_lineIt, "Unknown character sequence");
     }
-}
-
-bool SimpleLang::Compiler::Compiler::tryKeyword(std::string const &keyword)
-{
-    for (size_t i = 0; i < keyword.size(); i++)
+    // dump the remaining stack
+    for (std::vector<Token *>::const_reverse_iterator it = m_stack.rbegin(); it != m_stack.rend(); it++)
     {
-        if ((m_rowIt + i) == getEndOfTheLine() || *(m_rowIt + i) != keyword[i])
-        {
-            return false;
-        }
+        m_code.push_back(*it);
     }
-    return true;
 }
 
-bool SimpleLang::Compiler::Compiler::tryOperator(OperatorData const &op)
+void SimpleLang::Compiler::Compiler::generateByteCode()
 {
-    for (size_t i = 0; i < strnlen(op.symbol, 2); i++)
+    if (m_code.empty())
     {
-        if ((m_rowIt + i) == getEndOfTheLine() || *(m_rowIt + i) != op.symbol[i])
-        {
-            return false;
-        }
+        return;
     }
-    return true;
-}
-
-SimpleLang::Compiler::KeywordToken *SimpleLang::Compiler::Compiler::parseKeywords()
-{
-
-    for (std::map<std::string, Keyword>::const_iterator it = Keywords.begin(); it != Keywords.end(); it++)
+    m_byteCode.ids = m_parser.getIds();
+    m_byteCode.ints = m_parser.getInts();
+    std::vector<CompilerNode *> stack;
+    for (std::vector<Token *>::iterator it = m_code.begin(); it != m_code.end(); it++)
     {
-        if (tryKeyword(it->first))
+        if (dynamic_cast<IntToken *>(*it) != nullptr)
         {
-            m_rowIt += it->first.size();
-            return new KeywordToken(
-                (m_rowIt - it->first.size()) - (*m_lineIt).begin(),
-                m_lineIt - m_code.begin(),
-                it->second);
+            stack.push_back(new OperationCompilerNode(generateGetByteCode(*it)));
+        }
+        else if (dynamic_cast<IdToken *>(*it) != nullptr)
+        {
+            stack.push_back(new TokenCompilerNode(*it));
+        }
+        else if (OperatorToken *opToken = dynamic_cast<OperatorToken *>(*it); opToken != nullptr)
+        {
+            CompilerNode *a = stack[stack.size() - 2];
+            CompilerNode *b = stack[stack.size() - 1];
+            stack.pop_back();
+            stack.pop_back();
+            if (opToken->getOperator() == Operator::Assign)
+            {
+                appendByteCode(a->getOperationSetBytes());
+                appendByteCode(b->getOperationGetBytes());
+
+                m_byteCode.operations.push_back((uint8_t)SimpleLang::Operation::Set);
+            }
+            else
+            {
+                std::vector<uint8_t> opBytes;
+                std::vector<uint8_t> aBytes = a->getOperationGetBytes();
+                std::vector<uint8_t> bBytes = b->getOperationGetBytes();
+
+                opBytes.insert(opBytes.end(), aBytes.begin(), aBytes.end());
+                opBytes.insert(opBytes.end(), bBytes.begin(), bBytes.end());
+                opBytes.push_back((uint8_t)opToken->getOperation());
+                stack.push_back(new OperationCompilerNode(opBytes));
+            }
+            // since they are no longer on the stack they are not accessible outside of this block
+            // leaving them undeleted will make them a memory leak
+            delete a;
+            delete b;
         }
     }
-    return nullptr;
 }
 
-SimpleLang::Compiler::OperatorToken *SimpleLang::Compiler::Compiler::parseOperators()
+int32_t SimpleLang::Compiler::Compiler::getTopStackPriority()
 {
-    for (std::vector<OperatorData>::const_iterator it = Operators.begin(); it != Operators.end(); it++)
+    if (m_stack.empty())
     {
-        if (tryOperator(*it))
-        {
-            size_t offset = strnlen(it->symbol, 2);
-            m_rowIt += offset;
-            return new OperatorToken((m_rowIt - offset) - (*m_lineIt).begin(),
-                                     m_lineIt - m_code.begin(),
-                                     it->op);
-        }
+        return -1;
     }
-    return nullptr;
+    return m_stack[m_stack.size() - 1]->getPriority();
 }
 
-SimpleLang::Compiler::IdToken *SimpleLang::Compiler::Compiler::parseId()
+SimpleLang::Compiler::Token *SimpleLang::Compiler::Compiler::popStack()
 {
-    // must start with a character or underscore
-    if (!std::isalpha(*m_rowIt) && (*m_rowIt) != '_')
+    if (m_stack.empty())
     {
         return nullptr;
     }
-    std::string id;
-    size_t offset = 0;
-    while ((m_rowIt + offset) != getEndOfTheLine() && (std::isalnum(*(m_rowIt + offset)) || *(m_rowIt + offset) == '_'))
-    {
-        id.push_back(*(m_rowIt + offset));
-        offset++;
-    }
-    std::vector<std::string>::iterator it = std::find(m_ids.begin(), m_ids.end(), id);
-    size_t index = std::string::npos;
-    if (it == m_ids.end())
-    {
-        m_ids.push_back(id);
-        index = m_ids.size() - 1;
-    }
-    else
-    {
-        index = it - m_ids.begin();
-    }
-    m_rowIt += offset;
-    return new IdToken((m_rowIt - id.size()) - m_lineIt->begin(), m_lineIt - m_code.begin(), index);
+    Token *tkn = m_stack[m_stack.size() - 1];
+    m_stack.pop_back();
+    return tkn;
 }
 
-SimpleLang::Compiler::IntToken *SimpleLang::Compiler::Compiler::parseInt()
+void SimpleLang::Compiler::Compiler::printCode()
 {
-    if (!std::isdigit(*m_rowIt))
+    for (std::vector<Token *>::iterator it = m_code.begin(); it != m_code.end(); it++)
     {
-        return nullptr;
+        std::cout << (*it)->toString() << " ";
     }
-    std::string num;
-    size_t offset = 0;
-    while ((m_rowIt + offset) != getEndOfTheLine() && std::isdigit(*(m_rowIt + offset)))
-    {
-        num.push_back(*(m_rowIt + offset));
-        offset++;
-    }
-    size_t index = std::string::npos;
-    try
-    {
-        int32_t numVal = std::stoi(num);
-        std::vector<int32_t>::iterator it = std::find(m_ints.begin(), m_ints.end(), numVal);
-        if (it == m_ints.end())
-        {
-            m_ints.push_back(numVal);
-            index = m_ints.size() - 1;
-        }
-        else
-        {
-            index = it - m_ints.begin();
-        }
-    }
-    catch (std::invalid_argument e)
-    {
-        return nullptr;
-    }
-    catch (std::out_of_range e)
-    {
-        throw ParsingError(
-            m_rowIt - m_lineIt->begin(),
-            m_lineIt - m_code.begin(),
-            "Constant number is too large, valid range is " +
-                std::to_string(std::numeric_limits<int32_t>::min()) +
-                "< x < " +
-                std::to_string(std::numeric_limits<int32_t>::max()));
-    }
-    m_rowIt += offset;
-    return new IntToken((m_rowIt - num.size()) - m_lineIt->begin(), m_lineIt - m_code.begin(), index);
+    std::cout << std::endl;
 }
 
-void SimpleLang::Compiler::Compiler::printInfoTable()
+std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateGetByteCode(Token *token)
 {
-    for (size_t i = 0; i < m_ids.size(); i++)
+    std::vector<uint8_t> out;
+    if (IntToken *intToken = dynamic_cast<IntToken *>(token); intToken != nullptr)
     {
-        std::cout << "W" << i << ": " << m_ids[i] << std::endl;
+        out.push_back((uint8_t)Operation::PushConstInt);
+        out.push_back((uint8_t)intToken->getId());
     }
-
-    for (size_t i = 0; i < m_ints.size(); i++)
+    else if (IdToken *idToken = dynamic_cast<IdToken *>(token); idToken != nullptr)
     {
-        std::cout << "NUM" << i << ": " << m_ints[i] << std::endl;
+        out.push_back((uint8_t)SimpleLang::Operation::PushConstString);
+        out.push_back((uint8_t)idToken->getId());
+        out.push_back((uint8_t)SimpleLang::Operation::Get);
     }
+    return out;
 }
 
-SimpleLang::Compiler::Compiler::Compiler(std::vector<std::string> const &code) : m_code(code)
+std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateSetByteCode(Token *token)
 {
-    m_lineIt = m_code.begin();
-    m_rowIt = m_lineIt->begin();
-}
-
-SimpleLang::Compiler::Compiler::Compiler(std::string const &code)
-{
-    std::stringstream stream(code);
-    std::string to;
-    while (std::getline(stream, to, '\n'))
+    std::vector<uint8_t> out;
+    if (IdToken *idToken = dynamic_cast<IdToken *>(token); idToken != nullptr)
     {
-        m_code.push_back(to);
+        out.push_back((uint8_t)SimpleLang::Operation::PushConstString);
+        out.push_back((uint8_t)idToken->getId());
     }
-    m_lineIt = m_code.begin();
-    m_rowIt = m_lineIt->begin();
+    return out;
 }
 
-SimpleLang::Compiler::Compiler::~Compiler()
+void SimpleLang::Compiler::Compiler::appendByteCode(std::vector<uint8_t> const &code)
 {
-    for (size_t i = 0; i < m_tokens.size(); i++)
+    for (uint8_t byte : code)
     {
-        delete m_tokens[i];
+        m_byteCode.operations.push_back(byte);
     }
-    m_tokens.clear();
-}
-
-const char *SimpleLang::Compiler::ParsingError::what() const throw()
-{
-    return ("Error at line " + std::to_string(m_row) + " row " + std::to_string(m_column) + ": " + m_message).c_str();
 }

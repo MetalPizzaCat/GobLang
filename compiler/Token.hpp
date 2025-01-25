@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <vector>
 #include <cstdint>
+#include "../execution/Machine.hpp"
+
 namespace SimpleLang::Compiler
 {
     enum class Keyword
@@ -47,27 +49,29 @@ namespace SimpleLang::Compiler
         const char *symbol;
         Operator op;
         int32_t priority;
+        Operation operation;
     };
 
     static const std::vector<OperatorData> Operators = {
-        OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5},
-        OperatorData{.symbol = "=", .op = Operator::Equals, .priority = 2},
-        OperatorData{.symbol = "!=", .op = Operator::Equals, .priority = 5},
-        OperatorData{.symbol = "<", .op = Operator::Equals, .priority = 5},
-        OperatorData{.symbol = ">", .op = Operator::Equals, .priority = 5},
-        OperatorData{.symbol = "+", .op = Operator::Equals, .priority = 6},
-        OperatorData{.symbol = "-", .op = Operator::Equals, .priority = 6},
-        OperatorData{.symbol = "*", .op = Operator::Equals, .priority = 7},
-        OperatorData{.symbol = "/", .op = Operator::Equals, .priority = 7},
-        OperatorData{.symbol = "and", .op = Operator::Equals, .priority = 2},
-        OperatorData{.symbol = "&&", .op = Operator::Equals, .priority = 2},
-        OperatorData{.symbol = "or", .op = Operator::Equals, .priority = 2},
-        OperatorData{.symbol = "||", .op = Operator::Equals, .priority = 2}};
+        OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5, .operation = Operation::None},
+        OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 2, .operation = Operation::Set},
+        OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::None},
+        OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::None},
+        OperatorData{.symbol = ">", .op = Operator::More, .priority = 5, .operation = Operation::None},
+        OperatorData{.symbol = "+", .op = Operator::Add, .priority = 6, .operation = Operation::Add},
+        OperatorData{.symbol = "-", .op = Operator::Sub, .priority = 6, .operation = Operation::Sub},
+        OperatorData{.symbol = "*", .op = Operator::Mul, .priority = 7, .operation = Operation::None},
+        OperatorData{.symbol = "/", .op = Operator::Div, .priority = 7, .operation = Operation::None},
+        OperatorData{.symbol = "and", .op = Operator::And, .priority = 2, .operation = Operation::None},
+        OperatorData{.symbol = "&&", .op = Operator::And, .priority = 2, .operation = Operation::None},
+        OperatorData{.symbol = "or", .op = Operator::Or, .priority = 2, .operation = Operation::None},
+        OperatorData{.symbol = "||", .op = Operator::Or, .priority = 2, .operation = Operation::None}};
 
     class Token
     {
     public:
         virtual std::string toString() = 0;
+        virtual int32_t getPriority() const;
         explicit Token(size_t row, size_t column);
 
     private:
@@ -89,19 +93,25 @@ namespace SimpleLang::Compiler
     class OperatorToken : public Token
     {
     public:
-        explicit OperatorToken(size_t row, size_t column, Operator op) : Token(row, column), m_op(op) {}
-        Operator getOperator() const { return m_op; }
+        explicit OperatorToken(size_t row, size_t column, Operator oper);
+        Operator getOperator() const { return m_data->op; }
+        Operation getOperation() const { return m_data->operation; }
+        virtual int32_t getPriority() const override;
         std::string toString() override;
 
     private:
-        Operator m_op;
+        OperatorData const *m_data;
     };
 
     class IdToken : public Token
     {
     public:
         explicit IdToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
+
         std::string toString() override;
+
+        size_t getId() const { return m_id; }
+
     private:
         size_t m_id;
     };
@@ -111,6 +121,9 @@ namespace SimpleLang::Compiler
     public:
         explicit IntToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
         std::string toString() override;
+
+        size_t getId() const { return m_id; }
+
     private:
         size_t m_id;
     };

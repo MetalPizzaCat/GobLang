@@ -1,106 +1,101 @@
 #pragma once
-#include <string>
+#include "Parser.hpp"
 #include <vector>
-#include <map>
 #include <cstdint>
-#include <exception>
-
-#include "Token.hpp"
-
+#include "ByteCode.hpp"
 namespace SimpleLang::Compiler
 {
+
     class Compiler
     {
     public:
+        explicit Compiler(Parser const &parser) : m_parser(parser) {}
+
         /**
-         * @brief Moves code pointer to the next non-whitespace character
+         * @brief Convert given parsed data into reverse polish notation representation of code
          *
          */
-        void skipWhitespace();
+        void compile();
 
-        void parse();
+        void generateByteCode();
 
         /**
-         * @brief Verify that the char sequence used by the keyword is present
+         * @brief Get priority for the top item on the stack or -1 if stack is empty
          *
-         * @param keyword
-         * @return true Keyword has been found and processed
-         * @return false No keywords found
+         * @return int32_t Priority
          */
-        bool tryKeyword(std::string const &keyword);
+        int32_t getTopStackPriority();
 
         /**
-         * @brief Verify that the char sequence used by operator is present
+         * @brief Pop the last item from the stack and return it
          *
-         * @param op Operator to check
-         * @return true
-         * @return false
+         * @return Token* Token from top of the stack or nullptr if stack is empty
          */
-        bool tryOperator(OperatorData const &op);
+        Token *popStack();
 
         /**
-         * @brief Attempt to parse all known keywords
+         * @brief Prints the parsed sequence using the token data
          *
-         * @return KeywordToken* Pointer to the token for the parsed keyword or nullptr if no keywords were found
          */
-        KeywordToken *parseKeywords();
+        void printCode();
 
-        /**
-         * @brief Attempt to parse all known operators
-         *
-         * @return OperatorToken* Pointer to token for the parsed operator or nullptr if no tokens were found
-         */
-        OperatorToken *parseOperators();
-
-        IdToken *parseId();
-
-        IntToken * parseInt();
-
-        /**
-         * @brief Get iterator pointing to the end of the current line
-         * 
-         * @return std::string::iterator 
-         */
-        std::string::iterator getEndOfTheLine() { return (*m_lineIt).end(); }
+      
+        static std::vector<uint8_t> generateGetByteCode(Token *token);
         
-        /**
-         * @brief Print information about lexemes
-         * 
-         */
-        void printInfoTable();
+        static std::vector<uint8_t> generateSetByteCode(Token *token);
 
-        explicit Compiler(std::vector<std::string> const& code);
+        void appendByteCode(std::vector<uint8_t> const &code);
 
-        explicit Compiler(std::string const& code);
+        ByteCode getByteCode() const { return m_byteCode; }
 
-        ~Compiler();
     private:
-        std::vector<Token *> m_tokens;
-        std::vector<std::string> m_ids;
-        std::vector<std::string> m_strings;
-        std::vector<int32_t> m_ints;
-        std::vector<std::string> m_code;
         /**
-         * @brief Pointer to the current character in the row
+         * @brief code representation in reverse polish notation
          *
          */
-        std::string::iterator m_rowIt;
-        /**
-         * @brief Pointer to the current row
-         *
-         */
-        std::vector<std::string>::iterator m_lineIt;
+        std::vector<Token *> m_code;
+        std::vector<uint8_t> m_bytes;
+
+        std::vector<Token *> m_stack;
+
+        ByteCode m_byteCode;
+        Parser const &m_parser;
     };
 
-    class ParsingError : public std::exception
+    class CompilerNode
     {
     public:
-        const char *what() const throw() override;
-        ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg) {}
+        virtual std::vector<uint8_t> getOperationGetBytes() = 0;
+
+        virtual std::vector<uint8_t> getOperationSetBytes() { return {}; }
+    };
+
+    class OperationCompilerNode : public CompilerNode
+    {
+    public:
+        explicit OperationCompilerNode(std::vector<uint8_t> const &vec) : m_bytes(vec) {}
+
+        std::vector<uint8_t> getOperationGetBytes() override { return m_bytes; }
 
     private:
-        size_t m_row;
-        size_t m_column;
-        std::string m_message;
+        std::vector<uint8_t> m_bytes;
+    };
+
+    class TokenCompilerNode : public CompilerNode
+    {
+    public:
+        explicit TokenCompilerNode(Token *token) : m_token(token) {}
+        std::vector<uint8_t> getOperationGetBytes() override
+        {
+            return Compiler::generateGetByteCode(m_token);
+        }
+
+        std::vector<uint8_t> getOperationSetBytes() override
+        {
+            return Compiler::generateSetByteCode(m_token);
+        }
+
+    private:
+        Token *m_token;
     };
 }

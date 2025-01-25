@@ -7,7 +7,7 @@
 
 #include "Type.hpp"
 #include "Memory.hpp"
-
+#include "../compiler/ByteCode.hpp"
 
 namespace SimpleLang
 {
@@ -17,6 +17,8 @@ namespace SimpleLang
         explicit Machine()
         {
         }
+
+        explicit Machine(Compiler::ByteCode const &code);
 
         void addOperation(Operation op)
         {
@@ -52,6 +54,16 @@ namespace SimpleLang
 
         MemoryValue *getStackTop();
 
+        MemoryValue getVariableValue(std::string const &name) { return m_variables[name]; }
+
+        /**
+         * @brief Create a custom variable that will be accessible in code. Useful for binding with c code
+         * 
+         * @param name Name of the variable
+         * @param value Value of the variable
+         */
+        void createVariable(std::string const& name, MemoryValue const& value);
+
         ~Machine()
         {
             delete m_memoryRoot;
@@ -65,6 +77,16 @@ namespace SimpleLang
             m_operationStack.pop_back();
             m_operationStack.pop_back();
             Value c = std::get<int32_t>(a.value) + std::get<int32_t>(b.value);
+            m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = c});
+        }
+
+        inline void subInt()
+        {
+            MemoryValue a = m_operationStack[m_operationStack.size() - 1];
+            MemoryValue b = m_operationStack[m_operationStack.size() - 2];
+            m_operationStack.pop_back();
+            m_operationStack.pop_back();
+            Value c = std::get<int32_t>(b.value) - std::get<int32_t>(a.value);
             m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = c});
         }
 
@@ -115,10 +137,6 @@ namespace SimpleLang
             m_memoryRoot->push_back(node);
             m_operationStack.push_back(MemoryValue{.type = Type::MemoryObj, .value = node});
         }
-        inline void subInt()
-        {
-        }
-
         MemoryNode *m_memoryRoot = new MemoryNode();
         size_t m_programCounter = 0;
         std::vector<uint8_t> m_operations;

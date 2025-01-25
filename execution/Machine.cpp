@@ -1,6 +1,12 @@
 #include "Machine.hpp"
 #include <iostream>
 #include <vector>
+SimpleLang::Machine::Machine(Compiler::ByteCode const &code)
+{
+    m_constInts = code.ints;
+    m_constStrings = code.ids;
+    m_operations = code.operations;
+}
 void SimpleLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
 
 {
@@ -16,6 +22,9 @@ void SimpleLang::Machine::step()
     {
     case Operation::Add:
         addInt();
+        break;
+    case Operation::Sub:
+        subInt();
         break;
     case Operation::Call:
         call();
@@ -50,4 +59,9 @@ SimpleLang::MemoryValue *SimpleLang::Machine::getStackTop()
     {
         return &m_operationStack[m_operationStack.size() - 1];
     }
+}
+
+void SimpleLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
+{
+    m_variables[name] = value;
 }

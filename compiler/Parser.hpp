@@ -1,0 +1,116 @@
+#pragma once
+#include <string>
+#include <vector>
+#include <map>
+#include <cstdint>
+#include <exception>
+
+#include "Token.hpp"
+
+namespace SimpleLang::Compiler
+{
+    class Parser
+    {
+    public:
+        /**
+         * @brief Moves code pointer to the next non-whitespace character
+         *
+         */
+        void skipWhitespace();
+
+        void parse();
+
+        /**
+         * @brief Verify that the char sequence used by the keyword is present
+         *
+         * @param keyword
+         * @return true Keyword has been found and processed
+         * @return false No keywords found
+         */
+        bool tryKeyword(std::string const &keyword);
+
+        /**
+         * @brief Verify that the char sequence used by operator is present
+         *
+         * @param op Operator to check
+         * @return true
+         * @return false
+         */
+        bool tryOperator(OperatorData const &op);
+
+        /**
+         * @brief Attempt to parse all known keywords
+         *
+         * @return KeywordToken* Pointer to the token for the parsed keyword or nullptr if no keywords were found
+         */
+        KeywordToken *parseKeywords();
+
+        /**
+         * @brief Attempt to parse all known operators
+         *
+         * @return OperatorToken* Pointer to token for the parsed operator or nullptr if no tokens were found
+         */
+        OperatorToken *parseOperators();
+
+        IdToken *parseId();
+
+        IntToken *parseInt();
+
+        /**
+         * @brief Get iterator pointing to the end of the current line
+         *
+         * @return std::string::iterator
+         */
+        std::string::iterator getEndOfTheLine() { return (*m_lineIt).end(); }
+
+        /**
+         * @brief Print information about lexemes
+         *
+         */
+        void printInfoTable();
+
+        /**
+         * @brief Prints the parsed sequence using the token data
+         *
+         */
+        void printCode();
+
+        explicit Parser(std::vector<std::string> const &code);
+
+        explicit Parser(std::string const &code);
+
+        std::vector<Token *> const &getTokens() const { return m_tokens; }
+        std::vector<std::string> const &getIds() const { return m_ids; }
+        std::vector<int32_t> const &getInts() const { return m_ints; }
+        ~Parser();
+
+    private:
+        std::vector<Token *> m_tokens;
+        std::vector<std::string> m_ids;
+        std::vector<std::string> m_strings;
+        std::vector<int32_t> m_ints;
+        std::vector<std::string> m_code;
+        /**
+         * @brief Pointer to the current character in the row
+         *
+         */
+        std::string::iterator m_rowIt;
+        /**
+         * @brief Pointer to the current row
+         *
+         */
+        std::vector<std::string>::iterator m_lineIt;
+    };
+
+    class ParsingError : public std::exception
+    {
+    public:
+        const char *what() const throw() override;
+        ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg) {}
+
+    private:
+        size_t m_row;
+        size_t m_column;
+        std::string m_message;
+    };
+}
