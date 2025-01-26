@@ -20,30 +20,32 @@ void SimpleLang::Compiler::Parser::skipWhitespace()
 
 void SimpleLang::Compiler::Parser::parse()
 {
+    std::vector<std::function<Token *(void)>> parsers = {
+        std::bind(&Parser::parseKeywords, this),
+        std::bind(&Parser::parseInt, this),
+        std::bind(&Parser::parseId, this),
+        std::bind(&Parser::parseOperators, this),
+        std::bind(&Parser::parseSeparators, this),
+    };
+
     while (m_rowIt != getEndOfTheLine() && m_lineIt != m_code.end())
     {
         skipWhitespace();
-        if (Token *token = parseKeywords(); token != nullptr)
+
+        Token *token = nullptr;
+        for (std::function<Token *(void)> &f : parsers)
         {
-            m_tokens.push_back(token);
-            continue;
+            token = f();
+            if (token != nullptr)
+            {
+                m_tokens.push_back(token);
+                break;
+            }
         }
-        if (Token *token = parseInt(); token != nullptr)
+        if (token == nullptr)
         {
-            m_tokens.push_back(token);
-            continue;
+            throw ParsingError(getLineNumber(), getColumnNumber(), "Unknown character sequence");
         }
-        if (Token *token = parseOperators(); token != nullptr)
-        {
-            m_tokens.push_back(token);
-            continue;
-        }
-        if (Token *token = parseId(); token != nullptr)
-        {
-            m_tokens.push_back(token);
-            continue;
-        }
-        throw ParsingError(m_rowIt - m_lineIt->begin(), m_code.begin() - m_lineIt, "Unknown character sequence");
     }
 }
 
@@ -78,10 +80,12 @@ SimpleLang::Compiler::KeywordToken *SimpleLang::Compiler::Parser::parseKeywords(
     {
         if (tryKeyword(it->first))
         {
-            m_rowIt += it->first.size();
+            size_t row = getLineNumber();
+            size_t column = getColumnNumber();
+            advanceRowIterator(it->first.size());
             return new KeywordToken(
-                (m_rowIt - it->first.size()) - (*m_lineIt).begin(),
-                m_lineIt - m_code.begin(),
+                row,
+                column,
                 it->second);
         }
     }
@@ -94,10 +98,12 @@ SimpleLang::Compiler::OperatorToken *SimpleLang::Compiler::Parser::parseOperator
     {
         if (tryOperator(*it))
         {
+            size_t row = getLineNumber();
+            size_t column = getColumnNumber();
             size_t offset = strnlen(it->symbol, 2);
-            m_rowIt += offset;
-            return new OperatorToken((m_rowIt - offset) - (*m_lineIt).begin(),
-                                     m_lineIt - m_code.begin(),
+            advanceRowIterator(offset);
+            return new OperatorToken(row,
+                                     column,
                                      it->op);
         }
     }
@@ -129,8 +135,10 @@ SimpleLang::Compiler::IdToken *SimpleLang::Compiler::Parser::parseId()
     {
         index = it - m_ids.begin();
     }
-    m_rowIt += offset;
-    return new IdToken((m_rowIt - id.size()) - m_lineIt->begin(), m_lineIt - m_code.begin(), index);
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(offset);
+    return new IdToken(row, column, index);
 }
 
 SimpleLang::Compiler::IntToken *SimpleLang::Compiler::Parser::parseInt()
@@ -175,8 +183,58 @@ SimpleLang::Compiler::IntToken *SimpleLang::Compiler::Parser::parseInt()
                 "< x < " +
                 std::to_string(std::numeric_limits<int32_t>::max()));
     }
-    m_rowIt += offset;
-    return new IntToken((m_rowIt - num.size()) - m_lineIt->begin(), m_lineIt - m_code.begin(), index);
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(offset);
+    return new IntToken(row, column, index);
+}
+
+SimpleLang::Compiler::SeparatorToken *SimpleLang::Compiler::Parser::parseSeparators()
+{
+
+    for (std::vector<SeparatorData>::const_iterator it = Separators.begin(); it != Separators.end(); it++)
+    {
+        if (*m_rowIt == it->symbol)
+        {
+            size_t row = getLineNumber();
+            size_t column = getColumnNumber();
+            advanceRowIterator(1);
+            return new SeparatorToken(row, column, it->separator);
+        }
+    }
+    return nullptr;
+}
+
+void SimpleLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)
+{
+    size_t currentOffset = 0;
+    for (; currentOffset < offset && m_rowIt != getEndOfTheLine(); currentOffset++)
+    {
+        m_rowIt++;
+    }
+    if (currentOffset < offset && m_rowIt == getEndOfTheLine())
+    {
+        m_lineIt++;
+        if (m_lineIt == m_code.end())
+        {
+            return;
+        }
+        m_rowIt = m_lineIt->begin();
+        if (!stopAtEndOfTheLine)
+        {
+            advanceRowIterator(offset - currentOffset, stopAtEndOfTheLine);
+        }
+    }
+}
+
+size_t SimpleLang::Compiler::Parser::getLineNumber() const
+{
+    return m_lineIt - m_code.begin();
+}
+
+size_t SimpleLang::Compiler::Parser::getColumnNumber() const
+{
+    return m_rowIt - m_lineIt->begin();
 }
 
 void SimpleLang::Compiler::Parser::printInfoTable()
@@ -229,5 +287,10 @@ SimpleLang::Compiler::Parser::~Parser()
 
 const char *SimpleLang::Compiler::ParsingError::what() const throw()
 {
-    return ("Error at line " + std::to_string(m_row) + " row " + std::to_string(m_column) + ": " + m_message).c_str();
+    return m_full.c_str();
+}
+
+SimpleLang::Compiler::ParsingError::ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg)
+{
+    m_full = ("Error at line " + std::to_string(m_row) + " row " + std::to_string(m_column) + ": " + m_message);
 }

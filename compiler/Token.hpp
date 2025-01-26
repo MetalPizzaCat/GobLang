@@ -5,67 +5,10 @@
 #include <vector>
 #include <cstdint>
 #include "../execution/Machine.hpp"
+#include "Lexems.hpp"
 
 namespace SimpleLang::Compiler
 {
-    enum class Keyword
-    {
-        Int,
-        Float,
-        Function,
-        Return,
-        Null,
-        True,
-        False,
-    };
-
-    enum class Operator
-    {
-        Equals,
-        Assign,
-        NotEqual,
-        Less,
-        More,
-        Add,
-        Sub,
-        Mul,
-        Div,
-        And,
-        Or,
-        Not,
-    };
-
-    static const std::map<std::string, Keyword> Keywords = {
-        {"int", Keyword::Int},
-        {"float", Keyword::Float},
-        {"func", Keyword::Function},
-        {"return", Keyword::Return},
-        {"null", Keyword::Null},
-        {"true", Keyword::True},
-        {"false", Keyword::False}};
-
-    struct OperatorData
-    {
-        const char *symbol;
-        Operator op;
-        int32_t priority;
-        Operation operation;
-    };
-
-    static const std::vector<OperatorData> Operators = {
-        OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5, .operation = Operation::None},
-        OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 2, .operation = Operation::Set},
-        OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::None},
-        OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::None},
-        OperatorData{.symbol = ">", .op = Operator::More, .priority = 5, .operation = Operation::None},
-        OperatorData{.symbol = "+", .op = Operator::Add, .priority = 6, .operation = Operation::Add},
-        OperatorData{.symbol = "-", .op = Operator::Sub, .priority = 6, .operation = Operation::Sub},
-        OperatorData{.symbol = "*", .op = Operator::Mul, .priority = 7, .operation = Operation::None},
-        OperatorData{.symbol = "/", .op = Operator::Div, .priority = 7, .operation = Operation::None},
-        OperatorData{.symbol = "and", .op = Operator::And, .priority = 2, .operation = Operation::None},
-        OperatorData{.symbol = "&&", .op = Operator::And, .priority = 2, .operation = Operation::None},
-        OperatorData{.symbol = "or", .op = Operator::Or, .priority = 2, .operation = Operation::None},
-        OperatorData{.symbol = "||", .op = Operator::Or, .priority = 2, .operation = Operation::None}};
 
     class Token
     {
@@ -126,5 +69,17 @@ namespace SimpleLang::Compiler
 
     private:
         size_t m_id;
+    };
+
+    class SeparatorToken : public Token
+    {
+    public:
+        explicit SeparatorToken(size_t row, size_t column, Separator sep);
+        Separator getSeparator() const { return m_data->separator; }
+        virtual int32_t getPriority() const override { return m_data->priority; }
+        std::string toString() override;
+
+    private:
+        SeparatorData const *m_data;
     };
 }

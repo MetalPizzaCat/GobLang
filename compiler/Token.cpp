@@ -23,7 +23,7 @@ SimpleLang::Compiler::Token::Token(size_t row, size_t column) : m_row(row), m_co
 SimpleLang::Compiler::OperatorToken::OperatorToken(size_t row, size_t column, Operator oper) : Token(row, column)
 {
     m_data = &(*std::find_if(Operators.begin(), Operators.end(), [oper](OperatorData const &op)
-                           { return op.op == oper; }));
+                             { return op.op == oper; }));
 }
 
 int32_t SimpleLang::Compiler::OperatorToken::getPriority() const
@@ -44,4 +44,15 @@ std::string SimpleLang::Compiler::IdToken::toString()
 std::string SimpleLang::Compiler::IntToken::toString()
 {
     return "NUM" + std::to_string(m_id);
+}
+
+SimpleLang::Compiler::SeparatorToken::SeparatorToken(size_t row, size_t column, Separator sep) : Token(row, column)
+{
+    m_data = &(*std::find_if(Separators.begin(), Separators.end(), [sep](SeparatorData const &data)
+                             { return data.separator == sep; }));
+}
+
+std::string SimpleLang::Compiler::SeparatorToken::toString()
+{
+    return std::string{m_data->symbol};
 }

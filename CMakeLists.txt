@@ -10,6 +10,7 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Memory.hpp
     execution/Memory.cpp
     compiler/ByteCode.hpp
+    compiler/Lexems.hpp
     )
 
 
@@ -24,6 +25,7 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
 
 add_executable(sila
     main.cpp
+    ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
 )
 

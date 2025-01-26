@@ -56,12 +56,36 @@ namespace SimpleLang::Compiler
 
         IntToken *parseInt();
 
+        SeparatorToken *parseSeparators();
+
         /**
          * @brief Get iterator pointing to the end of the current line
          *
          * @return std::string::iterator
          */
         std::string::iterator getEndOfTheLine() { return (*m_lineIt).end(); }
+
+        /**
+         * @brief Advance current `m_rowIt` value by a given amount wrapping to the next line if necessary
+         *
+         * @param offset The amount to advance by
+         * @param stopAtEndOfTheLine If true `m_rowIt` will always be at position upon line switch, otherwise it will continue till end of offset
+         */
+        void advanceRowIterator(size_t offset, bool stopAtEndOfTheLine = false);
+
+        /**
+         * @brief Get number of the the current line(row) starting from 0
+         *
+         * @return size_t Number of the current line starting from 0
+         */
+        size_t getLineNumber() const;
+
+        /**
+         * @brief Get number of the current character in the current row(line). Uses m_rowIt for calculation
+         *
+         * @return size_t
+         */
+        size_t getColumnNumber() const;
 
         /**
          * @brief Print information about lexemes
@@ -106,9 +130,10 @@ namespace SimpleLang::Compiler
     {
     public:
         const char *what() const throw() override;
-        ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg) {}
+        ParsingError(size_t row, size_t column, std::string const &msg);
 
     private:
+        std::string m_full;
         size_t m_row;
         size_t m_column;
         std::string m_message;

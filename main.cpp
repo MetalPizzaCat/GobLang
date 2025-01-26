@@ -7,6 +7,10 @@
 #include <map>
 #include <cstdint>
 
+#include "compiler/Parser.hpp"
+#include "compiler/Compiler.hpp"
+#include "execution/Machine.hpp"
+
 #include "execution/Machine.hpp"
 
 namespace MachineFunctions
@@ -44,34 +48,12 @@ namespace MachineFunctions
 
 int main(int, char **)
 {
-    SimpleLang::Machine machine;
+    std::string code = "a = 5 + 99 - piss; a = 2 + a;";
+    std::cout << "Source: " << code << std::endl;
+    SimpleLang::Compiler::Parser comp(code);
+    comp.parse();
+    comp.printInfoTable();
+    comp.printCode();
 
-    machine.addStringConst("print");
-    machine.addStringConst("some_var");
-    machine.addIntConst(69);
-
-    machine.addFunction(MachineFunctions::printLine, "print");
-
-    machine.addOperation(SimpleLang::Operation::PushConstString);
-    machine.addUInt8(1);
-    machine.addOperation(SimpleLang::Operation::PushConstInt);
-    machine.addUInt8(0);
-    machine.addOperation(SimpleLang::Operation::Set);
-
-    machine.addOperation(SimpleLang::Operation::PushConstString);
-    machine.addUInt8(1);
-    machine.addOperation(SimpleLang::Operation::Get);
-
-    machine.addOperation(SimpleLang::Operation::PushConstString);
-    machine.addUInt8(0);
-    machine.addOperation(SimpleLang::Operation::Get);
-    machine.addOperation(SimpleLang::Operation::Call);
-    while (!machine.isAtTheEnd())
-    {
-        machine.step();
-    }
-
-    SimpleLang::Value strVal = new SimpleLang::StringNode("hello world");
-    assert(std::holds_alternative<SimpleLang::MemoryNode *>(strVal));
     return EXIT_SUCCESS;
 }
