@@ -58,11 +58,11 @@ namespace SimpleLang
 
         /**
          * @brief Create a custom variable that will be accessible in code. Useful for binding with c code
-         * 
+         *
          * @param name Name of the variable
          * @param value Value of the variable
          */
-        void createVariable(std::string const& name, MemoryValue const& value);
+        void createVariable(std::string const &name, MemoryValue const &value);
 
         ~Machine()
         {
@@ -132,9 +132,25 @@ namespace SimpleLang
 
         inline void pushConstString()
         {
-            StringNode *node = new StringNode(m_constStrings[(size_t)m_operations[m_programCounter + 1]]);
+            MemoryNode *root = m_memoryRoot;
+            std::string &str = m_constStrings[(size_t)m_operations[m_programCounter + 1]];
+            StringNode *node = nullptr;
+            // avoid making instance for each call, check if there is anything that uses this already
+            while (root != nullptr)
+            {
+                if (StringNode *strNode = dynamic_cast<StringNode *>(root); strNode != nullptr && strNode->getString() == str)
+                {
+                    node = strNode;
+                    break;
+                }
+                root = root->getNext();
+            }
+            if (node == nullptr)
+            {
+                node = new StringNode(str);
+                m_memoryRoot->push_back(node);
+            }
             m_programCounter++;
-            m_memoryRoot->push_back(node);
             m_operationStack.push_back(MemoryValue{.type = Type::MemoryObj, .value = node});
         }
         MemoryNode *m_memoryRoot = new MemoryNode();
