@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include "ByteCode.hpp"
+#include "CompilerToken.hpp"
 namespace SimpleLang::Compiler
 {
 
@@ -19,15 +20,17 @@ namespace SimpleLang::Compiler
 
         /**
          * @brief Generate byte code that can be used by the interpreter and write it into the `m_byteCode` variable
-         * 
+         *
          */
         void generateByteCode();
 
         /**
          * @brief Dump all contents of the stack into the reverse polish notation array
-         * 
+         *
          */
         void dumpStack();
+
+        void dumpStackWhile(std::function<bool(Token*)> const& cond);
 
         /**
          * @brief Get priority for the top item on the stack or -1 if stack is empty
@@ -49,14 +52,15 @@ namespace SimpleLang::Compiler
          */
         void printCode();
 
-      
         static std::vector<uint8_t> generateGetByteCode(Token *token);
-        
+
         static std::vector<uint8_t> generateSetByteCode(Token *token);
 
         void appendByteCode(std::vector<uint8_t> const &code);
 
         ByteCode getByteCode() const { return m_byteCode; }
+
+        ~Compiler();
 
     private:
         /**
@@ -67,6 +71,14 @@ namespace SimpleLang::Compiler
         std::vector<uint8_t> m_bytes;
 
         std::vector<Token *> m_stack;
+
+        /**
+         * @brief Array for storing all tokens created during the conversion process, used only to be able to delete them once the process ends
+         *
+         */
+        std::vector<Token *> m_compilerTokens;
+
+        std::vector<FunctionCallToken*> m_functionCalls;
 
         ByteCode m_byteCode;
         Parser const &m_parser;

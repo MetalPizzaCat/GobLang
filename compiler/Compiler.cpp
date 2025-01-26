@@ -1,6 +1,8 @@
 #include "Compiler.hpp"
 #include "../execution/Machine.hpp"
+#include "CompilerToken.hpp"
 #include <iostream>
+#include <deque>
 
 void SimpleLang::Compiler::Compiler::compile()
 {
@@ -13,10 +15,52 @@ void SimpleLang::Compiler::Compiler::compile()
         }
         else if (SeparatorToken *sepToken = dynamic_cast<SeparatorToken *>(*it); sepToken != nullptr)
         {
+
             if (sepToken->getSeparator() == Separator::End)
             {
                 dumpStack();
+                m_code.push_back(sepToken);
                 continue;
+            }
+            else if (sepToken->getSeparator() == Separator::BracketOpen &&
+                     dynamic_cast<IdToken *>(*(it - 1)) != nullptr)
+            {
+                FunctionCallToken *token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
+                m_compilerTokens.push_back(token);
+                m_stack.push_back(token);
+                m_functionCalls.push_back(token);
+            }
+            else if (sepToken->getSeparator() == Separator::Comma && !m_functionCalls.empty())
+            {
+                dumpStackWhile([](Token *t)
+                               { return dynamic_cast<FunctionCallToken *>(t) == nullptr; });
+                (*m_functionCalls.rbegin())->increaseArgCount();
+            }
+            else if (sepToken->getSeparator() == Separator::BracketClose)
+            {
+                while (!m_stack.empty())
+                {
+                    Token *t = *(m_stack.rbegin());
+                    m_stack.pop_back();
+                    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(t); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
+                    {
+                        break;
+                    }
+                    else if (FunctionCallToken *funcTok = dynamic_cast<FunctionCallToken *>(t); funcTok != nullptr)
+                    {
+                        SeparatorToken *prev = dynamic_cast<SeparatorToken *>(*(it - 1));
+                        if (!(prev != nullptr && (prev->getSeparator() == Separator::BracketOpen || prev->getSeparator() == Separator::Comma)))
+                        {
+                            (*m_functionCalls.rbegin())->increaseArgCount();
+                        }
+                        m_code.push_back(*m_functionCalls.rbegin());
+                        m_functionCalls.pop_back();
+                    }
+                    else
+                    {
+                        m_code.push_back(t);
+                    }
+                }
             }
         }
         else if (dynamic_cast<OperatorToken *>(*it) != nullptr)
@@ -47,13 +91,41 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
     std::vector<CompilerNode *> stack;
     for (std::vector<Token *>::iterator it = m_code.begin(); it != m_code.end(); it++)
     {
-        if (dynamic_cast<IntToken *>(*it) != nullptr)
+        if(SeparatorToken * sepTok = dynamic_cast<SeparatorToken*>(*it); sepTok != nullptr && sepTok->getSeparator() == Separator::End)
+        {
+
+        }
+        else if (dynamic_cast<IntToken *>(*it) != nullptr)
         {
             stack.push_back(new OperationCompilerNode(generateGetByteCode(*it)));
         }
         else if (dynamic_cast<IdToken *>(*it) != nullptr)
         {
             stack.push_back(new TokenCompilerNode(*it));
+        }
+        else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
+        {
+            std::deque<CompilerNode *> nodes;
+            for (int32_t i = 0; i < func->getArgCount(); i++)
+            {
+                nodes.push_front(*stack.rbegin());
+                stack.pop_back();
+            }
+            std::vector<uint8_t> bytes;
+            for (std::deque<CompilerNode *>::iterator it = nodes.begin(); it != nodes.end(); it++)
+            {
+                std::vector<uint8_t> temp = (*it)->getOperationGetBytes();
+                bytes.insert(bytes.end(), temp.begin(), temp.end());
+                // last time they are used, so we should delete them
+                delete (*it);
+            }
+            CompilerNode *funcNode = *stack.rbegin();
+            stack.pop_back();
+            std::vector<uint8_t> fTemp = funcNode->getOperationGetBytes();
+            bytes.insert(bytes.end(), fTemp.begin(), fTemp.end());
+            delete funcNode;
+            bytes.push_back((uint8_t)Operation::Call);
+            stack.push_back(new OperationCompilerNode(bytes));
         }
         else if (OperatorToken *opToken = dynamic_cast<OperatorToken *>(*it); opToken != nullptr)
         {
@@ -85,6 +157,11 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
             delete b;
         }
     }
+    for (std::vector<CompilerNode *>::iterator it = stack.begin(); it != stack.end(); it++)
+    {
+        appendByteCode((*it)->getOperationGetBytes());
+        delete (*it);
+    }
 }
 
 void SimpleLang::Compiler::Compiler::dumpStack()
@@ -95,6 +172,15 @@ void SimpleLang::Compiler::Compiler::dumpStack()
         m_code.push_back(*it);
     }
     m_stack.clear();
+}
+
+void SimpleLang::Compiler::Compiler::dumpStackWhile(std::function<bool(Token *)> const &cond)
+{
+    for (int32_t i = m_stack.size() - 1; i >= 0 && cond(m_stack[i]); i--)
+    {
+        m_code.push_back(m_stack[i]);
+        m_stack.pop_back();
+    }
 }
 
 int32_t SimpleLang::Compiler::Compiler::getTopStackPriority()
@@ -156,8 +242,13 @@ std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateSetByteCode(Token *
 
 void SimpleLang::Compiler::Compiler::appendByteCode(std::vector<uint8_t> const &code)
 {
-    for (uint8_t byte : code)
+    m_byteCode.operations.insert(m_byteCode.operations.end(), code.begin(), code.end());
+}
+
+SimpleLang::Compiler::Compiler::~Compiler()
+{
+    for (size_t i = 0; i < m_compilerTokens.size(); i++)
     {
-        m_byteCode.operations.push_back(byte);
+        delete m_compilerTokens[i];
     }
 }

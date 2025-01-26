@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <cassert>
+#include <exception>
 
 #include "Type.hpp"
 #include "Memory.hpp"
@@ -54,6 +55,10 @@ namespace SimpleLang
 
         MemoryValue *getStackTop();
 
+        MemoryValue * getStackTopAndPop();
+
+        void popStack();
+
         MemoryValue getVariableValue(std::string const &name) { return m_variables[name]; }
 
         /**
@@ -70,89 +75,20 @@ namespace SimpleLang
         }
 
     private:
-        inline void addInt()
-        {
-            MemoryValue a = m_operationStack[m_operationStack.size() - 1];
-            MemoryValue b = m_operationStack[m_operationStack.size() - 2];
-            m_operationStack.pop_back();
-            m_operationStack.pop_back();
-            Value c = std::get<int32_t>(a.value) + std::get<int32_t>(b.value);
-            m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = c});
-        }
+        void _addInt();
 
-        inline void subInt()
-        {
-            MemoryValue a = m_operationStack[m_operationStack.size() - 1];
-            MemoryValue b = m_operationStack[m_operationStack.size() - 2];
-            m_operationStack.pop_back();
-            m_operationStack.pop_back();
-            Value c = std::get<int32_t>(b.value) - std::get<int32_t>(a.value);
-            m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = c});
-        }
+        void _subInt();
 
-        inline void set()
-        {
-            // (name val =)
-            MemoryValue val = m_operationStack[m_operationStack.size() - 1];
-            MemoryValue name = m_operationStack[m_operationStack.size() - 2];
-            StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
-            if (memStr != nullptr)
-            {
-                m_variables[memStr->getString()] = val;
-            }
-        }
+        void _set();
 
-        inline void get()
-        {
-            MemoryValue name = m_operationStack[m_operationStack.size() - 1];
-            m_operationStack.pop_back();
-            assert(std::holds_alternative<MemoryNode *>(name.value));
-            StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
-            if (memStr != nullptr)
-            {
-                m_operationStack.push_back(m_variables[memStr->getString()]);
-            }
-        }
+        void _get();
 
-        inline void call()
-        {
-            MemoryValue func = m_operationStack[m_operationStack.size() - 1];
-            m_operationStack.pop_back();
-            if (std::holds_alternative<FunctionValue>(func.value))
-            {
-                std::get<FunctionValue>(func.value)(this);
-            }
-        }
+        void _call();
 
-        inline void pushConstInt()
-        {
-            m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = m_constInts[(size_t)m_operations[m_programCounter + 1]]});
-            m_programCounter++;
-        }
+        void _pushConstInt();
 
-        inline void pushConstString()
-        {
-            MemoryNode *root = m_memoryRoot;
-            std::string &str = m_constStrings[(size_t)m_operations[m_programCounter + 1]];
-            StringNode *node = nullptr;
-            // avoid making instance for each call, check if there is anything that uses this already
-            while (root != nullptr)
-            {
-                if (StringNode *strNode = dynamic_cast<StringNode *>(root); strNode != nullptr && strNode->getString() == str)
-                {
-                    node = strNode;
-                    break;
-                }
-                root = root->getNext();
-            }
-            if (node == nullptr)
-            {
-                node = new StringNode(str);
-                m_memoryRoot->push_back(node);
-            }
-            m_programCounter++;
-            m_operationStack.push_back(MemoryValue{.type = Type::MemoryObj, .value = node});
-        }
+        void _pushConstString();
+
         MemoryNode *m_memoryRoot = new MemoryNode();
         size_t m_programCounter = 0;
         std::vector<uint8_t> m_operations;
@@ -161,5 +97,15 @@ namespace SimpleLang
         std::vector<int32_t> m_constInts;
         std::vector<float> m_constFloats;
         std::vector<std::string> m_constStrings;
+    };
+
+    class RuntimeException : public std::exception
+    {
+    public:
+        const char *what() const throw() override;
+        explicit RuntimeException(std::string const &msg) : m_msg(msg) {}
+
+    private:
+        std::string m_msg;
     };
 }

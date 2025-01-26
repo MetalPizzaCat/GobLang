@@ -17,6 +17,9 @@ namespace SimpleLang::Compiler
         virtual int32_t getPriority() const;
         explicit Token(size_t row, size_t column);
 
+        size_t getRow() const { return m_row; }
+        size_t getColumn() const { return m_column; }
+
     private:
         size_t m_row;
         size_t m_column;

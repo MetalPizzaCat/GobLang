@@ -9,9 +9,13 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Machine.cpp
     execution/Memory.hpp
     execution/Memory.cpp
-    compiler/ByteCode.hpp
-    compiler/Lexems.hpp
-    )
+)
+
+
+list(APPEND STD_SOURCE_FILES execution/Type.hpp
+    standard/MachineFunctions.hpp
+    standard/MachineFunctions.cpp
+)
 
 
 
@@ -21,16 +25,23 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
     compiler/Parser.hpp
     compiler/Parser.cpp
     compiler/Token.hpp
-    compiler/Token.cpp)
+    compiler/Token.cpp
+    compiler/ByteCode.hpp
+    compiler/Lexems.hpp
+    compiler/CompilerToken.hpp
+    compiler/CompilerToken.cpp
+)
 
 add_executable(sila
     main.cpp
+    ${STD_SOURCE_FILES}
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
 )
 
 add_executable(silac
     compiler.cpp
+    ${STD_SOURCE_FILES}
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
 )

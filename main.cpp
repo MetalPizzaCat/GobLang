@@ -12,48 +12,25 @@
 #include "execution/Machine.hpp"
 
 #include "execution/Machine.hpp"
+#include "standard/MachineFunctions.hpp"
 
-namespace MachineFunctions
-{
-    void printLine(SimpleLang::Machine *machine)
-    {
-        SimpleLang::MemoryValue *v = machine->getStackTop();
-        if (v == nullptr)
-        {
-            return;
-        }
-        switch (v->type)
-        {
-        case SimpleLang::Type::Null:
-            std::cout << "null" << std::endl;
-            break;
-        case SimpleLang::Type::Number:
-            std::cout << std::get<float>(v->value) << std::endl;
-            break;
-        case SimpleLang::Type::Int:
-            std::cout << std::get<int32_t>(v->value) << std::endl;
-            break;
-        case SimpleLang::Type::UserData:
-            std::cerr << "Invalid data type" << std::endl;
-            break;
-        case SimpleLang::Type::MemoryObj:
-            std::cerr << "Invalid data type" << std::endl;
-            break;
-        case SimpleLang::Type::NativeFunction:
-            std::cerr << "Native function: " << &std::get<SimpleLang::FunctionValue>(v->value) << std::endl;
-            break;
-        }
-    }
-}
 
 int main(int, char **)
 {
-    std::string code = "a = 5 + 99 - piss; a = 2 + a;";
+    std::vector<int32_t> vec = {1, 2, 3};
+    auto it = vec.begin();
+    std::cout << *it << std::endl;
+    std::cout << *(it - 1) << std::endl;
+    std::string code = "print(99+2);";
     std::cout << "Source: " << code << std::endl;
     SimpleLang::Compiler::Parser comp(code);
     comp.parse();
     comp.printInfoTable();
     comp.printCode();
 
+    SimpleLang::Compiler::Compiler compiler(comp);
+    compiler.compile();
+    compiler.printCode();
+    
     return EXIT_SUCCESS;
 }
