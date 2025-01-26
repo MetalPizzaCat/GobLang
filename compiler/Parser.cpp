@@ -10,11 +10,7 @@ void SimpleLang::Compiler::Parser::skipWhitespace()
 {
     while (std::isspace(*m_rowIt) && m_rowIt != getEndOfTheLine())
     {
-        m_rowIt++;
-    }
-    if (m_rowIt == getEndOfTheLine())
-    {
-        m_lineIt++;
+        advanceRowIterator(1);
     }
 }
 
@@ -212,7 +208,7 @@ void SimpleLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAt
     {
         m_rowIt++;
     }
-    if (currentOffset < offset && m_rowIt == getEndOfTheLine())
+    if (m_rowIt == getEndOfTheLine())
     {
         m_lineIt++;
         if (m_lineIt == m_code.end())
@@ -220,7 +216,7 @@ void SimpleLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAt
             return;
         }
         m_rowIt = m_lineIt->begin();
-        if (!stopAtEndOfTheLine)
+        if (currentOffset < offset && !stopAtEndOfTheLine)
         {
             advanceRowIterator(offset - currentOffset, stopAtEndOfTheLine);
         }

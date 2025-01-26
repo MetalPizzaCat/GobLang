@@ -17,7 +17,17 @@ namespace SimpleLang::Compiler
          */
         void compile();
 
+        /**
+         * @brief Generate byte code that can be used by the interpreter and write it into the `m_byteCode` variable
+         * 
+         */
         void generateByteCode();
+
+        /**
+         * @brief Dump all contents of the stack into the reverse polish notation array
+         * 
+         */
+        void dumpStack();
 
         /**
          * @brief Get priority for the top item on the stack or -1 if stack is empty

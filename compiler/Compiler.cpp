@@ -11,7 +11,15 @@ void SimpleLang::Compiler::Compiler::compile()
             m_code.push_back(*it);
             continue;
         }
-        if (dynamic_cast<OperatorToken *>(*it) != nullptr)
+        else if (SeparatorToken *sepToken = dynamic_cast<SeparatorToken *>(*it); sepToken != nullptr)
+        {
+            if (sepToken->getSeparator() == Separator::End)
+            {
+                dumpStack();
+                continue;
+            }
+        }
+        else if (dynamic_cast<OperatorToken *>(*it) != nullptr)
         {
             if ((*it)->getPriority() > getTopStackPriority())
             {
@@ -25,11 +33,7 @@ void SimpleLang::Compiler::Compiler::compile()
             m_stack.push_back(*it);
         }
     }
-    // dump the remaining stack
-    for (std::vector<Token *>::const_reverse_iterator it = m_stack.rbegin(); it != m_stack.rend(); it++)
-    {
-        m_code.push_back(*it);
-    }
+    dumpStack();
 }
 
 void SimpleLang::Compiler::Compiler::generateByteCode()
@@ -81,6 +85,16 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
             delete b;
         }
     }
+}
+
+void SimpleLang::Compiler::Compiler::dumpStack()
+{
+    // dump the remaining stack
+    for (std::vector<Token *>::const_reverse_iterator it = m_stack.rbegin(); it != m_stack.rend(); it++)
+    {
+        m_code.push_back(*it);
+    }
+    m_stack.clear();
 }
 
 int32_t SimpleLang::Compiler::Compiler::getTopStackPriority()

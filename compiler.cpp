@@ -4,7 +4,7 @@
 #include "execution/Machine.hpp"
 int main()
 {
-    std::string code = "a = 5 + 99 - piss";
+    std::string code = "a = 5;\n b = 80;\n  a = b + a;";
     std::cout << "Source: " << code << std::endl;
     SimpleLang::Compiler::Parser comp(code);
     comp.parse();
