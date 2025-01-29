@@ -40,7 +40,8 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 }
 int main()
 {
-    std::string code = "a = 9 + 3; print(a); print(a + a); test1(a,3)";
+    // std::string code = "arr = array(3); arr[2] = 69; print(arr[2]);";
+    std::string code = "a = 8008; arr = array(3);  arr[2] = array(2);arr[2][0] = a;print(arr[2][0]);";
     std::cout << "Source: " << code << std::endl;
     SimpleLang::Compiler::Parser comp(code);
     comp.parse();
@@ -50,11 +51,12 @@ int main()
     compiler.compile();
     compiler.printCode();
     compiler.generateByteCode();
-    byteCodeToText(compiler.getByteCode().operations);
+    //byteCodeToText(compiler.getByteCode().operations);
     std::cout << "Executing code" << std::endl;
     SimpleLang::Machine machine(compiler.getByteCode());
     machine.createVariable("piss", SimpleLang::MemoryValue{.type = SimpleLang::Type::Int, .value = 69});
     machine.addFunction(MachineFunctions::printLine, "print");
+    machine.addFunction(MachineFunctions::createArrayOfSize, "array");
     machine.addFunction(test1, "test1");
     while (!machine.isAtTheEnd())
     {

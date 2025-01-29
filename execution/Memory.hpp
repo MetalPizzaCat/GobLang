@@ -1,11 +1,12 @@
 #pragma once
 #include <string>
-
+#include <vector>
+#include "Type.hpp"
 namespace SimpleLang
 {
     /**
      * @brief Class used to represent interpreter memory by using a linked list
-     * 
+     *
      */
     class MemoryNode
     {
@@ -64,4 +65,6 @@ namespace SimpleLang
     private:
         std::string m_str;
     };
+
+    
 }

@@ -8,6 +8,9 @@
 
 #include "Type.hpp"
 #include "Memory.hpp"
+#include "Operations.hpp"
+#include "Value.hpp"
+#include "Array.hpp"
 #include "../compiler/ByteCode.hpp"
 
 namespace SimpleLang
@@ -57,7 +60,11 @@ namespace SimpleLang
 
         MemoryValue * getStackTopAndPop();
 
+        ArrayNode* createArrayOfSize(int32_t size);
+
         void popStack();
+
+        void pushToStack(MemoryValue const& val);
 
         MemoryValue getVariableValue(std::string const &name) { return m_variables[name]; }
 
@@ -88,6 +95,10 @@ namespace SimpleLang
         void _pushConstInt();
 
         void _pushConstString();
+
+        void _getArray();
+
+        void _setArray();
 
         MemoryNode *m_memoryRoot = new MemoryNode();
         size_t m_programCounter = 0;

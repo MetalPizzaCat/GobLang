@@ -6,4 +6,6 @@
 namespace MachineFunctions
 {
     void printLine(SimpleLang::Machine *machine);
+
+    void createArrayOfSize(SimpleLang::Machine *machine);
 }

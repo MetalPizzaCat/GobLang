@@ -30,7 +30,7 @@ namespace SimpleLang::Compiler
          */
         void dumpStack();
 
-        void dumpStackWhile(std::function<bool(Token*)> const& cond);
+        void dumpStackWhile(std::function<bool(Token *)> const &cond);
 
         /**
          * @brief Get priority for the top item on the stack or -1 if stack is empty
@@ -63,6 +63,7 @@ namespace SimpleLang::Compiler
         ~Compiler();
 
     private:
+        void _compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it);
         /**
          * @brief code representation in reverse polish notation
          *
@@ -78,7 +79,7 @@ namespace SimpleLang::Compiler
          */
         std::vector<Token *> m_compilerTokens;
 
-        std::vector<FunctionCallToken*> m_functionCalls;
+        std::vector<FunctionCallToken *> m_functionCalls;
 
         ByteCode m_byteCode;
         Parser const &m_parser;
@@ -117,7 +118,43 @@ namespace SimpleLang::Compiler
             return Compiler::generateSetByteCode(m_token);
         }
 
+        Token *getToken() { return m_token; }
+
     private:
         Token *m_token;
+    };
+
+    class ArrayCompilerNode : public CompilerNode
+    {
+    public:
+        explicit ArrayCompilerNode(CompilerNode *array, CompilerNode *index) : m_array(array), m_index(index) {}
+
+        std::vector<uint8_t> getOperationGetBytes() override
+        {
+            std::vector<uint8_t> out = m_index->getOperationGetBytes();
+            std::vector<uint8_t> arrayGetBytes = m_array->getOperationGetBytes();
+            out.insert(out.end(), arrayGetBytes.begin(), arrayGetBytes.end());
+            out.push_back((uint8_t)Operation::GetArray);
+            return out;
+        }
+
+        std::vector<uint8_t> getOperationSetBytes() override
+        {
+            std::vector<uint8_t> out = m_index->getOperationGetBytes();
+            std::vector<uint8_t> arrayGetBytes = m_array->getOperationGetBytes();
+            out.insert(out.end(), arrayGetBytes.begin(), arrayGetBytes.end());
+            return out;
+        }
+
+        ~ArrayCompilerNode()
+        {
+            delete m_array;
+            delete m_index;
+        }
+
+    private:
+        CompilerNode *m_array;
+
+        CompilerNode *m_index;
     };
 }

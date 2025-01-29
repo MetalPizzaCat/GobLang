@@ -1,5 +1,5 @@
 #include "MachineFunctions.hpp"
-
+#include "../execution/Array.hpp"
 void MachineFunctions::printLine(SimpleLang::Machine *machine)
 
 {
@@ -30,4 +30,13 @@ void MachineFunctions::printLine(SimpleLang::Machine *machine)
         break;
     }
     delete v;
+}
+
+void MachineFunctions::createArrayOfSize(SimpleLang::Machine *machine)
+{
+    SimpleLang::MemoryValue *sizeVal = machine->getStackTopAndPop();
+    machine->pushToStack(SimpleLang::MemoryValue{
+        .type = SimpleLang::Type::MemoryObj,
+        .value = machine->createArrayOfSize(std::get<int32_t>(sizeVal->value))});
+    delete sizeVal;
 }
