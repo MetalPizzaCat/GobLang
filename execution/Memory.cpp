@@ -1,5 +1,4 @@
 #include "Memory.hpp"
-
 void SimpleLang::MemoryNode::insert(MemoryNode *node)
 {
     if (node != nullptr)
@@ -19,3 +18,5 @@ void SimpleLang::MemoryNode::push_back(MemoryNode *node)
     }
     curr->m_next = node;
 }
+
+

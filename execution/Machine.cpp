@@ -41,6 +41,12 @@ void SimpleLang::Machine::step()
     case Operation::PushConstString:
         _pushConstString();
         break;
+    case Operation::GetArray:
+        _getArray();
+        break;
+    case Operation::SetArray:
+        _setArray();
+        break;
     default:
         std::cerr << "Invalid op code: " << (int32_t)m_operations[m_programCounter] << std::endl;
         break;
@@ -75,9 +81,21 @@ SimpleLang::MemoryValue *SimpleLang::Machine::getStackTopAndPop()
     }
 }
 
+SimpleLang::ArrayNode *SimpleLang::Machine::createArrayOfSize(int32_t size)
+{
+    ArrayNode *node = new ArrayNode(size);
+    m_memoryRoot->push_back(node);
+    return node;
+}
+
 void SimpleLang::Machine::popStack()
 {
     m_operationStack.pop_back();
+}
+
+void SimpleLang::Machine::pushToStack(MemoryValue const &val)
+{
+    m_operationStack.push_back(val);
 }
 
 void SimpleLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
@@ -110,6 +128,8 @@ void SimpleLang::Machine::_set()
     // (name val =)
     MemoryValue val = m_operationStack[m_operationStack.size() - 1];
     MemoryValue name = m_operationStack[m_operationStack.size() - 2];
+    m_operationStack.pop_back();
+    m_operationStack.pop_back();
     StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
     if (memStr != nullptr)
     {
@@ -125,6 +145,10 @@ void SimpleLang::Machine::_get()
     StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
     if (memStr != nullptr)
     {
+        if (m_variables.count(memStr->getString()) < 1)
+        {
+            throw RuntimeException(std::string("Attempted to get variable '" + memStr->getString() + "', which doesn't exist"));
+        }
         m_operationStack.push_back(m_variables[memStr->getString()]);
     }
 }
@@ -171,6 +195,44 @@ void SimpleLang::Machine::_pushConstString()
     }
     m_programCounter++;
     m_operationStack.push_back(MemoryValue{.type = Type::MemoryObj, .value = node});
+}
+
+void SimpleLang::Machine::_getArray()
+{
+    // for (size_t i = 0; i < m_operationStack.size(); i++)
+    // {
+    //     std::cout << (m_operationStack.size() - i - 1) << " -> " << typeToString(m_operationStack[i].type) << std::endl;
+    // }
+    MemoryValue index = m_operationStack[m_operationStack.size() - 2];
+    MemoryValue array = m_operationStack[m_operationStack.size() - 1];
+    m_operationStack.pop_back();
+    m_operationStack.pop_back();
+    if (!std::holds_alternative<MemoryNode *>(array.value))
+    {
+        throw RuntimeException(std::string("Attempted to get array value, but array has instead type: ") + typeToString(array.type));
+    }
+    if (ArrayNode *arrNode = dynamic_cast<ArrayNode *>(std::get<MemoryNode *>(array.value)); arrNode != nullptr)
+    {
+        m_operationStack.push_back(*arrNode->getItem(std::get<int32_t>(index.value)));
+    }
+}
+
+void SimpleLang::Machine::_setArray()
+{
+    MemoryValue index = m_operationStack[m_operationStack.size() - 3];
+    MemoryValue array = m_operationStack[m_operationStack.size() - 2];
+    MemoryValue value = m_operationStack[m_operationStack.size() - 1];
+    m_operationStack.pop_back();
+    m_operationStack.pop_back();
+    m_operationStack.pop_back();
+    if (!std::holds_alternative<MemoryNode *>(array.value))
+    {
+        throw RuntimeException(std::string("Attempted to set array value, but array has instead type: ") + typeToString(array.type));
+    }
+    if (ArrayNode *arrNode = dynamic_cast<ArrayNode *>(std::get<MemoryNode *>(array.value)); arrNode != nullptr)
+    {
+        arrNode->setItem(std::get<int32_t>(index.value), value);
+    }
 }
 
 const char *SimpleLang::RuntimeException::what() const throw()

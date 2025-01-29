@@ -16,4 +16,12 @@ namespace SimpleLang::Compiler
     private:
         int32_t m_argCount = 0;
     };
+
+    class ArrayIndexToken : public Token
+    {
+    public:
+        explicit ArrayIndexToken(size_t row, size_t column) : Token(row, column) {}
+
+        std::string toString() override { return "AIO"; }
+    };
 }

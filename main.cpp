@@ -17,11 +17,7 @@
 
 int main(int, char **)
 {
-    std::vector<int32_t> vec = {1, 2, 3};
-    auto it = vec.begin();
-    std::cout << *it << std::endl;
-    std::cout << *(it - 1) << std::endl;
-    std::string code = "print(99+2);";
+    std::string code = "arr[2+2];";
     std::cout << "Source: " << code << std::endl;
     SimpleLang::Compiler::Parser comp(code);
     comp.parse();

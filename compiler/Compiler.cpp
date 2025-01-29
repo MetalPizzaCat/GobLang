@@ -15,53 +15,7 @@ void SimpleLang::Compiler::Compiler::compile()
         }
         else if (SeparatorToken *sepToken = dynamic_cast<SeparatorToken *>(*it); sepToken != nullptr)
         {
-
-            if (sepToken->getSeparator() == Separator::End)
-            {
-                dumpStack();
-                m_code.push_back(sepToken);
-                continue;
-            }
-            else if (sepToken->getSeparator() == Separator::BracketOpen &&
-                     dynamic_cast<IdToken *>(*(it - 1)) != nullptr)
-            {
-                FunctionCallToken *token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
-                m_compilerTokens.push_back(token);
-                m_stack.push_back(token);
-                m_functionCalls.push_back(token);
-            }
-            else if (sepToken->getSeparator() == Separator::Comma && !m_functionCalls.empty())
-            {
-                dumpStackWhile([](Token *t)
-                               { return dynamic_cast<FunctionCallToken *>(t) == nullptr; });
-                (*m_functionCalls.rbegin())->increaseArgCount();
-            }
-            else if (sepToken->getSeparator() == Separator::BracketClose)
-            {
-                while (!m_stack.empty())
-                {
-                    Token *t = *(m_stack.rbegin());
-                    m_stack.pop_back();
-                    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(t); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
-                    {
-                        break;
-                    }
-                    else if (FunctionCallToken *funcTok = dynamic_cast<FunctionCallToken *>(t); funcTok != nullptr)
-                    {
-                        SeparatorToken *prev = dynamic_cast<SeparatorToken *>(*(it - 1));
-                        if (!(prev != nullptr && (prev->getSeparator() == Separator::BracketOpen || prev->getSeparator() == Separator::Comma)))
-                        {
-                            (*m_functionCalls.rbegin())->increaseArgCount();
-                        }
-                        m_code.push_back(*m_functionCalls.rbegin());
-                        m_functionCalls.pop_back();
-                    }
-                    else
-                    {
-                        m_code.push_back(t);
-                    }
-                }
-            }
+            _compileSeparators(sepToken, it);
         }
         else if (dynamic_cast<OperatorToken *>(*it) != nullptr)
         {
@@ -91,9 +45,8 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
     std::vector<CompilerNode *> stack;
     for (std::vector<Token *>::iterator it = m_code.begin(); it != m_code.end(); it++)
     {
-        if(SeparatorToken * sepTok = dynamic_cast<SeparatorToken*>(*it); sepTok != nullptr && sepTok->getSeparator() == Separator::End)
+        if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*it); sepTok != nullptr && sepTok->getSeparator() == Separator::End)
         {
-
         }
         else if (dynamic_cast<IntToken *>(*it) != nullptr)
         {
@@ -129,22 +82,30 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
         }
         else if (OperatorToken *opToken = dynamic_cast<OperatorToken *>(*it); opToken != nullptr)
         {
-            CompilerNode *a = stack[stack.size() - 2];
-            CompilerNode *b = stack[stack.size() - 1];
+            CompilerNode *setter = stack[stack.size() - 2];
+            CompilerNode *valueToSet = stack[stack.size() - 1];
             stack.pop_back();
             stack.pop_back();
             if (opToken->getOperator() == Operator::Assign)
             {
-                appendByteCode(a->getOperationSetBytes());
-                appendByteCode(b->getOperationGetBytes());
-
-                m_byteCode.operations.push_back((uint8_t)SimpleLang::Operation::Set);
+                if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
+                {
+                    appendByteCode(setter->getOperationSetBytes());
+                    appendByteCode(valueToSet->getOperationGetBytes());
+                    m_byteCode.operations.push_back((uint8_t)SimpleLang::Operation::SetArray);
+                }
+                else
+                {
+                    appendByteCode(setter->getOperationSetBytes());
+                    appendByteCode(valueToSet->getOperationGetBytes());
+                    m_byteCode.operations.push_back((uint8_t)SimpleLang::Operation::Set);
+                }
             }
             else
             {
                 std::vector<uint8_t> opBytes;
-                std::vector<uint8_t> aBytes = a->getOperationGetBytes();
-                std::vector<uint8_t> bBytes = b->getOperationGetBytes();
+                std::vector<uint8_t> aBytes = setter->getOperationGetBytes();
+                std::vector<uint8_t> bBytes = valueToSet->getOperationGetBytes();
 
                 opBytes.insert(opBytes.end(), aBytes.begin(), aBytes.end());
                 opBytes.insert(opBytes.end(), bBytes.begin(), bBytes.end());
@@ -153,8 +114,17 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
             }
             // since they are no longer on the stack they are not accessible outside of this block
             // leaving them undeleted will make them a memory leak
-            delete a;
-            delete b;
+            delete setter;
+            delete valueToSet;
+        }
+        else if (ArrayIndexToken *ait = dynamic_cast<ArrayIndexToken *>(*it); ait != nullptr)
+        {
+            CompilerNode *array = stack[stack.size() - 2];
+            CompilerNode *index = stack[stack.size() - 1];
+            stack.pop_back();
+            stack.pop_back();
+
+            stack.push_back(new ArrayCompilerNode(array, index));
         }
     }
     for (std::vector<CompilerNode *>::iterator it = stack.begin(); it != stack.end(); it++)
@@ -226,6 +196,10 @@ std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateGetByteCode(Token *
         out.push_back((uint8_t)idToken->getId());
         out.push_back((uint8_t)SimpleLang::Operation::Get);
     }
+    else if (ArrayIndexToken *arrToken = dynamic_cast<ArrayIndexToken *>(token); idToken != nullptr)
+    {
+        out.push_back((uint8_t)SimpleLang::Operation::GetArray);
+    }
     return out;
 }
 
@@ -237,6 +211,10 @@ std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateSetByteCode(Token *
         out.push_back((uint8_t)SimpleLang::Operation::PushConstString);
         out.push_back((uint8_t)idToken->getId());
     }
+    // else if (ArrayIndexToken *arrToken = dynamic_cast<ArrayIndexToken *>(token); idToken != nullptr)
+    // {
+    //     out.push_back((uint8_t)SimpleLang::Operation::SetArray);
+    // }
     return out;
 }
 
@@ -250,5 +228,84 @@ SimpleLang::Compiler::Compiler::~Compiler()
     for (size_t i = 0; i < m_compilerTokens.size(); i++)
     {
         delete m_compilerTokens[i];
+    }
+}
+
+void SimpleLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it)
+{
+
+    switch (sepToken->getSeparator())
+    {
+    case Separator::End:
+        dumpStack();
+        m_code.push_back(sepToken);
+        break;
+    case Separator::BracketOpen:
+        if (dynamic_cast<IdToken *>(*(it - 1)) != nullptr)
+        {
+            FunctionCallToken *token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
+            m_compilerTokens.push_back(token);
+            m_stack.push_back(token);
+            m_functionCalls.push_back(token);
+        }
+        break;
+    case Separator::Comma:
+        if (!m_functionCalls.empty())
+        {
+            dumpStackWhile([](Token *t)
+                           { return dynamic_cast<FunctionCallToken *>(t) == nullptr; });
+            (*m_functionCalls.rbegin())->increaseArgCount();
+        }
+        break;
+    case Separator::ArrayOpen:
+    {
+        ArrayIndexToken *token = new ArrayIndexToken(sepToken->getRow(), sepToken->getColumn());
+        m_compilerTokens.push_back(token);
+        m_stack.push_back(token);
+    }
+    break;
+    case Separator::ArrayClose:
+
+        if (m_stack.empty())
+        {
+            throw ParsingError(sepToken->getRow(), sepToken->getColumn(), "Encountered ')' without previous '('");
+        }
+        else
+        {
+            Token *arrayPopToken = nullptr;
+            do
+            {
+                arrayPopToken = *(m_stack.rbegin());
+                m_code.push_back(arrayPopToken);
+                m_stack.pop_back();
+            } while (!m_stack.empty() && dynamic_cast<ArrayIndexToken *>(arrayPopToken) == nullptr);
+        }
+        break;
+
+    case Separator::BracketClose:
+        while (!m_stack.empty())
+        {
+            Token *t = *(m_stack.rbegin());
+            m_stack.pop_back();
+            if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(t); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
+            {
+                break;
+            }
+            else if (FunctionCallToken *funcTok = dynamic_cast<FunctionCallToken *>(t); funcTok != nullptr)
+            {
+                SeparatorToken *prev = dynamic_cast<SeparatorToken *>(*(it - 1));
+                if (!(prev != nullptr && (prev->getSeparator() == Separator::BracketOpen || prev->getSeparator() == Separator::Comma)))
+                {
+                    (*m_functionCalls.rbegin())->increaseArgCount();
+                }
+                m_code.push_back(*m_functionCalls.rbegin());
+                m_functionCalls.pop_back();
+            }
+            else
+            {
+                m_code.push_back(t);
+            }
+        }
+        break;
     }
 }
