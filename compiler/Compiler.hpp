@@ -60,10 +60,18 @@ namespace SimpleLang::Compiler
 
         ByteCode getByteCode() const { return m_byteCode; }
 
+        size_t getMarkCounterAndAdvance();
+
         ~Compiler();
 
     private:
         void _compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it);
+
+        void _compileKeywords(KeywordToken *keyToken, std::vector<Token *>::const_iterator const &it);
+
+        bool _isElseChainToken(std::vector<Token *>::const_iterator const &it);
+
+        bool _isElifChainToken(std::vector<Token *>::const_iterator const &it);
         /**
          * @brief code representation in reverse polish notation
          *
@@ -72,6 +80,8 @@ namespace SimpleLang::Compiler
         std::vector<uint8_t> m_bytes;
 
         std::vector<Token *> m_stack;
+
+        std::vector<GotoToken *> m_jumps;
 
         /**
          * @brief Array for storing all tokens created during the conversion process, used only to be able to delete them once the process ends
@@ -83,6 +93,9 @@ namespace SimpleLang::Compiler
 
         ByteCode m_byteCode;
         Parser const &m_parser;
+
+        bool m_isInConditionHead = false;
+        size_t m_markCounter = 0;
     };
 
     class CompilerNode

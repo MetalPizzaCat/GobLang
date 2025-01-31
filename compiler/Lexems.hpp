@@ -13,6 +13,9 @@ namespace SimpleLang::Compiler
         Null,
         True,
         False,
+        If,
+        Elif,
+        Else
     };
 
     enum class Operator
@@ -70,7 +73,10 @@ namespace SimpleLang::Compiler
         {"return", Keyword::Return},
         {"null", Keyword::Null},
         {"true", Keyword::True},
-        {"false", Keyword::False}};
+        {"false", Keyword::False},
+        {"if", Keyword::If},
+        {"elif", Keyword::Elif},
+        {"else", Keyword::Else}};
 
     /**
      * @brief Static array containing info about all operators used in the compiler

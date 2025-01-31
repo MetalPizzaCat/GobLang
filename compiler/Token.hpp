@@ -98,4 +98,39 @@ namespace SimpleLang::Compiler
     private:
         SeparatorData const *m_data;
     };
+
+    class GotoToken : public Token
+    {
+    public:
+        explicit GotoToken(size_t row, size_t column, size_t mark = 0) : Token(row, column), m_mark(mark) {}
+        std::string toString() override;
+        size_t getMark() const { return m_mark; }
+        void setMark(size_t mark) { m_mark = mark; }
+
+    private:
+        size_t m_mark;
+    };
+
+    class IfToken : public GotoToken
+    {
+    public:
+        explicit IfToken(size_t row, size_t column, bool elif, size_t mark = 0) : GotoToken(row, column, mark), m_elif(elif) {}
+        std::string toString() override;
+        bool isElif() const { return m_elif; }
+
+    private:
+        bool m_elif;
+    };
+
+    class JumpDestinationToken : public Token
+    {
+    public:
+        explicit JumpDestinationToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
+        std::string toString() override;
+
+        size_t getId() const { return m_id; }
+
+    private:
+        size_t m_id;
+    };
 }
