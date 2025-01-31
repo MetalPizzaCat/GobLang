@@ -8,7 +8,7 @@ void SimpleLang::Compiler::Compiler::compile()
 {
     for (std::vector<Token *>::const_iterator it = m_parser.getTokens().begin(); it != m_parser.getTokens().end(); it++)
     {
-        if (dynamic_cast<IdToken *>(*it) != nullptr || dynamic_cast<IntToken *>(*it) != nullptr)
+        if (dynamic_cast<IdToken *>(*it) != nullptr || dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr)
         {
             m_code.push_back(*it);
             continue;
@@ -48,7 +48,7 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
         if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*it); sepTok != nullptr && sepTok->getSeparator() == Separator::End)
         {
         }
-        else if (dynamic_cast<IntToken *>(*it) != nullptr)
+        else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr)
         {
             stack.push_back(new OperationCompilerNode(generateGetByteCode(*it)));
         }
@@ -189,6 +189,11 @@ std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateGetByteCode(Token *
     {
         out.push_back((uint8_t)Operation::PushConstInt);
         out.push_back((uint8_t)intToken->getId());
+    }
+    if (StringToken *strToken = dynamic_cast<StringToken *>(token); strToken != nullptr)
+    {
+        out.push_back((uint8_t)SimpleLang::Operation::PushConstString);
+        out.push_back((uint8_t)strToken->getId());
     }
     else if (IdToken *idToken = dynamic_cast<IdToken *>(token); idToken != nullptr)
     {

@@ -56,3 +56,8 @@ std::string SimpleLang::Compiler::SeparatorToken::toString()
 {
     return std::string{m_data->symbol};
 }
+
+std::string SimpleLang::Compiler::StringToken::toString()
+{
+    return "STR" + std::to_string(m_id);
+}

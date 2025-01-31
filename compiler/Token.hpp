@@ -62,6 +62,19 @@ namespace SimpleLang::Compiler
         size_t m_id;
     };
 
+    class StringToken : public Token
+    {
+    public:
+        explicit StringToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
+
+        std::string toString() override;
+
+        size_t getId() const { return m_id; }
+
+    private:
+        size_t m_id;
+    };
+
     class IntToken : public Token
     {
     public:

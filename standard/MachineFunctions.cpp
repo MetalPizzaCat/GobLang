@@ -1,5 +1,6 @@
 #include "MachineFunctions.hpp"
 #include "../execution/Array.hpp"
+#include "../execution/Memory.hpp"
 void MachineFunctions::printLine(SimpleLang::Machine *machine)
 
 {
@@ -23,7 +24,7 @@ void MachineFunctions::printLine(SimpleLang::Machine *machine)
         std::cerr << "Invalid data type" << std::endl;
         break;
     case SimpleLang::Type::MemoryObj:
-        std::cerr << "Invalid data type" << std::endl;
+        std::cerr << std::get<SimpleLang::MemoryNode *>(v->value)->toString() << std::endl;
         break;
     case SimpleLang::Type::NativeFunction:
         std::cerr << "Native function: " << &std::get<SimpleLang::FunctionValue>(v->value) << std::endl;

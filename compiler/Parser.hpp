@@ -6,6 +6,7 @@
 #include <exception>
 
 #include "Token.hpp"
+#include "SpecialCharacter.hpp"
 
 namespace SimpleLang::Compiler
 {
@@ -57,6 +58,10 @@ namespace SimpleLang::Compiler
         IntToken *parseInt();
 
         SeparatorToken *parseSeparators();
+
+        StringToken *parseString();
+
+        SpecialCharacter const*parseSpecialCharacter(std::string::iterator const& it);
 
         /**
          * @brief Get iterator pointing to the end of the current line

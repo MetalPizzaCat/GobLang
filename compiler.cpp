@@ -41,7 +41,7 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 int main()
 {
     // std::string code = "arr = array(3); arr[2] = 69; print(arr[2]);";
-    std::string code = "a = 8008; arr = array(3);  arr[2] = array(2);arr[2][0] = a;print(arr[2][0]);";
+    std::string code = "print(\"hello\\n world\")";
     std::cout << "Source: " << code << std::endl;
     SimpleLang::Compiler::Parser comp(code);
     comp.parse();
