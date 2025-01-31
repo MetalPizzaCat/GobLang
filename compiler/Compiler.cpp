@@ -13,6 +13,10 @@ void SimpleLang::Compiler::Compiler::compile()
             m_code.push_back(*it);
             continue;
         }
+        else if (KeywordToken *keyTok = dynamic_cast<KeywordToken *>(*it); keyTok != nullptr)
+        {
+            _compileKeywords(keyTok, it);
+        }
         else if (SeparatorToken *sepToken = dynamic_cast<SeparatorToken *>(*it); sepToken != nullptr)
         {
             _compileSeparators(sepToken, it);
@@ -47,6 +51,11 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
     {
         if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*it); sepTok != nullptr && sepTok->getSeparator() == Separator::End)
         {
+            for (std::vector<CompilerNode *>::iterator it = stack.begin(); it != stack.end(); it++)
+            {
+                appendByteCode((*it)->getOperationGetBytes());
+                delete (*it);
+            }
         }
         else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr)
         {
@@ -228,6 +237,11 @@ void SimpleLang::Compiler::Compiler::appendByteCode(std::vector<uint8_t> const &
     m_byteCode.operations.insert(m_byteCode.operations.end(), code.begin(), code.end());
 }
 
+size_t SimpleLang::Compiler::Compiler::getMarkCounterAndAdvance()
+{
+    return m_markCounter++;
+}
+
 SimpleLang::Compiler::Compiler::~Compiler()
 {
     for (size_t i = 0; i < m_compilerTokens.size(); i++)
@@ -246,12 +260,15 @@ void SimpleLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken
         m_code.push_back(sepToken);
         break;
     case Separator::BracketOpen:
-        if (dynamic_cast<IdToken *>(*(it - 1)) != nullptr)
+        if (!m_isInConditionHead)
         {
-            FunctionCallToken *token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
-            m_compilerTokens.push_back(token);
-            m_stack.push_back(token);
-            m_functionCalls.push_back(token);
+            if (dynamic_cast<IdToken *>(*(it - 1)) != nullptr)
+            {
+                FunctionCallToken *token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
+                m_compilerTokens.push_back(token);
+                m_stack.push_back(token);
+                m_functionCalls.push_back(token);
+            }
         }
         break;
     case Separator::Comma:
@@ -309,8 +326,105 @@ void SimpleLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken
             else
             {
                 m_code.push_back(t);
+                if (dynamic_cast<IfToken *>(t) != nullptr)
+                {
+                    m_isInConditionHead = false;
+                }
             }
         }
         break;
+    case Separator::BlockOpen:
+        break;
+    case Separator::BlockClose:
+        dumpStack();
+        if (!m_jumps.empty())
+        {
+            GotoToken *jump = *m_jumps.rbegin();
+            m_jumps.pop_back();
+            if (IfToken *ifToken = dynamic_cast<IfToken *>(jump); ifToken != nullptr && ifToken->isElif())
+            {
+                if (m_jumps.empty())
+                {
+                    throw ParsingError(ifToken->getRow(), ifToken->getColumn(), "Invalid elif configuration, jump token was not generated");
+                }
+                GotoToken *elifPair = *m_jumps.rbegin();
+                elifPair->setMark(getMarkCounterAndAdvance());
+                JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), elifPair->getMark());
+                m_compilerTokens.push_back(dest);
+                m_code.push_back(dest);
+            }
+            jump->setMark(getMarkCounterAndAdvance());
+            JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), jump->getMark());
+            if (_isElseChainToken(it + 1) || _isElifChainToken(it + 1))
+            {
+                GotoToken *elseJump = new GotoToken(sepToken->getRow(), sepToken->getColumn());
+                m_jumps.push_back(elseJump);
+                m_compilerTokens.push_back(elseJump);
+                m_code.push_back(elseJump);
+            }
+
+            m_compilerTokens.push_back(dest);
+            m_code.push_back(dest);
+        }
+        break;
     }
+}
+
+void SimpleLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, std::vector<Token *>::const_iterator const &it)
+{
+    switch (keyToken->getKeyword())
+    {
+    case Keyword::Elif:
+    case Keyword::If:
+    {
+        if (it + 1 == m_parser.getTokens().end() || dynamic_cast<SeparatorToken *>(*(it + 1)) == nullptr)
+        {
+            throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Missing condition for 'if' construct");
+        }
+        else if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(it + 1)); sepTok != nullptr && sepTok->getSeparator() != Separator::BracketOpen)
+        {
+            throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Missing condition for 'if' construct");
+        }
+        IfToken *ifTok = new IfToken(keyToken->getRow(), keyToken->getColumn(), keyToken->getKeyword() == Keyword::Elif);
+        m_stack.push_back(ifTok);
+        m_jumps.push_back(ifTok);
+        m_compilerTokens.push_back(ifTok);
+        m_isInConditionHead = true;
+    }
+    break;
+    case Keyword::Else:
+        if (it + 1 == m_parser.getTokens().end() || dynamic_cast<SeparatorToken *>(*(it + 1)) == nullptr)
+        {
+            throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Else construct is missing body block");
+        }
+        else if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(it + 1)); sepTok != nullptr && sepTok->getSeparator() != Separator::BlockOpen)
+        {
+            throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Else keyword must be followed by a code block");
+        }
+
+        break;
+    default:
+        throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Invalid keyword encountered");
+        break;
+    }
+}
+
+bool SimpleLang::Compiler::Compiler::_isElseChainToken(std::vector<Token *>::const_iterator const &it)
+{
+    if (it == m_parser.getTokens().end())
+    {
+        return false;
+    }
+    KeywordToken *key = dynamic_cast<KeywordToken *>(*it);
+    return key != nullptr && key->getKeyword() == Keyword::Else;
+}
+
+bool SimpleLang::Compiler::Compiler::_isElifChainToken(std::vector<Token *>::const_iterator const &it)
+{
+    if (it == m_parser.getTokens().end())
+    {
+        return false;
+    }
+    KeywordToken *key = dynamic_cast<KeywordToken *>(*it);
+    return key != nullptr && key->getKeyword() == Keyword::Elif;
 }
