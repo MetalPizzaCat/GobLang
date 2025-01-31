@@ -19,6 +19,7 @@ void SimpleLang::Compiler::Parser::parse()
     std::vector<std::function<Token *(void)>> parsers = {
         std::bind(&Parser::parseKeywords, this),
         std::bind(&Parser::parseInt, this),
+        std::bind(&Parser::parseString, this),
         std::bind(&Parser::parseId, this),
         std::bind(&Parser::parseOperators, this),
         std::bind(&Parser::parseSeparators, this),
@@ -199,6 +200,66 @@ SimpleLang::Compiler::SeparatorToken *SimpleLang::Compiler::Parser::parseSeparat
         }
     }
     return nullptr;
+}
+
+SimpleLang::Compiler::StringToken *SimpleLang::Compiler::Parser::parseString()
+{
+
+    if (*m_rowIt != '"')
+    {
+        
+        return nullptr;
+    }
+    // we don't need to store opening and closing marks
+    size_t offset = 1;
+    std::cout << *(m_rowIt + offset) << std::endl;
+    std::string str;
+    for (; (m_rowIt + offset) != getEndOfTheLine() && *(m_rowIt + offset) != '"'; offset++)
+    {
+        if (SpecialCharacter const *spec = parseSpecialCharacter(m_rowIt + offset); spec != nullptr)
+        {
+            str.push_back(spec->character);
+            offset++;
+        }
+        else
+        {
+            str.push_back(*(m_rowIt + offset));
+        }
+    }
+    std::vector<std::string>::iterator it = std::find(m_ids.begin(), m_ids.end(), str);
+    size_t index = std::string::npos;
+    if (it == m_ids.end())
+    {
+        m_ids.push_back(str);
+        index = m_ids.size() - 1;
+    }
+    else
+    {
+        index = it - m_ids.begin();
+    }
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(offset + 1);
+    return new StringToken(row, column, index);
+}
+
+SimpleLang::Compiler::SpecialCharacter const *SimpleLang::Compiler::Parser::parseSpecialCharacter(std::string::iterator const &it)
+{
+    std::vector<SpecialCharacter>::const_iterator charIt = std::find_if(
+        SpecialCharacters.begin(),
+        SpecialCharacters.end(),
+        [it](SpecialCharacter const &ch)
+        {
+            for (size_t i = 0; i < strnlen(ch.sequence, 2); i++)
+            {
+                if (*(it + i) != ch.sequence[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        });
+    return charIt == SpecialCharacters.end() ? nullptr : &*charIt;
 }
 
 void SimpleLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)

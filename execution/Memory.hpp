@@ -38,6 +38,8 @@ namespace SimpleLang
          */
         void push_back(MemoryNode *node);
 
+        virtual std::string toString() { return "Memory object"; }
+
         virtual ~MemoryNode() = default;
 
     private:
@@ -60,11 +62,12 @@ namespace SimpleLang
 
         std::string const &getString() { return m_str; }
 
+        std::string toString() override { return getString(); }
+
         virtual ~StringNode() = default;
 
     private:
         std::string m_str;
     };
 
-    
 }
