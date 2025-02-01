@@ -16,7 +16,7 @@ int32_t SimpleLang::Compiler::Token::getPriority() const
     return -1;
 }
 
-SimpleLang::Compiler::Token::Token(size_t row, size_t column) : m_row(row), m_column(m_column)
+SimpleLang::Compiler::Token::Token(size_t row, size_t column) : m_row(row), m_column(column)
 {
 }
 
@@ -60,4 +60,19 @@ std::string SimpleLang::Compiler::SeparatorToken::toString()
 std::string SimpleLang::Compiler::StringToken::toString()
 {
     return "STR" + std::to_string(m_id);
+}
+
+std::string SimpleLang::Compiler::GotoToken::toString()
+{
+    return "GOTO_M" + std::to_string(m_mark);
+}
+
+std::string SimpleLang::Compiler::IfToken::toString()
+{
+    return (m_elif ? "JMP_ELIF_FALSE_M" : "JMP_IF_FALSE_M") + std::to_string(getMark());
+}
+
+std::string SimpleLang::Compiler::JumpDestinationToken::toString()
+{
+    return "M" + std::to_string(m_id) + ":";
 }

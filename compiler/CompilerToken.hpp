@@ -24,4 +24,17 @@ namespace SimpleLang::Compiler
 
         std::string toString() override { return "AIO"; }
     };
+
+    class BoolConstToken : public Token
+    {
+    public:
+        explicit BoolConstToken(size_t row, size_t column, bool value) : Token(row, column), m_value(value) {}
+
+        bool getValue() const { return m_value; }
+
+        std::string toString() override { return m_value ? "True" : "False"; }
+
+    private:
+        bool m_value;
+    };
 }

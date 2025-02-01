@@ -19,4 +19,16 @@ void SimpleLang::MemoryNode::push_back(MemoryNode *node)
     curr->m_next = node;
 }
 
+bool SimpleLang::MemoryNode::equalsTo(MemoryNode *other)
+{
+    return other == this;
+}
 
+bool SimpleLang::StringNode::equalsTo(MemoryNode *other)
+{
+    if(StringNode* otherStr = dynamic_cast<StringNode*>(other); otherStr != nullptr)
+    {
+        return otherStr->getString() == getString();
+    }
+    return false;
+}

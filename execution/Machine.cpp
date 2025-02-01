@@ -47,6 +47,24 @@ void SimpleLang::Machine::step()
     case Operation::SetArray:
         _setArray();
         break;
+    case Operation::Jump:
+        _jump();
+        return; // this uses return because we want to avoid advancing the counter after jup
+    case Operation::JumpIfNot:
+        _jumpIf();
+        return;
+    case Operation::PushTrue:
+        m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = true});
+        break;
+    case Operation::PushFalse:
+        m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = false});
+        break;
+    case Operation::Equals:
+        _eq();
+        break;
+    case Operation::End:
+        m_forcedEnd = true;
+        break;
     default:
         std::cerr << "Invalid op code: " << (int32_t)m_operations[m_programCounter] << std::endl;
         break;
@@ -101,6 +119,45 @@ void SimpleLang::Machine::pushToStack(MemoryValue const &val)
 void SimpleLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
 {
     m_variables[name] = value;
+}
+
+SimpleLang::ProgramAddressType SimpleLang::Machine::_getAddressFromByteCode(size_t start)
+{
+    ProgramAddressType reconAddr = 0x0;
+    for (int32_t i = 0; i < sizeof(ProgramAddressType); i++)
+    {
+        ProgramAddressType offset = (sizeof(ProgramAddressType) - i - 1) * 8;
+        reconAddr |= (ProgramAddressType)(m_operations[start + i]) << offset;
+    }
+    return reconAddr;
+}
+
+void SimpleLang::Machine::_jump()
+{
+    ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
+    m_programCounter = dest;
+}
+
+void SimpleLang::Machine::_jumpIf()
+{
+    ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
+    m_programCounter += sizeof(ProgramAddressType);
+    MemoryValue a = *m_operationStack.rbegin();
+    if (a.type == Type::Bool)
+    {
+        if (!std::get<bool>(a.value))
+        {
+            m_programCounter = dest;
+        }
+        else
+        {
+            m_programCounter++;
+        }
+    }
+    else
+    {
+        throw RuntimeException(std::string("Invalid data type passed to condition check. Expected bool got: ") + typeToString(a.type));
+    }
 }
 
 void SimpleLang::Machine::_addInt()
@@ -232,6 +289,22 @@ void SimpleLang::Machine::_setArray()
     if (ArrayNode *arrNode = dynamic_cast<ArrayNode *>(std::get<MemoryNode *>(array.value)); arrNode != nullptr)
     {
         arrNode->setItem(std::get<int32_t>(index.value), value);
+    }
+}
+
+void SimpleLang::Machine::_eq()
+{
+    MemoryValue a = m_operationStack[m_operationStack.size() - 2];
+    MemoryValue b = m_operationStack[m_operationStack.size() - 1];
+    m_operationStack.pop_back();
+    m_operationStack.pop_back();
+    if (a.type == b.type)
+    {
+        m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = areEqual(a, b)});
+    }
+    else
+    {
+        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
     }
 }
 
