@@ -17,6 +17,9 @@ void MachineFunctions::printLine(SimpleLang::Machine *machine)
     case SimpleLang::Type::Number:
         std::cout << std::get<float>(v->value) << std::endl;
         break;
+    case SimpleLang::Type::Bool:
+        std::cout << (std::get<bool>(v->value) ? "true" : "false") << std::endl;
+        break;
     case SimpleLang::Type::Int:
         std::cout << std::get<int32_t>(v->value) << std::endl;
         break;

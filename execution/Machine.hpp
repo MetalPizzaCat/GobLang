@@ -15,6 +15,11 @@
 
 namespace SimpleLang
 {
+    /**
+     * @brief Type used to store jump addresses in the code 
+     * 
+     */
+    using ProgramAddressType = size_t;
     class Machine
     {
     public:
@@ -51,7 +56,7 @@ namespace SimpleLang
 
         bool isAtTheEnd() const
         {
-            return m_programCounter >= m_operations.size();
+            return m_programCounter >= m_operations.size() || m_forcedEnd ;
         }
         void addFunction(FunctionValue const &func, std::string const &name);
         void step();
@@ -82,6 +87,12 @@ namespace SimpleLang
         }
 
     private:
+        ProgramAddressType _getAddressFromByteCode(size_t start);
+
+        void _jump();
+
+        void _jumpIf();
+        
         void _addInt();
 
         void _subInt();
@@ -99,6 +110,10 @@ namespace SimpleLang
         void _getArray();
 
         void _setArray();
+
+        void _eq();
+
+        bool m_forcedEnd = false;
 
         MemoryNode *m_memoryRoot = new MemoryNode();
         size_t m_programCounter = 0;

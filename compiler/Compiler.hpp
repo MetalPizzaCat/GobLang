@@ -4,9 +4,9 @@
 #include <cstdint>
 #include "ByteCode.hpp"
 #include "CompilerToken.hpp"
+#include "CompilerNode.hpp"
 namespace SimpleLang::Compiler
 {
-
     class Compiler
     {
     public:
@@ -56,14 +56,33 @@ namespace SimpleLang::Compiler
 
         static std::vector<uint8_t> generateSetByteCode(Token *token);
 
-        void appendByteCode(std::vector<uint8_t> const &code);
+        //void appendByteCode(std::vector<uint8_t> const &code);
+
+        /**
+         * @brief Generate and add byte code for the given compiler node. If node has mark attached this mark will be updated
+         * 
+         * @param node Node to process
+         * @param getter If true getter code will be generated, otherwise false
+         */
+        void appendCompilerNode(CompilerNode *node, bool getter);
+
+        void addNewMarkReplacement(size_t mark, size_t address);
 
         ByteCode getByteCode() const { return m_byteCode; }
+
+        size_t getMarkCounterAndAdvance();
 
         ~Compiler();
 
     private:
+        void _placeAddressForMark(size_t mark, size_t address, bool erase);
         void _compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it);
+
+        void _compileKeywords(KeywordToken *keyToken, std::vector<Token *>::const_iterator const &it);
+
+        bool _isElseChainToken(std::vector<Token *>::const_iterator const &it);
+
+        bool _isElifChainToken(std::vector<Token *>::const_iterator const &it);
         /**
          * @brief code representation in reverse polish notation
          *
@@ -73,6 +92,16 @@ namespace SimpleLang::Compiler
 
         std::vector<Token *> m_stack;
 
+        std::vector<GotoToken *> m_jumps;
+
+        /**
+         * @brief Jump map used in bytecode generation to know which places require which marks.
+         * key is mark id, value are all places which require address replacement
+         *
+         */
+        std::map<size_t, std::vector<size_t>> m_jumpMarks;
+        
+        std::map<size_t, size_t> m_jumpDestinations;
         /**
          * @brief Array for storing all tokens created during the conversion process, used only to be able to delete them once the process ends
          *
@@ -83,78 +112,9 @@ namespace SimpleLang::Compiler
 
         ByteCode m_byteCode;
         Parser const &m_parser;
+
+        bool m_isInConditionHead = false;
+        size_t m_markCounter = 0;
     };
 
-    class CompilerNode
-    {
-    public:
-        virtual std::vector<uint8_t> getOperationGetBytes() = 0;
-
-        virtual std::vector<uint8_t> getOperationSetBytes() { return {}; }
-    };
-
-    class OperationCompilerNode : public CompilerNode
-    {
-    public:
-        explicit OperationCompilerNode(std::vector<uint8_t> const &vec) : m_bytes(vec) {}
-
-        std::vector<uint8_t> getOperationGetBytes() override { return m_bytes; }
-
-    private:
-        std::vector<uint8_t> m_bytes;
-    };
-
-    class TokenCompilerNode : public CompilerNode
-    {
-    public:
-        explicit TokenCompilerNode(Token *token) : m_token(token) {}
-        std::vector<uint8_t> getOperationGetBytes() override
-        {
-            return Compiler::generateGetByteCode(m_token);
-        }
-
-        std::vector<uint8_t> getOperationSetBytes() override
-        {
-            return Compiler::generateSetByteCode(m_token);
-        }
-
-        Token *getToken() { return m_token; }
-
-    private:
-        Token *m_token;
-    };
-
-    class ArrayCompilerNode : public CompilerNode
-    {
-    public:
-        explicit ArrayCompilerNode(CompilerNode *array, CompilerNode *index) : m_array(array), m_index(index) {}
-
-        std::vector<uint8_t> getOperationGetBytes() override
-        {
-            std::vector<uint8_t> out = m_index->getOperationGetBytes();
-            std::vector<uint8_t> arrayGetBytes = m_array->getOperationGetBytes();
-            out.insert(out.end(), arrayGetBytes.begin(), arrayGetBytes.end());
-            out.push_back((uint8_t)Operation::GetArray);
-            return out;
-        }
-
-        std::vector<uint8_t> getOperationSetBytes() override
-        {
-            std::vector<uint8_t> out = m_index->getOperationGetBytes();
-            std::vector<uint8_t> arrayGetBytes = m_array->getOperationGetBytes();
-            out.insert(out.end(), arrayGetBytes.begin(), arrayGetBytes.end());
-            return out;
-        }
-
-        ~ArrayCompilerNode()
-        {
-            delete m_array;
-            delete m_index;
-        }
-
-    private:
-        CompilerNode *m_array;
-
-        CompilerNode *m_index;
-    };
 }
