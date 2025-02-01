@@ -17,12 +17,12 @@
 void runParsing(std::string const &code)
 {
     std::cout << "Source: " << code << std::endl;
-    SimpleLang::Compiler::Parser comp(code);
+    GobLang::Compiler::Parser comp(code);
     comp.parse();
     comp.printInfoTable();
     comp.printCode();
 
-    SimpleLang::Compiler::Compiler compiler(comp);
+    GobLang::Compiler::Compiler compiler(comp);
     compiler.compile();
     compiler.printCode();
 }

@@ -1,7 +1,7 @@
 #include "Value.hpp"
 #include "Memory.hpp"
 
-bool SimpleLang::areEqual(MemoryValue const &a, MemoryValue const &b)
+bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
 {
     if (a.type != b.type)
     {

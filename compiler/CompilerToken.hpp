@@ -2,7 +2,7 @@
 #include "Token.hpp"
 #include <string>
 #include <cstdint>
-namespace SimpleLang::Compiler
+namespace GobLang::Compiler
 {
     class FunctionCallToken : public Token
     {

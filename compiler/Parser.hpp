@@ -8,7 +8,7 @@
 #include "Token.hpp"
 #include "SpecialCharacter.hpp"
 
-namespace SimpleLang::Compiler
+namespace GobLang::Compiler
 {
     class Parser
     {

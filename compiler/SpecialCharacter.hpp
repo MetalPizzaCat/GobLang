@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-namespace SimpleLang::Compiler
+namespace GobLang::Compiler
 {
     struct SpecialCharacter
     {

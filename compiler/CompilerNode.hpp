@@ -2,7 +2,7 @@
 #include <vector>
 #include <cstdint>
 #include "Token.hpp"
-namespace SimpleLang::Compiler
+namespace GobLang::Compiler
 {
 
     class CompilerNode

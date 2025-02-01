@@ -5,7 +5,7 @@
 #include "ByteCode.hpp"
 #include "CompilerToken.hpp"
 #include "CompilerNode.hpp"
-namespace SimpleLang::Compiler
+namespace GobLang::Compiler
 {
     class Compiler
     {

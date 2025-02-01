@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include "Type.hpp"
-namespace SimpleLang
+namespace GobLang
 {
     /**
      * @brief Class used to represent interpreter memory by using a linked list

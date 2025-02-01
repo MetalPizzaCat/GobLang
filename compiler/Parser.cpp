@@ -6,7 +6,7 @@
 #include <limits>
 #include "Parser.hpp"
 
-void SimpleLang::Compiler::Parser::skipWhitespace()
+void GobLang::Compiler::Parser::skipWhitespace()
 {
     while (std::isspace(*m_rowIt) && m_rowIt != getEndOfTheLine())
     {
@@ -14,7 +14,7 @@ void SimpleLang::Compiler::Parser::skipWhitespace()
     }
 }
 
-void SimpleLang::Compiler::Parser::parse()
+void GobLang::Compiler::Parser::parse()
 {
     std::vector<std::function<Token *(void)>> parsers = {
         std::bind(&Parser::parseKeywords, this),
@@ -46,7 +46,7 @@ void SimpleLang::Compiler::Parser::parse()
     }
 }
 
-bool SimpleLang::Compiler::Parser::tryKeyword(std::string const &keyword)
+bool GobLang::Compiler::Parser::tryKeyword(std::string const &keyword)
 {
     for (size_t i = 0; i < keyword.size(); i++)
     {
@@ -58,7 +58,7 @@ bool SimpleLang::Compiler::Parser::tryKeyword(std::string const &keyword)
     return true;
 }
 
-bool SimpleLang::Compiler::Parser::tryOperator(OperatorData const &op)
+bool GobLang::Compiler::Parser::tryOperator(OperatorData const &op)
 {
     for (size_t i = 0; i < strnlen(op.symbol, 2); i++)
     {
@@ -70,7 +70,7 @@ bool SimpleLang::Compiler::Parser::tryOperator(OperatorData const &op)
     return true;
 }
 
-SimpleLang::Compiler::KeywordToken *SimpleLang::Compiler::Parser::parseKeywords()
+GobLang::Compiler::KeywordToken *GobLang::Compiler::Parser::parseKeywords()
 {
 
     for (std::map<std::string, Keyword>::const_iterator it = Keywords.begin(); it != Keywords.end(); it++)
@@ -89,7 +89,7 @@ SimpleLang::Compiler::KeywordToken *SimpleLang::Compiler::Parser::parseKeywords(
     return nullptr;
 }
 
-SimpleLang::Compiler::OperatorToken *SimpleLang::Compiler::Parser::parseOperators()
+GobLang::Compiler::OperatorToken *GobLang::Compiler::Parser::parseOperators()
 {
     for (std::vector<OperatorData>::const_iterator it = Operators.begin(); it != Operators.end(); it++)
     {
@@ -107,7 +107,7 @@ SimpleLang::Compiler::OperatorToken *SimpleLang::Compiler::Parser::parseOperator
     return nullptr;
 }
 
-SimpleLang::Compiler::IdToken *SimpleLang::Compiler::Parser::parseId()
+GobLang::Compiler::IdToken *GobLang::Compiler::Parser::parseId()
 {
     // must start with a character or underscore
     if (!std::isalpha(*m_rowIt) && (*m_rowIt) != '_')
@@ -138,7 +138,7 @@ SimpleLang::Compiler::IdToken *SimpleLang::Compiler::Parser::parseId()
     return new IdToken(row, column, index);
 }
 
-SimpleLang::Compiler::IntToken *SimpleLang::Compiler::Parser::parseInt()
+GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseInt()
 {
     if (!std::isdigit(*m_rowIt))
     {
@@ -186,7 +186,7 @@ SimpleLang::Compiler::IntToken *SimpleLang::Compiler::Parser::parseInt()
     return new IntToken(row, column, index);
 }
 
-SimpleLang::Compiler::SeparatorToken *SimpleLang::Compiler::Parser::parseSeparators()
+GobLang::Compiler::SeparatorToken *GobLang::Compiler::Parser::parseSeparators()
 {
 
     for (std::vector<SeparatorData>::const_iterator it = Separators.begin(); it != Separators.end(); it++)
@@ -202,7 +202,7 @@ SimpleLang::Compiler::SeparatorToken *SimpleLang::Compiler::Parser::parseSeparat
     return nullptr;
 }
 
-SimpleLang::Compiler::StringToken *SimpleLang::Compiler::Parser::parseString()
+GobLang::Compiler::StringToken *GobLang::Compiler::Parser::parseString()
 {
 
     if (*m_rowIt != '"')
@@ -243,7 +243,7 @@ SimpleLang::Compiler::StringToken *SimpleLang::Compiler::Parser::parseString()
     return new StringToken(row, column, index);
 }
 
-SimpleLang::Compiler::SpecialCharacter const *SimpleLang::Compiler::Parser::parseSpecialCharacter(std::string::iterator const &it)
+GobLang::Compiler::SpecialCharacter const *GobLang::Compiler::Parser::parseSpecialCharacter(std::string::iterator const &it)
 {
     std::vector<SpecialCharacter>::const_iterator charIt = std::find_if(
         SpecialCharacters.begin(),
@@ -262,7 +262,7 @@ SimpleLang::Compiler::SpecialCharacter const *SimpleLang::Compiler::Parser::pars
     return charIt == SpecialCharacters.end() ? nullptr : &*charIt;
 }
 
-void SimpleLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)
+void GobLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)
 {
     size_t currentOffset = 0;
     for (; currentOffset < offset && m_rowIt != getEndOfTheLine(); currentOffset++)
@@ -284,17 +284,17 @@ void SimpleLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAt
     }
 }
 
-size_t SimpleLang::Compiler::Parser::getLineNumber() const
+size_t GobLang::Compiler::Parser::getLineNumber() const
 {
     return m_lineIt - m_code.begin();
 }
 
-size_t SimpleLang::Compiler::Parser::getColumnNumber() const
+size_t GobLang::Compiler::Parser::getColumnNumber() const
 {
     return m_rowIt - m_lineIt->begin();
 }
 
-void SimpleLang::Compiler::Parser::printInfoTable()
+void GobLang::Compiler::Parser::printInfoTable()
 {
     for (size_t i = 0; i < m_ids.size(); i++)
     {
@@ -307,7 +307,7 @@ void SimpleLang::Compiler::Parser::printInfoTable()
     }
 }
 
-void SimpleLang::Compiler::Parser::printCode()
+void GobLang::Compiler::Parser::printCode()
 {
     for (std::vector<Token *>::iterator it = m_tokens.begin(); it != m_tokens.end(); it++)
     {
@@ -315,13 +315,13 @@ void SimpleLang::Compiler::Parser::printCode()
     }
     std::cout << std::endl;
 }
-SimpleLang::Compiler::Parser::Parser(std::vector<std::string> const &code) : m_code(code)
+GobLang::Compiler::Parser::Parser(std::vector<std::string> const &code) : m_code(code)
 {
     m_lineIt = m_code.begin();
     m_rowIt = m_lineIt->begin();
 }
 
-SimpleLang::Compiler::Parser::Parser(std::string const &code)
+GobLang::Compiler::Parser::Parser(std::string const &code)
 {
     std::stringstream stream(code);
     std::string to;
@@ -333,7 +333,7 @@ SimpleLang::Compiler::Parser::Parser(std::string const &code)
     m_rowIt = m_lineIt->begin();
 }
 
-SimpleLang::Compiler::Parser::~Parser()
+GobLang::Compiler::Parser::~Parser()
 {
     for (size_t i = 0; i < m_tokens.size(); i++)
     {
@@ -342,12 +342,12 @@ SimpleLang::Compiler::Parser::~Parser()
     m_tokens.clear();
 }
 
-const char *SimpleLang::Compiler::ParsingError::what() const throw()
+const char *GobLang::Compiler::ParsingError::what() const throw()
 {
     return m_full.c_str();
 }
 
-SimpleLang::Compiler::ParsingError::ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg)
+GobLang::Compiler::ParsingError::ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg)
 {
     m_full = ("Error at line " + std::to_string(m_row) + " row " + std::to_string(m_column) + ": " + m_message);
 }

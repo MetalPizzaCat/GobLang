@@ -1,18 +1,18 @@
 #include "Machine.hpp"
 #include <iostream>
 #include <vector>
-SimpleLang::Machine::Machine(Compiler::ByteCode const &code)
+GobLang::Machine::Machine(Compiler::ByteCode const &code)
 {
     m_constInts = code.ints;
     m_constStrings = code.ids;
     m_operations = code.operations;
 }
-void SimpleLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
+void GobLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
 
 {
     m_variables[name] = MemoryValue{.type = Type::NativeFunction, .value = func};
 }
-void SimpleLang::Machine::step()
+void GobLang::Machine::step()
 {
     if (m_programCounter >= m_operations.size())
     {
@@ -72,7 +72,7 @@ void SimpleLang::Machine::step()
     m_programCounter++;
 }
 
-SimpleLang::MemoryValue *SimpleLang::Machine::getStackTop()
+GobLang::MemoryValue *GobLang::Machine::getStackTop()
 
 {
     if (m_operationStack.empty())
@@ -85,7 +85,7 @@ SimpleLang::MemoryValue *SimpleLang::Machine::getStackTop()
     }
 }
 
-SimpleLang::MemoryValue *SimpleLang::Machine::getStackTopAndPop()
+GobLang::MemoryValue *GobLang::Machine::getStackTopAndPop()
 {
     if (m_operationStack.empty())
     {
@@ -99,29 +99,29 @@ SimpleLang::MemoryValue *SimpleLang::Machine::getStackTopAndPop()
     }
 }
 
-SimpleLang::ArrayNode *SimpleLang::Machine::createArrayOfSize(int32_t size)
+GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
 {
     ArrayNode *node = new ArrayNode(size);
     m_memoryRoot->push_back(node);
     return node;
 }
 
-void SimpleLang::Machine::popStack()
+void GobLang::Machine::popStack()
 {
     m_operationStack.pop_back();
 }
 
-void SimpleLang::Machine::pushToStack(MemoryValue const &val)
+void GobLang::Machine::pushToStack(MemoryValue const &val)
 {
     m_operationStack.push_back(val);
 }
 
-void SimpleLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
+void GobLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
 {
     m_variables[name] = value;
 }
 
-SimpleLang::ProgramAddressType SimpleLang::Machine::_getAddressFromByteCode(size_t start)
+GobLang::ProgramAddressType GobLang::Machine::_getAddressFromByteCode(size_t start)
 {
     ProgramAddressType reconAddr = 0x0;
     for (int32_t i = 0; i < sizeof(ProgramAddressType); i++)
@@ -132,13 +132,13 @@ SimpleLang::ProgramAddressType SimpleLang::Machine::_getAddressFromByteCode(size
     return reconAddr;
 }
 
-void SimpleLang::Machine::_jump()
+void GobLang::Machine::_jump()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
     m_programCounter = dest;
 }
 
-void SimpleLang::Machine::_jumpIf()
+void GobLang::Machine::_jumpIf()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
     m_programCounter += sizeof(ProgramAddressType);
@@ -160,7 +160,7 @@ void SimpleLang::Machine::_jumpIf()
     }
 }
 
-void SimpleLang::Machine::_addInt()
+void GobLang::Machine::_addInt()
 {
     MemoryValue a = m_operationStack[m_operationStack.size() - 1];
     MemoryValue b = m_operationStack[m_operationStack.size() - 2];
@@ -170,7 +170,7 @@ void SimpleLang::Machine::_addInt()
     m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = c});
 }
 
-void SimpleLang::Machine::_subInt()
+void GobLang::Machine::_subInt()
 {
     MemoryValue a = m_operationStack[m_operationStack.size() - 1];
     MemoryValue b = m_operationStack[m_operationStack.size() - 2];
@@ -180,7 +180,7 @@ void SimpleLang::Machine::_subInt()
     m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = c});
 }
 
-void SimpleLang::Machine::_set()
+void GobLang::Machine::_set()
 {
     // (name val =)
     MemoryValue val = m_operationStack[m_operationStack.size() - 1];
@@ -194,7 +194,7 @@ void SimpleLang::Machine::_set()
     }
 }
 
-void SimpleLang::Machine::_get()
+void GobLang::Machine::_get()
 {
     MemoryValue name = m_operationStack[m_operationStack.size() - 1];
     m_operationStack.pop_back();
@@ -210,7 +210,7 @@ void SimpleLang::Machine::_get()
     }
 }
 
-void SimpleLang::Machine::_call()
+void GobLang::Machine::_call()
 {
     MemoryValue func = m_operationStack[m_operationStack.size() - 1];
     m_operationStack.pop_back();
@@ -224,13 +224,13 @@ void SimpleLang::Machine::_call()
     }
 }
 
-void SimpleLang::Machine::_pushConstInt()
+void GobLang::Machine::_pushConstInt()
 {
     m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = m_constInts[(size_t)m_operations[m_programCounter + 1]]});
     m_programCounter++;
 }
 
-void SimpleLang::Machine::_pushConstString()
+void GobLang::Machine::_pushConstString()
 {
     MemoryNode *root = m_memoryRoot;
     std::string &str = m_constStrings[(size_t)m_operations[m_programCounter + 1]];
@@ -254,7 +254,7 @@ void SimpleLang::Machine::_pushConstString()
     m_operationStack.push_back(MemoryValue{.type = Type::MemoryObj, .value = node});
 }
 
-void SimpleLang::Machine::_getArray()
+void GobLang::Machine::_getArray()
 {
     // for (size_t i = 0; i < m_operationStack.size(); i++)
     // {
@@ -274,7 +274,7 @@ void SimpleLang::Machine::_getArray()
     }
 }
 
-void SimpleLang::Machine::_setArray()
+void GobLang::Machine::_setArray()
 {
     MemoryValue index = m_operationStack[m_operationStack.size() - 3];
     MemoryValue array = m_operationStack[m_operationStack.size() - 2];
@@ -292,7 +292,7 @@ void SimpleLang::Machine::_setArray()
     }
 }
 
-void SimpleLang::Machine::_eq()
+void GobLang::Machine::_eq()
 {
     MemoryValue a = m_operationStack[m_operationStack.size() - 2];
     MemoryValue b = m_operationStack[m_operationStack.size() - 1];
@@ -308,7 +308,7 @@ void SimpleLang::Machine::_eq()
     }
 }
 
-const char *SimpleLang::RuntimeException::what() const throw()
+const char *GobLang::RuntimeException::what() const throw()
 {
     return m_msg.c_str();
 }

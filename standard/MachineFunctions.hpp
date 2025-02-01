@@ -5,7 +5,7 @@
 
 namespace MachineFunctions
 {
-    void printLine(SimpleLang::Machine *machine);
+    void printLine(GobLang::Machine *machine);
 
-    void createArrayOfSize(SimpleLang::Machine *machine);
+    void createArrayOfSize(GobLang::Machine *machine);
 }
