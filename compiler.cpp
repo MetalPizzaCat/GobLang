@@ -60,16 +60,18 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 int main()
 {
     // std::string code = "a = 2; if(a) { print(a); print(b)} elif(c) {test1()} else {print(0)}";
-    std::string code = R"CLM(a = 0;
-c = 9;
-print(a);
-if(a == 6) {
+    std::string code = R"CLM(a = array(3);
+a[0] = 6;
+a[2] = 9;
+c = a[2];
+print(a[0]);
+if(a[0] == 6) {
     print("you stupid");
-    if (c == 9){
-        print(c);
+    if (c == a[2]){
+        print(a[1]);
         }
 }
-elif (a == 0) {
+elif (a[0] == 0) {
     print("lmao");
 })CLM";
     std::cout << "Source: " << code << std::endl;
@@ -81,7 +83,7 @@ elif (a == 0) {
     compiler.compile();
     compiler.printCode();
     compiler.generateByteCode();
-    //byteCodeToText(compiler.getByteCode().operations);
+    byteCodeToText(compiler.getByteCode().operations);
     std::cout << "Executing code" << std::endl;
     SimpleLang::Machine machine(compiler.getByteCode());
     machine.createVariable("piss", SimpleLang::MemoryValue{.type = SimpleLang::Type::Int, .value = 69});
