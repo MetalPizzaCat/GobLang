@@ -47,6 +47,12 @@ void SimpleLang::Machine::step()
     case Operation::SetArray:
         _setArray();
         break;
+    case Operation::Jump:
+        _jump();
+        break;
+    case Operation::JumpIfNot:
+        _jumpIf();
+        break;
     default:
         std::cerr << "Invalid op code: " << (int32_t)m_operations[m_programCounter] << std::endl;
         break;
@@ -101,6 +107,41 @@ void SimpleLang::Machine::pushToStack(MemoryValue const &val)
 void SimpleLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
 {
     m_variables[name] = value;
+}
+
+SimpleLang::ProgramAddressType SimpleLang::Machine::_getAddressFromByteCode(size_t start)
+{
+    ProgramAddressType reconAddr = 0x0;
+    for (int32_t i = 0; i < sizeof(ProgramAddressType); i++)
+    {
+        ProgramAddressType offset = (sizeof(ProgramAddressType) - i - 1) * 8;
+        reconAddr |= (ProgramAddressType)(m_operations[start + i]) << offset;
+    }
+    return reconAddr;
+}
+
+void SimpleLang::Machine::_jump()
+{
+    ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
+    m_programCounter = dest;
+}
+
+void SimpleLang::Machine::_jumpIf()
+{
+    ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
+    m_programCounter += sizeof(ProgramAddressType);
+    MemoryValue a = *m_operationStack.rbegin();
+    if (a.type == Type::Bool)
+    {
+        if (!std::get<bool>(a.value))
+        {
+            m_programCounter = dest;
+        }
+    }
+    else
+    {
+        throw RuntimeException(std::string("Invalid data type passed to condition check. Expected bool got: ") + typeToString(a.type));
+    }
 }
 
 void SimpleLang::Machine::_addInt()

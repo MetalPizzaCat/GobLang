@@ -6,6 +6,7 @@ namespace SimpleLang
     enum class Type
     {
         Null,
+        Bool,
         Number,
         Int,
         UserData,
