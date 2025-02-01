@@ -15,6 +15,11 @@
 
 namespace SimpleLang
 {
+    /**
+     * @brief Type used to store jump addresses in the code 
+     * 
+     */
+    using ProgramAddressType = size_t;
     class Machine
     {
     public:
@@ -82,6 +87,12 @@ namespace SimpleLang
         }
 
     private:
+        ProgramAddressType _getAddressFromByteCode(size_t start);
+
+        void _jump();
+
+        void _jumpIf();
+        
         void _addInt();
 
         void _subInt();

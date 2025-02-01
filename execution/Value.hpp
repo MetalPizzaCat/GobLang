@@ -9,7 +9,7 @@ namespace SimpleLang
     class Machine;
     class MemoryNode;
     using FunctionValue = std::function<void(Machine *)>;
-    using Value = std::variant<float, int32_t, void *, MemoryNode *, FunctionValue>;
+    using Value = std::variant<bool, float, int32_t, void *, MemoryNode *, FunctionValue>;
 
     struct MemoryValue
     {

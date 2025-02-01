@@ -17,6 +17,7 @@ void test1(SimpleLang::Machine *machine)
 
 void byteCodeToText(std::vector<uint8_t> const &bytecode)
 {
+    size_t address = 0;
     for (std::vector<uint8_t>::const_iterator it = bytecode.begin(); it != bytecode.end(); it++)
     {
         std::vector<SimpleLang::OperationData>::const_iterator opIt = std::find_if(
@@ -28,20 +29,38 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
             });
         if (opIt != SimpleLang::Operations.end())
         {
-            std::cout << (opIt->text) << " ";
-            for (int32_t i = 0; i < opIt->argCount; i++)
+            std::cout << std::hex << address << std::dec << ": " << (opIt->text) << " ";
+            if (opIt->argCount == sizeof(SimpleLang::ProgramAddressType))
             {
-                it++;
-                std::cout << std::to_string(*it);
+                size_t reconAddr = 0x0;
+                for (int32_t i = 0; i < sizeof(SimpleLang::ProgramAddressType); i++)
+                {
+                    it++;
+                    size_t offset = ((sizeof(SimpleLang::ProgramAddressType) - i - 1)) * 8;
+                    reconAddr |= (size_t)(*it) << offset;
+                }
+                address += sizeof(SimpleLang::ProgramAddressType);
+                std::cout << std::hex << reconAddr << std::dec;
+                ;
             }
+            else
+            {
+                for (int32_t i = 0; i < opIt->argCount; i++)
+                {
+                    it++;
+                    address += 1;
+                    std::cout << std::to_string(*it);
+                }
+            }
+            address++;
             std::cout << std::endl;
         }
     }
 }
 int main()
 {
-    // std::string code = "arr = array(3); arr[2] = 69; print(arr[2]);";
-    std::string code = "print(\"hello\\n world\")";
+    // std::string code = "a = 2; if(a) { print(a); print(b)} elif(c) {test1()} else {print(0)}";
+    std::string code = "a = 2; if(a) { print(a); print(b)} elif(c) {test1()} else {print(0)}";
     std::cout << "Source: " << code << std::endl;
     SimpleLang::Compiler::Parser comp(code);
     comp.parse();
@@ -51,17 +70,17 @@ int main()
     compiler.compile();
     compiler.printCode();
     compiler.generateByteCode();
-    //byteCodeToText(compiler.getByteCode().operations);
+    byteCodeToText(compiler.getByteCode().operations);
     std::cout << "Executing code" << std::endl;
     SimpleLang::Machine machine(compiler.getByteCode());
     machine.createVariable("piss", SimpleLang::MemoryValue{.type = SimpleLang::Type::Int, .value = 69});
     machine.addFunction(MachineFunctions::printLine, "print");
     machine.addFunction(MachineFunctions::createArrayOfSize, "array");
     machine.addFunction(test1, "test1");
-    while (!machine.isAtTheEnd())
-    {
-        machine.step();
-    }
+    // while (!machine.isAtTheEnd())
+    // {
+    //     machine.step();
+    // }
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }

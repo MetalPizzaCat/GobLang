@@ -35,6 +35,8 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
     compiler/CompilerToken.hpp
     compiler/CompilerToken.cpp
     compiler/SpecialCharacter.hpp
+    compiler/CompilerNode.hpp
+    compiler/CompilerNode.cpp
 )
 
 add_executable(sila
