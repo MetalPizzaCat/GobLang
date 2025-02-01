@@ -70,6 +70,12 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
                 stack.pop_back();
             }
         }
+
+        else if (BoolConstToken *boolToken = dynamic_cast<BoolConstToken *>(*it); boolToken != nullptr)
+        {
+            stack.push_back(new OperationCompilerNode(
+                {(uint8_t)(boolToken->getValue() ? Operation::PushTrue : Operation::PushFalse)}, isDestination, destMark));
+        }
         else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr)
         {
             stack.push_back(new OperationCompilerNode(generateGetByteCode(*it), isDestination, destMark));
@@ -87,13 +93,15 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
         }
         else if (GotoToken *jmpToken = dynamic_cast<GotoToken *>(*it); jmpToken != nullptr)
         {
-            CompilerNode *cond = *stack.rbegin();
-            stack.pop_back();
-            // condition goes first and we don't care about anything else
-            std::vector<uint8_t> bytes = cond->getOperationGetBytes();
+            std::vector<uint8_t> bytes;
             if (dynamic_cast<IfToken *>(jmpToken) != nullptr)
             {
+                CompilerNode *cond = *stack.rbegin();
+                stack.pop_back();
+                // condition goes first and we don't care about anything else
+                bytes = cond->getOperationGetBytes();
                 bytes.push_back((uint8_t)Operation::JumpIfNot);
+                delete cond;
             }
             else
             {
@@ -105,7 +113,6 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
             {
                 m_byteCode.operations.push_back(0x0);
             }
-            delete cond;
         }
         else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
         {
@@ -496,6 +503,15 @@ void SimpleLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, st
         }
 
         break;
+    case Keyword::True:
+    case Keyword::False:
+    {
+        BoolConstToken *boolTok = new BoolConstToken(keyToken->getRow(), keyToken->getColumn(), keyToken->getKeyword() == Keyword::True);
+        m_stack.push_back(boolTok);
+        m_compilerTokens.push_back(boolTok);
+    }
+
+    break;
     default:
         throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Invalid keyword encountered");
         break;

@@ -22,6 +22,9 @@ namespace SimpleLang
         SetArray,
         PushConstInt,
         PushConstString,
+        PushTrue,
+        PushFalse,
+        Equals,
         /**
          * @brief Unconditionally jump. Uses sizeof(size_t) bytes to get the address to jump to
          */
@@ -54,6 +57,9 @@ namespace SimpleLang
         OperationData{.op = Operation::GetArray, .text = "get_arr", .argCount = 0},
         OperationData{.op = Operation::PushConstInt, .text = "push_int", .argCount = 1},
         OperationData{.op = Operation::PushConstString, .text = "push_str", .argCount = 1},
+        OperationData{.op = Operation::PushTrue, .text = "push_true", .argCount = 0},
+        OperationData{.op = Operation::PushFalse, .text = "push_false", .argCount = 0},
+        OperationData{.op = Operation::Equals, .text = "eq", .argCount = 0},
         OperationData{.op = Operation::Jump, .text = "goto", .argCount = sizeof(size_t)},
         OperationData{.op = Operation::JumpIfNot, .text = "goto_if_not", .argCount = sizeof(size_t)},
         OperationData{.op = Operation::End, .text = "hlt", .argCount = 0}};

@@ -87,4 +87,21 @@ namespace SimpleLang::Compiler
 
         CompilerNode *m_index;
     };
+
+    class BoolConstCompilerNode : public CompilerNode
+    {
+    public:
+        explicit BoolConstCompilerNode(
+            bool isDestination,
+            size_t destinationId,
+            bool value) : CompilerNode(isDestination, destinationId), m_value(value) {}
+
+        std::vector<uint8_t> getOperationGetBytes() override
+        {
+            return {(uint8_t)(m_value ? Operation::PushTrue : Operation::PushFalse)};
+        }
+
+    private:
+        bool m_value;
+    };
 } // namespace SimpleLang::Compiler

@@ -49,9 +49,21 @@ void SimpleLang::Machine::step()
         break;
     case Operation::Jump:
         _jump();
-        break;
+        return; // this uses return because we want to avoid advancing the counter after jup
     case Operation::JumpIfNot:
         _jumpIf();
+        return;
+    case Operation::PushTrue:
+        m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = true});
+        break;
+    case Operation::PushFalse:
+        m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = false});
+        break;
+    case Operation::Equals:
+        _eq();
+        break;
+    case Operation::End:
+        m_forcedEnd = true;
         break;
     default:
         std::cerr << "Invalid op code: " << (int32_t)m_operations[m_programCounter] << std::endl;
@@ -136,6 +148,10 @@ void SimpleLang::Machine::_jumpIf()
         if (!std::get<bool>(a.value))
         {
             m_programCounter = dest;
+        }
+        else
+        {
+            m_programCounter++;
         }
     }
     else
@@ -273,6 +289,22 @@ void SimpleLang::Machine::_setArray()
     if (ArrayNode *arrNode = dynamic_cast<ArrayNode *>(std::get<MemoryNode *>(array.value)); arrNode != nullptr)
     {
         arrNode->setItem(std::get<int32_t>(index.value), value);
+    }
+}
+
+void SimpleLang::Machine::_eq()
+{
+    MemoryValue a = m_operationStack[m_operationStack.size() - 2];
+    MemoryValue b = m_operationStack[m_operationStack.size() - 1];
+    m_operationStack.pop_back();
+    m_operationStack.pop_back();
+    if (a.type == b.type)
+    {
+        m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = areEqual(a, b)});
+    }
+    else
+    {
+        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
     }
 }
 
