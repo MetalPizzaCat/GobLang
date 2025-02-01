@@ -83,7 +83,7 @@ namespace SimpleLang::Compiler
      *
      */
     static const std::vector<OperatorData> Operators = {
-        OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5, .operation = Operation::None},
+        OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5, .operation = Operation::Equals},
         OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 2, .operation = Operation::Set},
         OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::None},
         OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::None},

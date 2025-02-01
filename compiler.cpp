@@ -60,7 +60,18 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 int main()
 {
     // std::string code = "a = 2; if(a) { print(a); print(b)} elif(c) {test1()} else {print(0)}";
-    std::string code = "a = 2; if(a) { print(a); print(b)} elif(c) {test1()} else {print(0)}";
+    std::string code = R"CLM(a = 0;
+c = 9;
+print(a);
+if(a == 6) {
+    print("you stupid");
+    if (c == 9){
+        print(c);
+        }
+}
+elif (a == 0) {
+    print("lmao");
+})CLM";
     std::cout << "Source: " << code << std::endl;
     SimpleLang::Compiler::Parser comp(code);
     comp.parse();
@@ -70,17 +81,17 @@ int main()
     compiler.compile();
     compiler.printCode();
     compiler.generateByteCode();
-    byteCodeToText(compiler.getByteCode().operations);
+    //byteCodeToText(compiler.getByteCode().operations);
     std::cout << "Executing code" << std::endl;
     SimpleLang::Machine machine(compiler.getByteCode());
     machine.createVariable("piss", SimpleLang::MemoryValue{.type = SimpleLang::Type::Int, .value = 69});
     machine.addFunction(MachineFunctions::printLine, "print");
     machine.addFunction(MachineFunctions::createArrayOfSize, "array");
     machine.addFunction(test1, "test1");
-    // while (!machine.isAtTheEnd())
-    // {
-    //     machine.step();
-    // }
+    while (!machine.isAtTheEnd())
+    {
+        machine.step();
+    }
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }

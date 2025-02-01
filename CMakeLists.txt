@@ -7,6 +7,7 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Type.cpp
     execution/Operations.hpp
     execution/Value.hpp
+    execution/Value.cpp
     execution/Machine.hpp
     execution/Machine.cpp
     execution/Memory.hpp

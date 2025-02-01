@@ -38,6 +38,15 @@ namespace SimpleLang
          */
         void push_back(MemoryNode *node);
 
+        /**
+         * @brief Check if this memory value is equal to other value. This should be overriden to have type specific to avoid java situation
+         * 
+         * @param other 
+         * @return true 
+         * @return false 
+         */
+        virtual bool equalsTo(MemoryNode* other);
+
         virtual std::string toString() { return "Memory object"; }
 
         virtual ~MemoryNode() = default;
@@ -63,6 +72,15 @@ namespace SimpleLang
         std::string const &getString() { return m_str; }
 
         std::string toString() override { return getString(); }
+
+        /**
+         * @brief Compare other memory node and return true if both contain same sequence of characters
+         * 
+         * @param other 
+         * @return true 
+         * @return false 
+         */
+        bool equalsTo(MemoryNode* other) override;
 
         virtual ~StringNode() = default;
 

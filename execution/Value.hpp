@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <variant>
+#include "Type.hpp"
 
 namespace SimpleLang
 {
@@ -16,4 +17,14 @@ namespace SimpleLang
         Type type;
         Value value;
     };
+
+    /**
+     * @brief Compare two memory values and validate that both are equal
+     * 
+     * @param a 
+     * @param b 
+     * @return true 
+     * @return false 
+     */
+    bool areEqual(MemoryValue const& a, MemoryValue const & b);
 }

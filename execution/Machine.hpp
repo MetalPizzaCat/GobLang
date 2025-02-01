@@ -56,7 +56,7 @@ namespace SimpleLang
 
         bool isAtTheEnd() const
         {
-            return m_programCounter >= m_operations.size();
+            return m_programCounter >= m_operations.size() || m_forcedEnd ;
         }
         void addFunction(FunctionValue const &func, std::string const &name);
         void step();
@@ -110,6 +110,10 @@ namespace SimpleLang
         void _getArray();
 
         void _setArray();
+
+        void _eq();
+
+        bool m_forcedEnd = false;
 
         MemoryNode *m_memoryRoot = new MemoryNode();
         size_t m_programCounter = 0;
