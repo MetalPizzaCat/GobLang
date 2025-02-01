@@ -6,10 +6,10 @@
 
 #include "standard/MachineFunctions.hpp"
 
-void test1(SimpleLang::Machine *machine)
+void test1(GobLang::Machine *machine)
 {
-    SimpleLang::MemoryValue *b = machine->getStackTopAndPop();
-    SimpleLang::MemoryValue *a = machine->getStackTopAndPop();
+    GobLang::MemoryValue *b = machine->getStackTopAndPop();
+    GobLang::MemoryValue *a = machine->getStackTopAndPop();
     std::cout << "A: " << std::get<int32_t>(a->value) << " B: " << std::get<int32_t>(b->value) << std::endl;
     delete a;
     delete b;
@@ -20,26 +20,26 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
     size_t address = 0;
     for (std::vector<uint8_t>::const_iterator it = bytecode.begin(); it != bytecode.end(); it++)
     {
-        std::vector<SimpleLang::OperationData>::const_iterator opIt = std::find_if(
-            SimpleLang::Operations.begin(),
-            SimpleLang::Operations.end(),
-            [it](SimpleLang::OperationData const &a)
+        std::vector<GobLang::OperationData>::const_iterator opIt = std::find_if(
+            GobLang::Operations.begin(),
+            GobLang::Operations.end(),
+            [it](GobLang::OperationData const &a)
             {
                 return (uint8_t)a.op == *it;
             });
-        if (opIt != SimpleLang::Operations.end())
+        if (opIt != GobLang::Operations.end())
         {
             std::cout << std::hex << address << std::dec << ": " << (opIt->text) << " ";
-            if (opIt->argCount == sizeof(SimpleLang::ProgramAddressType))
+            if (opIt->argCount == sizeof(GobLang::ProgramAddressType))
             {
                 size_t reconAddr = 0x0;
-                for (int32_t i = 0; i < sizeof(SimpleLang::ProgramAddressType); i++)
+                for (int32_t i = 0; i < sizeof(GobLang::ProgramAddressType); i++)
                 {
                     it++;
-                    size_t offset = ((sizeof(SimpleLang::ProgramAddressType) - i - 1)) * 8;
+                    size_t offset = ((sizeof(GobLang::ProgramAddressType) - i - 1)) * 8;
                     reconAddr |= (size_t)(*it) << offset;
                 }
-                address += sizeof(SimpleLang::ProgramAddressType);
+                address += sizeof(GobLang::ProgramAddressType);
                 std::cout << std::hex << reconAddr << std::dec;
                 ;
             }
@@ -75,18 +75,18 @@ elif (a[0] == 0) {
     print("lmao");
 })CLM";
     std::cout << "Source: " << code << std::endl;
-    SimpleLang::Compiler::Parser comp(code);
+    GobLang::Compiler::Parser comp(code);
     comp.parse();
     comp.printInfoTable();
     comp.printCode();
-    SimpleLang::Compiler::Compiler compiler(comp);
+    GobLang::Compiler::Compiler compiler(comp);
     compiler.compile();
     compiler.printCode();
     compiler.generateByteCode();
     byteCodeToText(compiler.getByteCode().operations);
     std::cout << "Executing code" << std::endl;
-    SimpleLang::Machine machine(compiler.getByteCode());
-    machine.createVariable("piss", SimpleLang::MemoryValue{.type = SimpleLang::Type::Int, .value = 69});
+    GobLang::Machine machine(compiler.getByteCode());
+    machine.createVariable("piss", GobLang::MemoryValue{.type = GobLang::Type::Int, .value = 69});
     machine.addFunction(MachineFunctions::printLine, "print");
     machine.addFunction(MachineFunctions::createArrayOfSize, "array");
     machine.addFunction(test1, "test1");

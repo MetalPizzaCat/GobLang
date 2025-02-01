@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
-namespace SimpleLang::Compiler
+namespace GobLang::Compiler
 {
     struct ByteCode
     {

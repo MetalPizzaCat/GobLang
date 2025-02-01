@@ -7,7 +7,7 @@
 #include "../execution/Machine.hpp"
 #include "Lexems.hpp"
 
-namespace SimpleLang::Compiler
+namespace GobLang::Compiler
 {
 
     class Token

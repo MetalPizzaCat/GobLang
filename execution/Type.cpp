@@ -1,6 +1,6 @@
 #include "Type.hpp"
 
-const char *SimpleLang::typeToString(Type type)
+const char *GobLang::typeToString(Type type)
 {
     switch (type)
     {

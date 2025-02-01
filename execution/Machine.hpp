@@ -13,7 +13,7 @@
 #include "Array.hpp"
 #include "../compiler/ByteCode.hpp"
 
-namespace SimpleLang
+namespace GobLang
 {
     /**
      * @brief Type used to store jump addresses in the code 

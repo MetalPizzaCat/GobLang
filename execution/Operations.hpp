@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <cstdint>
-namespace SimpleLang
+namespace GobLang
 {
     enum class Operation
     {

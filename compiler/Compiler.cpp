@@ -4,7 +4,7 @@
 #include <iostream>
 #include <deque>
 
-void SimpleLang::Compiler::Compiler::compile()
+void GobLang::Compiler::Compiler::compile()
 {
     for (std::vector<Token *>::const_iterator it = m_parser.getTokens().begin(); it != m_parser.getTokens().end(); it++)
     {
@@ -38,7 +38,7 @@ void SimpleLang::Compiler::Compiler::compile()
     dumpStack();
 }
 
-void SimpleLang::Compiler::Compiler::generateByteCode()
+void GobLang::Compiler::Compiler::generateByteCode()
 {
     if (m_code.empty())
     {
@@ -150,11 +150,11 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
                 appendCompilerNode(valueToSet, true);
                 if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
                 {
-                    m_byteCode.operations.push_back((uint8_t)SimpleLang::Operation::SetArray);
+                    m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
                 }
                 else
                 {
-                    m_byteCode.operations.push_back((uint8_t)SimpleLang::Operation::Set);
+                    m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
                 }
             }
             else
@@ -204,7 +204,7 @@ void SimpleLang::Compiler::Compiler::generateByteCode()
     }
 }
 
-void SimpleLang::Compiler::Compiler::dumpStack()
+void GobLang::Compiler::Compiler::dumpStack()
 {
     // dump the remaining stack
     for (std::vector<Token *>::const_reverse_iterator it = m_stack.rbegin(); it != m_stack.rend(); it++)
@@ -214,7 +214,7 @@ void SimpleLang::Compiler::Compiler::dumpStack()
     m_stack.clear();
 }
 
-void SimpleLang::Compiler::Compiler::dumpStackWhile(std::function<bool(Token *)> const &cond)
+void GobLang::Compiler::Compiler::dumpStackWhile(std::function<bool(Token *)> const &cond)
 {
     for (int32_t i = m_stack.size() - 1; i >= 0 && cond(m_stack[i]); i--)
     {
@@ -223,7 +223,7 @@ void SimpleLang::Compiler::Compiler::dumpStackWhile(std::function<bool(Token *)>
     }
 }
 
-int32_t SimpleLang::Compiler::Compiler::getTopStackPriority()
+int32_t GobLang::Compiler::Compiler::getTopStackPriority()
 {
     if (m_stack.empty())
     {
@@ -232,7 +232,7 @@ int32_t SimpleLang::Compiler::Compiler::getTopStackPriority()
     return m_stack[m_stack.size() - 1]->getPriority();
 }
 
-SimpleLang::Compiler::Token *SimpleLang::Compiler::Compiler::popStack()
+GobLang::Compiler::Token *GobLang::Compiler::Compiler::popStack()
 {
     if (m_stack.empty())
     {
@@ -243,7 +243,7 @@ SimpleLang::Compiler::Token *SimpleLang::Compiler::Compiler::popStack()
     return tkn;
 }
 
-void SimpleLang::Compiler::Compiler::printCode()
+void GobLang::Compiler::Compiler::printCode()
 {
     for (std::vector<Token *>::iterator it = m_code.begin(); it != m_code.end(); it++)
     {
@@ -252,7 +252,7 @@ void SimpleLang::Compiler::Compiler::printCode()
     std::cout << std::endl;
 }
 
-std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateGetByteCode(Token *token)
+std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *token)
 {
     std::vector<uint8_t> out;
     if (IntToken *intToken = dynamic_cast<IntToken *>(token); intToken != nullptr)
@@ -262,28 +262,28 @@ std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateGetByteCode(Token *
     }
     if (StringToken *strToken = dynamic_cast<StringToken *>(token); strToken != nullptr)
     {
-        out.push_back((uint8_t)SimpleLang::Operation::PushConstString);
+        out.push_back((uint8_t)GobLang::Operation::PushConstString);
         out.push_back((uint8_t)strToken->getId());
     }
     else if (IdToken *idToken = dynamic_cast<IdToken *>(token); idToken != nullptr)
     {
-        out.push_back((uint8_t)SimpleLang::Operation::PushConstString);
+        out.push_back((uint8_t)GobLang::Operation::PushConstString);
         out.push_back((uint8_t)idToken->getId());
-        out.push_back((uint8_t)SimpleLang::Operation::Get);
+        out.push_back((uint8_t)GobLang::Operation::Get);
     }
     else if (ArrayIndexToken *arrToken = dynamic_cast<ArrayIndexToken *>(token); idToken != nullptr)
     {
-        out.push_back((uint8_t)SimpleLang::Operation::GetArray);
+        out.push_back((uint8_t)GobLang::Operation::GetArray);
     }
     return out;
 }
 
-std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateSetByteCode(Token *token)
+std::vector<uint8_t> GobLang::Compiler::Compiler::generateSetByteCode(Token *token)
 {
     std::vector<uint8_t> out;
     if (IdToken *idToken = dynamic_cast<IdToken *>(token); idToken != nullptr)
     {
-        out.push_back((uint8_t)SimpleLang::Operation::PushConstString);
+        out.push_back((uint8_t)GobLang::Operation::PushConstString);
         out.push_back((uint8_t)idToken->getId());
     }
     // else if (ArrayIndexToken *arrToken = dynamic_cast<ArrayIndexToken *>(token); idToken != nullptr)
@@ -293,7 +293,7 @@ std::vector<uint8_t> SimpleLang::Compiler::Compiler::generateSetByteCode(Token *
     return out;
 }
 
-void SimpleLang::Compiler::Compiler::appendCompilerNode(CompilerNode *node, bool getter)
+void GobLang::Compiler::Compiler::appendCompilerNode(CompilerNode *node, bool getter)
 {
     if (node->hasMark())
     {
@@ -303,7 +303,7 @@ void SimpleLang::Compiler::Compiler::appendCompilerNode(CompilerNode *node, bool
     m_byteCode.operations.insert(m_byteCode.operations.end(), code.begin(), code.end());
 }
 
-void SimpleLang::Compiler::Compiler::addNewMarkReplacement(size_t mark, size_t address)
+void GobLang::Compiler::Compiler::addNewMarkReplacement(size_t mark, size_t address)
 {
     if (m_jumpMarks.count(mark) > 0)
     {
@@ -315,12 +315,12 @@ void SimpleLang::Compiler::Compiler::addNewMarkReplacement(size_t mark, size_t a
     }
 }
 
-size_t SimpleLang::Compiler::Compiler::getMarkCounterAndAdvance()
+size_t GobLang::Compiler::Compiler::getMarkCounterAndAdvance()
 {
     return m_markCounter++;
 }
 
-SimpleLang::Compiler::Compiler::~Compiler()
+GobLang::Compiler::Compiler::~Compiler()
 {
     for (size_t i = 0; i < m_compilerTokens.size(); i++)
     {
@@ -328,7 +328,7 @@ SimpleLang::Compiler::Compiler::~Compiler()
     }
 }
 
-void SimpleLang::Compiler::Compiler::_placeAddressForMark(size_t mark, size_t address, bool erase)
+void GobLang::Compiler::Compiler::_placeAddressForMark(size_t mark, size_t address, bool erase)
 {
     for (std::vector<size_t>::iterator labelIt = m_jumpMarks[mark].begin();
          labelIt != m_jumpMarks[mark].end();
@@ -350,7 +350,7 @@ void SimpleLang::Compiler::Compiler::_placeAddressForMark(size_t mark, size_t ad
     }
 }
 
-void SimpleLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it)
+void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it)
 {
 
     switch (sepToken->getSeparator())
@@ -470,7 +470,7 @@ void SimpleLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken
     }
 }
 
-void SimpleLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, std::vector<Token *>::const_iterator const &it)
+void GobLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, std::vector<Token *>::const_iterator const &it)
 {
     switch (keyToken->getKeyword())
     {
@@ -518,7 +518,7 @@ void SimpleLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, st
     }
 }
 
-bool SimpleLang::Compiler::Compiler::_isElseChainToken(std::vector<Token *>::const_iterator const &it)
+bool GobLang::Compiler::Compiler::_isElseChainToken(std::vector<Token *>::const_iterator const &it)
 {
     if (it == m_parser.getTokens().end())
     {
@@ -528,7 +528,7 @@ bool SimpleLang::Compiler::Compiler::_isElseChainToken(std::vector<Token *>::con
     return key != nullptr && key->getKeyword() == Keyword::Else;
 }
 
-bool SimpleLang::Compiler::Compiler::_isElifChainToken(std::vector<Token *>::const_iterator const &it)
+bool GobLang::Compiler::Compiler::_isElifChainToken(std::vector<Token *>::const_iterator const &it)
 {
     if (it == m_parser.getTokens().end())
     {

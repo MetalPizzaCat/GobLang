@@ -5,7 +5,7 @@
 #include <variant>
 #include "Type.hpp"
 
-namespace SimpleLang
+namespace GobLang
 {
     class Machine;
     class MemoryNode;

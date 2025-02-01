@@ -1,5 +1,5 @@
 #include "Memory.hpp"
-void SimpleLang::MemoryNode::insert(MemoryNode *node)
+void GobLang::MemoryNode::insert(MemoryNode *node)
 {
     if (node != nullptr)
     {
@@ -9,7 +9,7 @@ void SimpleLang::MemoryNode::insert(MemoryNode *node)
     }
 }
 
-void SimpleLang::MemoryNode::push_back(MemoryNode *node)
+void GobLang::MemoryNode::push_back(MemoryNode *node)
 {
     MemoryNode *curr = this;
     while (curr->m_next != nullptr)
@@ -19,12 +19,12 @@ void SimpleLang::MemoryNode::push_back(MemoryNode *node)
     curr->m_next = node;
 }
 
-bool SimpleLang::MemoryNode::equalsTo(MemoryNode *other)
+bool GobLang::MemoryNode::equalsTo(MemoryNode *other)
 {
     return other == this;
 }
 
-bool SimpleLang::StringNode::equalsTo(MemoryNode *other)
+bool GobLang::StringNode::equalsTo(MemoryNode *other)
 {
     if(StringNode* otherStr = dynamic_cast<StringNode*>(other); otherStr != nullptr)
     {

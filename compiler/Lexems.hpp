@@ -2,7 +2,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
-namespace SimpleLang::Compiler
+namespace GobLang::Compiler
 {
     enum class Keyword
     {

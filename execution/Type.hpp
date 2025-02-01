@@ -1,6 +1,6 @@
 #pragma once
 
-namespace SimpleLang
+namespace GobLang
 {
 
     enum class Type

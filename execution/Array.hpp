@@ -3,7 +3,7 @@
 
 
 
-namespace SimpleLang
+namespace GobLang
 {
     struct MemoryValue;
     class ArrayNode : public MemoryNode

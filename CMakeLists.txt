@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(sila VERSION 0.1.0 LANGUAGES C CXX)
+project(goblang VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -40,19 +40,19 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
     compiler/CompilerNode.cpp
 )
 
-add_executable(sila
+add_executable(goblang
     main.cpp
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
     ${STD_SOURCE_FILES}
 )
 
-add_executable(silac
+add_executable(gobc
     compiler.cpp
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
     ${STD_SOURCE_FILES}
 )
 
-target_link_options(sila PRIVATE -static-libgcc -static-libstdc++)
-target_link_options(silac PRIVATE -static-libgcc -static-libstdc++)
+target_link_options(goblang PRIVATE -static-libgcc -static-libstdc++)
+target_link_options(gobc PRIVATE -static-libgcc -static-libstdc++)
