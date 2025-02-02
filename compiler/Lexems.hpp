@@ -18,6 +18,8 @@ namespace GobLang::Compiler
         Elif,
         Else,
         While,
+        Continue,
+        Break,
     };
 
     enum class Operator
@@ -27,6 +29,8 @@ namespace GobLang::Compiler
         NotEqual,
         Less,
         More,
+        LessEq,
+        MoreEq,
         Add,
         Sub,
         Mul,
@@ -78,6 +82,8 @@ namespace GobLang::Compiler
         {"false", Keyword::False},
         {"if", Keyword::If},
         {"while", Keyword::While},
+        {"continue", Keyword::Continue},
+        {"break", Keyword::Break},
         {"elif", Keyword::Elif},
         {"else", Keyword::Else},
         {"let", Keyword::Let}};
@@ -88,12 +94,12 @@ namespace GobLang::Compiler
      */
     static const std::vector<OperatorData> Operators = {
         OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5, .operation = Operation::Equals},
+        OperatorData{.symbol = ">=", .op = Operator::LessEq, .priority = 5, .operation = Operation::MoreOrEq},
+        OperatorData{.symbol = "<=", .op = Operator::MoreEq, .priority = 5, .operation = Operation::LessOrEq},
         OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 2, .operation = Operation::Set},
         OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::NotEq},
         OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::Less},
         OperatorData{.symbol = ">", .op = Operator::More, .priority = 5, .operation = Operation::More},
-        OperatorData{.symbol = ">=", .op = Operator::Less, .priority = 5, .operation = Operation::MoreOrEq},
-        OperatorData{.symbol = "<=", .op = Operator::More, .priority = 5, .operation = Operation::LessOrEq},
         OperatorData{.symbol = "+", .op = Operator::Add, .priority = 6, .operation = Operation::Add},
         OperatorData{.symbol = "-", .op = Operator::Sub, .priority = 6, .operation = Operation::Sub},
         OperatorData{.symbol = "*", .op = Operator::Mul, .priority = 7, .operation = Operation::None},

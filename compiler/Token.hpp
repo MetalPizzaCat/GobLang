@@ -104,7 +104,7 @@ namespace GobLang::Compiler
     public:
         explicit GotoToken(size_t row, size_t column, size_t mark = 0) : Token(row, column), m_mark(mark) {}
         std::string toString() override;
-        size_t getMark() const { return m_mark; }
+        virtual size_t getMark() const { return m_mark; }
         void setMark(size_t mark) { m_mark = mark; }
 
     private:

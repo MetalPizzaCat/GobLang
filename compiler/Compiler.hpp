@@ -70,6 +70,13 @@ namespace GobLang::Compiler
 
         void appendByteCode(std::vector<uint8_t> const& bytes);
 
+        /**
+         * @brief Get token of a while loop that is closest to the top of the jump stack.
+         * 
+         * @return WhileToken* Token of a while loop that is closest to the top of the jump stack or nullptr if none are found
+         */
+        WhileToken * getCurrentLoop();
+
         ByteCode getByteCode() const { return m_byteCode; }
 
         size_t getMarkCounterAndAdvance();
