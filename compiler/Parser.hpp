@@ -61,9 +61,11 @@ namespace GobLang::Compiler
 
         StringToken *parseString();
 
-        BoolConstToken * parseBool();
+        BoolConstToken *parseBool();
 
-        SpecialCharacter const*parseSpecialCharacter(std::string::iterator const& it);
+        CharToken *parseChar();
+
+        SpecialCharacter const *parseSpecialCharacter(std::string::iterator const &it);
 
         /**
          * @brief Get iterator pointing to the end of the current line

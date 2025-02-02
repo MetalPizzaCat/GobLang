@@ -1,8 +1,6 @@
 #pragma once
 #include "Memory.hpp"
 
-
-
 namespace GobLang
 {
     struct MemoryValue;
@@ -15,6 +13,8 @@ namespace GobLang
         MemoryValue *getItem(size_t i);
 
         std::string toString() override;
+
+        size_t getSize() const { return m_data.size(); }
 
     private:
         std::vector<MemoryValue> m_data;

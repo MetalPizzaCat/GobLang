@@ -21,9 +21,10 @@ void GobLang::Compiler::Parser::parse()
         std::bind(&Parser::parseOperators, this),
         std::bind(&Parser::parseKeywords, this),
         std::bind(&Parser::parseInt, this),
+        std::bind(&Parser::parseChar, this),
         std::bind(&Parser::parseString, this),
         std::bind(&Parser::parseId, this),
-        
+
         std::bind(&Parser::parseSeparators, this),
     };
 
@@ -288,6 +289,36 @@ GobLang::Compiler::BoolConstToken *GobLang::Compiler::Parser::parseBool()
     size_t column = getColumnNumber();
     advanceRowIterator(it->first.size());
     return new BoolConstToken(row, column, it->second);
+}
+
+GobLang::Compiler::CharToken *GobLang::Compiler::Parser::parseChar()
+{
+    if (*m_rowIt != '\'')
+    {
+        return nullptr;
+    }
+    char ch = '\0';
+    size_t offset = 1;
+    if (SpecialCharacter const *spec = parseSpecialCharacter(m_rowIt + offset); spec != nullptr)
+    {
+        ch = spec->character;
+        offset += strnlen(spec->sequence, 2);
+    }
+    else
+    {
+        ch = *(m_rowIt + offset);
+        offset++;
+    }
+    if (*(m_rowIt + offset) != '\'')
+    {
+        char c =  *(m_rowIt + offset);
+        return nullptr;
+    }
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(offset + 1);
+
+    return new CharToken(row, column, ch);
 }
 
 void GobLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)

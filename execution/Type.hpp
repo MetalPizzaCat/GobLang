@@ -6,6 +6,7 @@ namespace GobLang
     enum class Type
     {
         Null,
+        Char,
         Bool,
         Number,
         Int,

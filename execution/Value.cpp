@@ -17,6 +17,8 @@ bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
         return std::get<float>(a.value) == std::get<float>(b.value);
     case Type::Int:
         return std::get<int32_t>(a.value) == std::get<int32_t>(b.value);
+    case Type::Char:
+        return std::get<char>(a.value) == std::get<char>(b.value);
     case Type::UserData:
         return std::get<void *>(a.value) == std::get<void *>(b.value);
     case Type::MemoryObj:
@@ -44,6 +46,8 @@ std::string GobLang::valueToString(MemoryValue const &val)
         return std::to_string((const size_t)std::get<void *>(val.value));
     case Type::MemoryObj:
         return std::get<MemoryNode *>(val.value)->toString();
+    case Type::Char:
+        return std::string{std::get<char>(val.value)};
     case Type::NativeFunction:
         // c++ has no equality check for std::function
         return "Native function";

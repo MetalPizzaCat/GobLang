@@ -21,3 +21,21 @@ void MachineFunctions::createArrayOfSize(GobLang::Machine *machine)
         .value = machine->createArrayOfSize(std::get<int32_t>(sizeVal->value))});
     delete sizeVal;
 }
+
+void MachineFunctions::getSizeof(GobLang::Machine *machine)
+{
+    GobLang::MemoryValue *array = machine->getStackTopAndPop();
+    if (array->type != GobLang::Type::MemoryObj)
+    {
+        throw GobLang::RuntimeException("Attempted to get a size of a non array object");
+    }
+    if (GobLang::ArrayNode *arrayNode = dynamic_cast<GobLang::ArrayNode *>(std::get<GobLang::MemoryNode *>(array->value)); arrayNode != nullptr)
+    {
+        machine->pushToStack(GobLang::MemoryValue{.type = GobLang::Type::Int, .value = (int32_t)arrayNode->getSize()});
+    }
+    else if (GobLang::StringNode *strNode = dynamic_cast<GobLang::StringNode *>(std::get<GobLang::MemoryNode *>(array->value)); strNode != nullptr)
+    {
+        machine->pushToStack(GobLang::MemoryValue{.type = GobLang::Type::Int, .value = (int32_t)strNode->getSize()});
+    }
+    delete array;
+}

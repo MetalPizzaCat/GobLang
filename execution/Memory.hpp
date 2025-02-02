@@ -40,12 +40,12 @@ namespace GobLang
 
         /**
          * @brief Check if this memory value is equal to other value. This should be overriden to have type specific to avoid java situation
-         * 
-         * @param other 
-         * @return true 
-         * @return false 
+         *
+         * @param other
+         * @return true
+         * @return false
          */
-        virtual bool equalsTo(MemoryNode* other);
+        virtual bool equalsTo(MemoryNode *other);
 
         virtual std::string toString() { return "Memory object"; }
 
@@ -73,14 +73,20 @@ namespace GobLang
 
         std::string toString() override { return getString(); }
 
+        char getCharAt(size_t ind);
+
+        void setCharAt(char ch, size_t ind);
+
         /**
          * @brief Compare other memory node and return true if both contain same sequence of characters
-         * 
-         * @param other 
-         * @return true 
-         * @return false 
+         *
+         * @param other
+         * @return true
+         * @return false
          */
-        bool equalsTo(MemoryNode* other) override;
+        bool equalsTo(MemoryNode *other) override;
+
+        size_t getSize() const { return m_str.size(); }
 
         virtual ~StringNode() = default;
 

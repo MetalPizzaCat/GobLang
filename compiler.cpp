@@ -60,7 +60,7 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 int main()
 {
     // std::string code = R"CLM(let a = 90;a = 10;)CLM";
-    std::string code = R"CLM(let a = 0; while(a < 55){a = a + 1; if(a == 2){continue;}  print(a); if(a >= 4){break;}})CLM";
+    std::string code = R"CLM(str = "hello"; print(str); str[0] = 'j'; print(str); print(sizeof(str));)CLM";
     std::cout << "Source: " << code << std::endl;
     GobLang::Compiler::Parser comp(code);
     comp.parse();
@@ -70,9 +70,10 @@ int main()
     compiler.compile();
     compiler.printCode();
     compiler.generateByteCode();
-    //byteCodeToText(compiler.getByteCode().operations);
+    byteCodeToText(compiler.getByteCode().operations);
     std::cout << "Executing code" << std::endl;
     GobLang::Machine machine(compiler.getByteCode());
+    machine.addFunction(MachineFunctions::getSizeof, "sizeof");
     machine.addFunction(MachineFunctions::printLine, "print");
     machine.addFunction(MachineFunctions::createArrayOfSize, "array");
     machine.addFunction(test1, "test1");

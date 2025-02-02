@@ -16,6 +16,8 @@ const char *GobLang::typeToString(Type type)
         return "Object";
     case Type::NativeFunction:
         return "NativeFunction";
+    case Type::Char:
+        return "Char";
     }
     return nullptr;
 }

@@ -75,6 +75,21 @@ namespace GobLang::Compiler
         size_t m_id;
     };
 
+    class CharToken : public Token
+    {
+    public:
+        explicit CharToken(size_t row, size_t column, char ch) : Token(row, column), m_char(ch) {}
+
+        std::string toString() override
+        {
+            return "CHAR_" + std::to_string(m_char);
+        }
+        char getChar() const { return m_char; }
+
+    private:
+        char m_char;
+    };
+
     class IntToken : public Token
     {
     public:
@@ -146,7 +161,7 @@ namespace GobLang::Compiler
         size_t m_id;
     };
 
-        class BoolConstToken : public Token
+    class BoolConstToken : public Token
     {
     public:
         explicit BoolConstToken(size_t row, size_t column, bool value) : Token(row, column), m_value(value) {}

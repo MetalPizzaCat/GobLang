@@ -11,7 +11,7 @@ namespace GobLang
     class Machine;
     class MemoryNode;
     using FunctionValue = std::function<void(Machine *)>;
-    using Value = std::variant<bool, float, int32_t, void *, MemoryNode *, FunctionValue>;
+    using Value = std::variant<bool, char, float, int32_t, void *, MemoryNode *, FunctionValue>;
 
     struct MemoryValue
     {
@@ -21,19 +21,19 @@ namespace GobLang
 
     /**
      * @brief Compare two memory values and validate that both are equal
-     * 
-     * @param a 
-     * @param b 
-     * @return true 
-     * @return false 
+     *
+     * @param a
+     * @param b
+     * @return true
+     * @return false
      */
-    bool areEqual(MemoryValue const& a, MemoryValue const & b);
+    bool areEqual(MemoryValue const &a, MemoryValue const &b);
 
     /**
      * @brief Create a string representation of a given value
-     * 
-     * @param val 
-     * @return std::string 
+     *
+     * @param val
+     * @return std::string
      */
-    std::string valueToString(MemoryValue const& val);
+    std::string valueToString(MemoryValue const &val);
 }

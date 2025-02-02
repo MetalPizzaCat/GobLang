@@ -44,6 +44,9 @@ void GobLang::Machine::step()
     case Operation::PushConstInt:
         _pushConstInt();
         break;
+    case Operation::PushConstChar:
+        _pushConstChar();
+        break;
     case Operation::PushConstString:
         _pushConstString();
         break;
@@ -316,6 +319,12 @@ void GobLang::Machine::_pushConstInt()
     m_programCounter++;
 }
 
+void GobLang::Machine::_pushConstChar()
+{
+    m_operationStack.push_back(MemoryValue{.type = Type::Char, .value = (char)m_operations[m_programCounter + 1]});
+    m_programCounter++;
+}
+
 void GobLang::Machine::_pushConstString()
 {
     MemoryNode *root = m_memoryRoot;
@@ -358,6 +367,10 @@ void GobLang::Machine::_getArray()
     {
         m_operationStack.push_back(*arrNode->getItem(std::get<int32_t>(index.value)));
     }
+    else if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(array.value)); strNode != nullptr)
+    {
+        m_operationStack.push_back(MemoryValue{.type = Type::Char, .value = strNode->getCharAt(std::get<int32_t>(index.value))});
+    }
 }
 
 void GobLang::Machine::_setArray()
@@ -375,6 +388,10 @@ void GobLang::Machine::_setArray()
     if (ArrayNode *arrNode = dynamic_cast<ArrayNode *>(std::get<MemoryNode *>(array.value)); arrNode != nullptr)
     {
         arrNode->setItem(std::get<int32_t>(index.value), value);
+    }
+    else if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(array.value)); strNode != nullptr && value.type == Type::Char)
+    {
+        strNode->setCharAt(std::get<char>(value.value), std::get<int32_t>(index.value));
     }
 }
 
