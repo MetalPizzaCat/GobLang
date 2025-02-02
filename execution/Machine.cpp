@@ -10,7 +10,7 @@ GobLang::Machine::Machine(Compiler::ByteCode const &code)
 void GobLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
 
 {
-    m_variables[name] = MemoryValue{.type = Type::NativeFunction, .value = func};
+    m_globals[name] = MemoryValue{.type = Type::NativeFunction, .value = func};
 }
 void GobLang::Machine::step()
 {
@@ -34,6 +34,12 @@ void GobLang::Machine::step()
         break;
     case Operation::Get:
         _get();
+        break;
+    case Operation::GetLocal:
+        _getLocal();
+        break;
+    case Operation::SetLocal:
+        _setLocal();
         break;
     case Operation::PushConstInt:
         _pushConstInt();
@@ -70,6 +76,32 @@ void GobLang::Machine::step()
         break;
     }
     m_programCounter++;
+}
+
+void GobLang::Machine::printGlobalsInfo()
+{
+    for (std::map<std::string, MemoryValue>::iterator it = m_globals.begin(); it != m_globals.end(); it++)
+    {
+        std::cout << it->first << "(" << typeToString(it->second.type) << ")" << " = " << valueToString(it->second) << std::endl;
+    }
+}
+
+void GobLang::Machine::printVariablesInfo()
+{
+    std::cout << "Local:" << std::endl;
+    for (std::vector<MemoryValue>::iterator it = m_variables.begin(); it != m_variables.end(); it++)
+    {
+        std::cout << it - m_variables.begin() << ": " << typeToString(it->type) << " = " << valueToString(*it) << std::endl;
+    }
+}
+
+void GobLang::Machine::printStack()
+{
+    std::cout << "Stack:" << std::endl;
+    for (std::vector<MemoryValue>::reverse_iterator it = m_operationStack.rbegin(); it != m_operationStack.rend(); it++)
+    {
+        std::cout << it - m_operationStack.rbegin() << ": " << typeToString(it->type) << " = " << valueToString(*it) << std::endl;
+    }
 }
 
 GobLang::MemoryValue *GobLang::Machine::getStackTop()
@@ -116,9 +148,25 @@ void GobLang::Machine::pushToStack(MemoryValue const &val)
     m_operationStack.push_back(val);
 }
 
+void GobLang::Machine::setLocalVariableValue(size_t id, MemoryValue const &val)
+{
+    m_variables.resize(id + 1);
+
+    m_variables[id] = val;
+}
+
+GobLang::MemoryValue *GobLang::Machine::getLocalVariableValue(size_t id)
+{
+    if (m_variables.size() < id)
+    {
+        return nullptr;
+    }
+    return &m_variables[id];
+}
+
 void GobLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
 {
-    m_variables[name] = value;
+    m_globals[name] = value;
 }
 
 GobLang::ProgramAddressType GobLang::Machine::_getAddressFromByteCode(size_t start)
@@ -190,7 +238,7 @@ void GobLang::Machine::_set()
     StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
     if (memStr != nullptr)
     {
-        m_variables[memStr->getString()] = val;
+        m_globals[memStr->getString()] = val;
     }
 }
 
@@ -202,11 +250,34 @@ void GobLang::Machine::_get()
     StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
     if (memStr != nullptr)
     {
-        if (m_variables.count(memStr->getString()) < 1)
+        if (m_globals.count(memStr->getString()) < 1)
         {
             throw RuntimeException(std::string("Attempted to get variable '" + memStr->getString() + "', which doesn't exist"));
         }
-        m_operationStack.push_back(m_variables[memStr->getString()]);
+        m_operationStack.push_back(m_globals[memStr->getString()]);
+    }
+}
+
+void GobLang::Machine::_setLocal()
+{
+    MemoryValue val = m_operationStack[m_operationStack.size() - 1];
+    m_operationStack.pop_back();
+    m_programCounter++;
+    uint8_t id = m_operations[m_programCounter];
+    setLocalVariableValue(id, val);
+}
+
+void GobLang::Machine::_getLocal()
+{
+    m_programCounter++;
+    uint8_t id = m_operations[m_programCounter];
+    if (MemoryValue *val = getLocalVariableValue(id); val != nullptr)
+    {
+        m_operationStack.push_back(*val);
+    }
+    else
+    {
+        throw RuntimeException(std::string("Attempted to retrieve value of variable ") + std::to_string(id) + ", but no variable uses this id");
     }
 }
 

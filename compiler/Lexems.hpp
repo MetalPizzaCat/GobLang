@@ -8,6 +8,7 @@ namespace GobLang::Compiler
     {
         Int,
         Float,
+        Let,
         Function,
         Return,
         Null,
@@ -76,7 +77,8 @@ namespace GobLang::Compiler
         {"false", Keyword::False},
         {"if", Keyword::If},
         {"elif", Keyword::Elif},
-        {"else", Keyword::Else}};
+        {"else", Keyword::Else},
+        {"let", Keyword::Let}};
 
     /**
      * @brief Static array containing info about all operators used in the compiler
