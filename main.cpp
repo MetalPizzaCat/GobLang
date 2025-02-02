@@ -29,8 +29,8 @@ void runParsing(std::string const &code)
 int main(int, char **)
 {
     std::string code1 = "let a = 90; let b = 90; let c = a + b; if(a == b){ let d = c;} else {let h = a;} i = a";
-    std::string code2 = "if(a){print();} else {print();} if(a){print();} elif(b){print(40);} elif(b){print(40);} else {print();}";
-    runParsing(code1);
+    std::string code2 = "a = (2 + 2) * 3";
+    runParsing(code2);
     // runParsing(code2);
     return EXIT_SUCCESS;
 }

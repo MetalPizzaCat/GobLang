@@ -139,6 +139,16 @@ namespace GobLang
 
         void _eq();
 
+        void _neq();
+
+        void _less();
+
+        void _more();
+
+        void _lessOrEq();
+
+        void _moreOrEq();
+
         bool m_forcedEnd = false;
 
         MemoryNode *m_memoryRoot = new MemoryNode();

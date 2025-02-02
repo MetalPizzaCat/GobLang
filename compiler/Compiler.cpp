@@ -127,6 +127,19 @@ void GobLang::Compiler::Compiler::generateByteCode()
                 bytes.push_back((uint8_t)Operation::JumpIfNot);
                 delete cond;
             }
+            else if (WhileToken *whileTok = dynamic_cast<WhileToken *>(jmpToken); whileTok != nullptr)
+            {
+                if (it + 1 != m_code.end())
+                {
+                    m_jumpDestinations[whileTok->getReturnMark()] = m_byteCode.operations.size();
+                }
+                CompilerNode *cond = *stack.rbegin();
+                stack.pop_back();
+                // condition goes first and we don't care about anything else
+                bytes = cond->getOperationGetBytes();
+                bytes.push_back((uint8_t)Operation::JumpIfNot);
+                delete cond;
+            }
             else
             {
                 bytes.push_back((uint8_t)Operation::Jump);
@@ -515,7 +528,7 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
             else
             {
                 m_code.push_back(t);
-                if (dynamic_cast<IfToken *>(t) != nullptr)
+                if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
                 {
                     m_isInConditionHead = false;
                 }
@@ -543,6 +556,14 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
                 JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), elifPair->getMark());
                 m_compilerTokens.push_back(dest);
                 m_code.push_back(dest);
+            }
+            else if (WhileToken *whileToken = dynamic_cast<WhileToken *>(jump); whileToken != nullptr)
+            {
+                whileToken->setReturnMark(getMarkCounterAndAdvance());
+                GotoToken *loopJump = new GotoToken(sepToken->getRow(), sepToken->getColumn(), whileToken->getReturnMark());
+                m_jumps.push_back(loopJump);
+                m_compilerTokens.push_back(loopJump);
+                m_code.push_back(loopJump);
             }
             jump->setMark(getMarkCounterAndAdvance());
             JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), jump->getMark());
@@ -580,6 +601,15 @@ void GobLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, std::
         m_stack.push_back(ifTok);
         m_jumps.push_back(ifTok);
         m_compilerTokens.push_back(ifTok);
+        m_isInConditionHead = true;
+    }
+    break;
+    case Keyword::While:
+    {
+        WhileToken *whileTok = new WhileToken(keyToken->getRow(), keyToken->getColumn());
+        m_stack.push_back(whileTok);
+        m_jumps.push_back(whileTok);
+        m_compilerTokens.push_back(whileTok);
         m_isInConditionHead = true;
     }
     break;
