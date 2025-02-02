@@ -60,7 +60,7 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 int main()
 {
     // std::string code = R"CLM(let a = 90;a = 10;)CLM";
-    std::string code = R"CLM(let a = 0; while(a < 5){print(a); a = a + 1;})CLM";
+    std::string code = R"CLM(let a = 0; while(a < 55){a = a + 1; if(a == 2){continue;}  print(a); if(a >= 4){break;}})CLM";
     std::cout << "Source: " << code << std::endl;
     GobLang::Compiler::Parser comp(code);
     comp.parse();

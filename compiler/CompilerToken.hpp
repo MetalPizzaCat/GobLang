@@ -38,6 +38,20 @@ namespace GobLang::Compiler
         bool m_value;
     };
 
+    class LoopControlToken : public GotoToken
+    {
+    public:
+        explicit LoopControlToken(size_t row, size_t column, bool isBreak, WhileToken *loop) : GotoToken(row, column, 0), m_loop(loop), m_isBreak(isBreak) {}
+
+        std::string toString() override { return "GOTO_M" + std::to_string(m_isBreak ? m_loop->getMark() : m_loop->getReturnMark()); }
+
+        size_t getMark() const override { return m_isBreak ? m_loop->getMark() : m_loop->getReturnMark(); }
+
+    private:
+        WhileToken *m_loop;
+        bool m_isBreak;
+    };
+
     class LocalVarToken : public Token
     {
     public:

@@ -371,6 +371,18 @@ void GobLang::Compiler::Compiler::appendByteCode(std::vector<uint8_t> const &byt
     m_byteCode.operations.insert(m_byteCode.operations.end(), bytes.begin(), bytes.end());
 }
 
+GobLang::Compiler::WhileToken *GobLang::Compiler::Compiler::getCurrentLoop()
+{
+    for (std::vector<GotoToken *>::reverse_iterator it = m_jumps.rbegin(); it != m_jumps.rend(); it++)
+    {
+        if (WhileToken *tok = dynamic_cast<WhileToken *>(*it); tok != nullptr)
+        {
+            return tok;
+        }
+    }
+    return nullptr;
+}
+
 size_t GobLang::Compiler::Compiler::getMarkCounterAndAdvance()
 {
     return m_markCounter++;
@@ -638,6 +650,23 @@ void GobLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, std::
             throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Missing variable name in variable declaration");
         }
         m_isVariableDeclaration = true;
+        break;
+    case Keyword::Continue:
+
+        if (WhileToken *whileTok = getCurrentLoop(); whileTok != nullptr)
+        {
+            LoopControlToken *contTok = new LoopControlToken(keyToken->getRow(), keyToken->getColumn(), false, whileTok);
+            m_compilerTokens.push_back(contTok);
+            m_code.push_back(contTok);
+        }
+        break;
+    case Keyword::Break:
+        if (WhileToken *whileTok = getCurrentLoop(); whileTok != nullptr)
+        {
+            LoopControlToken *contTok = new LoopControlToken(keyToken->getRow(), keyToken->getColumn(), true, whileTok);
+            m_compilerTokens.push_back(contTok);
+            m_code.push_back(contTok);
+        }
         break;
     default:
         throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Invalid keyword encountered");
