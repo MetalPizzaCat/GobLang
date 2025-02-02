@@ -1,5 +1,4 @@
 #include "Array.hpp"
-
 #include "Value.hpp"
 GobLang::ArrayNode::ArrayNode(size_t size)
 {
@@ -20,4 +19,18 @@ GobLang::MemoryValue *GobLang::ArrayNode::getItem(size_t i)
     {
         return nullptr;
     }
+}
+
+std::string GobLang::ArrayNode::toString()
+{
+    std::string text = "[";
+    for (size_t i = 0; i < m_data.size(); i++)
+    {
+        text += valueToString(m_data[i]);
+        if (i != m_data.size() - 1)
+        {
+            text += ",";
+        }
+    }
+    return text + "]";
 }
