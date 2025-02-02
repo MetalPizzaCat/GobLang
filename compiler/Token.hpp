@@ -122,6 +122,18 @@ namespace GobLang::Compiler
         bool m_elif;
     };
 
+    class WhileToken : public GotoToken
+    {
+    public:
+        explicit WhileToken(size_t row, size_t column, size_t returnMark = 0, size_t mark = 0) : GotoToken(row, column, mark), m_returnMark(returnMark) {}
+        std::string toString() override;
+        size_t getReturnMark() const { return m_returnMark; }
+        void setReturnMark(size_t mark) { m_returnMark = mark; }
+
+    private:
+        size_t m_returnMark;
+    };
+
     class JumpDestinationToken : public Token
     {
     public:

@@ -76,3 +76,8 @@ std::string GobLang::Compiler::JumpDestinationToken::toString()
 {
     return "M" + std::to_string(m_id) + ":";
 }
+
+std::string GobLang::Compiler::WhileToken::toString()
+{
+    return "WHILE_M" + std::to_string(m_returnMark) + "_THEN_M" + std::to_string(getMark());
+}

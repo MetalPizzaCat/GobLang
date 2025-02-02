@@ -27,6 +27,11 @@ namespace GobLang
         PushTrue,
         PushFalse,
         Equals,
+        Less,
+        More,
+        LessOrEq,
+        MoreOrEq,
+        NotEq,
         /**
          * @brief Unconditionally jump. Uses sizeof(size_t) bytes to get the address to jump to
          */
@@ -64,6 +69,11 @@ namespace GobLang
         OperationData{.op = Operation::PushTrue, .text = "push_true", .argCount = 0},
         OperationData{.op = Operation::PushFalse, .text = "push_false", .argCount = 0},
         OperationData{.op = Operation::Equals, .text = "eq", .argCount = 0},
+        OperationData{.op = Operation::NotEq, .text = "neq", .argCount = 0},
+        OperationData{.op = Operation::More, .text = "eq", .argCount = 0},
+        OperationData{.op = Operation::Less, .text = "eq", .argCount = 0},
+        OperationData{.op = Operation::MoreOrEq, .text = "eq", .argCount = 0},
+        OperationData{.op = Operation::LessOrEq, .text = "eq", .argCount = 0},
         OperationData{.op = Operation::Jump, .text = "goto", .argCount = sizeof(size_t)},
         OperationData{.op = Operation::JumpIfNot, .text = "goto_if_not", .argCount = sizeof(size_t)},
         OperationData{.op = Operation::End, .text = "hlt", .argCount = 0},
