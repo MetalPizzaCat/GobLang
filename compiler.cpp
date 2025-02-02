@@ -62,33 +62,7 @@ int main()
     // std::string code = R"CLM(let a = 90;a = 10;)CLM";
     std::string code = R"CLM(str = "hello"; print(str); str[0] = 'j'; print(str); print(sizeof(str));)CLM";
     std::cout << "Source: " << code << std::endl;
-    GobLang::Compiler::Parser comp(code);
-    comp.parse();
-    comp.printInfoTable();
-    comp.printCode();
-    GobLang::Compiler::Compiler compiler(comp);
-    compiler.compile();
-    compiler.printCode();
-    compiler.generateByteCode();
-    byteCodeToText(compiler.getByteCode().operations);
-    std::cout << "Executing code" << std::endl;
-    GobLang::Machine machine(compiler.getByteCode());
-    machine.addFunction(MachineFunctions::getSizeof, "sizeof");
-    machine.addFunction(MachineFunctions::printLine, "print");
-    machine.addFunction(MachineFunctions::createArrayOfSize, "array");
-    machine.addFunction(test1, "test1");
-    std::vector<size_t> debugPoints = {};
-    while (!machine.isAtTheEnd())
-    {
-        if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
-        {
-            std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << std::endl;
-            machine.printGlobalsInfo();
-            machine.printVariablesInfo();
-            machine.printStack();
-        }
-        machine.step();
-    }
+    
 
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
