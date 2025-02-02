@@ -59,21 +59,21 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 }
 int main()
 {
-    // std::string code = "a = 2; if(a) { print(a); print(b)} elif(c) {test1()} else {print(0)}";
-    std::string code = R"CLM(a = array(3);
-a[0] = 6;
-a[2] = 9;
-c = a[2];
-print(a[0]);
-if(a[0] == 6) {
-    print("you stupid");
-    if (c == a[2]){
-        print(a[1]);
-        }
-}
-elif (a[0] == 0) {
-    print("lmao");
-})CLM";
+    // std::string code = R"CLM(let a = 90;a = 10;)CLM";
+    std::string code = R"CLM(let a = 90;
+   
+    a = 10;
+    d = "this is global";
+    let b = 90;
+    print(a == b);
+    let c = a + b;
+    if(a == b){
+        let d = c;
+        print(d + d);
+    } else {
+        let d = a;
+    }
+    print(d);)CLM";
     std::cout << "Source: " << code << std::endl;
     GobLang::Compiler::Parser comp(code);
     comp.parse();
@@ -83,17 +83,25 @@ elif (a[0] == 0) {
     compiler.compile();
     compiler.printCode();
     compiler.generateByteCode();
-    byteCodeToText(compiler.getByteCode().operations);
+    //byteCodeToText(compiler.getByteCode().operations);
     std::cout << "Executing code" << std::endl;
     GobLang::Machine machine(compiler.getByteCode());
-    machine.createVariable("piss", GobLang::MemoryValue{.type = GobLang::Type::Int, .value = 69});
     machine.addFunction(MachineFunctions::printLine, "print");
     machine.addFunction(MachineFunctions::createArrayOfSize, "array");
     machine.addFunction(test1, "test1");
+    std::vector<size_t> debugPoints = {};
     while (!machine.isAtTheEnd())
     {
+        if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
+        {
+            std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << std::endl;
+            machine.printGlobalsInfo();
+            machine.printVariablesInfo();
+            machine.printStack();
+        }
         machine.step();
     }
+
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }
