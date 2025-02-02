@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <variant>
+#include <string>
 #include "Type.hpp"
 
 namespace GobLang
@@ -27,4 +28,12 @@ namespace GobLang
      * @return false 
      */
     bool areEqual(MemoryValue const& a, MemoryValue const & b);
+
+    /**
+     * @brief Create a string representation of a given value
+     * 
+     * @param val 
+     * @return std::string 
+     */
+    std::string valueToString(MemoryValue const& val);
 }
