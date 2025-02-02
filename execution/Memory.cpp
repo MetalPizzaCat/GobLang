@@ -24,6 +24,16 @@ bool GobLang::MemoryNode::equalsTo(MemoryNode *other)
     return other == this;
 }
 
+char GobLang::StringNode::getCharAt(size_t ind)
+{
+    return m_str[ind];
+}
+
+void GobLang::StringNode::setCharAt(char ch, size_t ind)
+{
+    m_str[ind] = ch;
+}
+
 bool GobLang::StringNode::equalsTo(MemoryNode *other)
 {
     if(StringNode* otherStr = dynamic_cast<StringNode*>(other); otherStr != nullptr)

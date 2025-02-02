@@ -29,7 +29,10 @@ void GobLang::Compiler::Compiler::compile()
                 m_code.push_back(*it);
             }
         }
-        else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr || dynamic_cast<BoolConstToken *>(*it) != nullptr)
+        else if (dynamic_cast<IntToken *>(*it) != nullptr ||
+                 dynamic_cast<StringToken *>(*it) != nullptr ||
+                 dynamic_cast<BoolConstToken *>(*it) != nullptr ||
+                 dynamic_cast<CharToken *>(*it) != nullptr)
         {
             m_code.push_back(*it);
             continue;
@@ -96,7 +99,7 @@ void GobLang::Compiler::Compiler::generateByteCode()
             stack.push_back(new OperationCompilerNode(
                 {(uint8_t)(boolToken->getValue() ? Operation::PushTrue : Operation::PushFalse)}, isDestination, destMark));
         }
-        else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr)
+        else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr || dynamic_cast<CharToken *>(*it) != nullptr)
         {
             stack.push_back(new OperationCompilerNode(generateGetByteCode(*it), isDestination, destMark));
         }
@@ -335,6 +338,11 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
     {
         out.push_back((uint8_t)GobLang::Operation::GetLocal);
         out.push_back((uint8_t)localVarToken->getId());
+    }
+    else if (CharToken *chTok = dynamic_cast<CharToken *>(token); chTok != nullptr)
+    {
+        out.push_back((uint8_t)Operation::PushConstChar);
+        out.push_back((uint8_t)chTok->getChar());
     }
     return out;
 }
