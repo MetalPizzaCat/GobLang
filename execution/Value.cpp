@@ -1,6 +1,6 @@
 #include "Value.hpp"
 #include "Memory.hpp"
-
+#include <iostream>
 bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
 {
     if (a.type != b.type)
@@ -26,4 +26,27 @@ bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
         return false;
     }
     return false;
+}
+
+std::string GobLang::valueToString(MemoryValue const &val)
+{
+    switch (val.type)
+    {
+    case Type::Null:
+        return "null";
+    case Type::Bool:
+        return std::get<bool>(val.value) ? "true" : "false";
+    case Type::Number:
+        return std::to_string(std::get<float>(val.value));
+    case Type::Int:
+        return std::to_string(std::get<int32_t>(val.value));
+    case Type::UserData:
+        return std::to_string((const size_t)std::get<void *>(val.value));
+    case Type::MemoryObj:
+        return std::get<MemoryNode *>(val.value)->toString();
+    case Type::NativeFunction:
+        // c++ has no equality check for std::function
+        return "Native function";
+    }
+    return "Invalid datatype";
 }

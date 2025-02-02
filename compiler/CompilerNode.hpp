@@ -51,6 +51,14 @@ namespace GobLang::Compiler
         Token *m_token;
     };
 
+    class LocalVarTokenCompilerNode : public TokenCompilerNode
+    {
+    public:
+        explicit LocalVarTokenCompilerNode(Token *token,
+                                           bool isDestination,
+                                           size_t destinationId) : TokenCompilerNode(token, isDestination, destinationId) {}
+    };
+
     class ArrayCompilerNode : public CompilerNode
     {
     public:

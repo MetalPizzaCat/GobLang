@@ -12,6 +12,8 @@ namespace GobLang
         Call,
         Set,
         Get,
+        GetLocal,
+        SetLocal,
         /**
          * @brief Get value of the nth element of an array
          */
@@ -51,8 +53,10 @@ namespace GobLang
         OperationData{.op = Operation::Add, .text = "add", .argCount = 0},
         OperationData{.op = Operation::Sub, .text = "sub", .argCount = 0},
         OperationData{.op = Operation::Call, .text = "call", .argCount = 0},
-        OperationData{.op = Operation::Set, .text = "setvar", .argCount = 0},
-        OperationData{.op = Operation::Get, .text = "getvar", .argCount = 0},
+        OperationData{.op = Operation::Set, .text = "set_global", .argCount = 0},
+        OperationData{.op = Operation::Get, .text = "get_global", .argCount = 0},
+        OperationData{.op = Operation::SetLocal, .text = "set", .argCount = 1},
+        OperationData{.op = Operation::GetLocal, .text = "get", .argCount = 1},
         OperationData{.op = Operation::SetArray, .text = "set_arr", .argCount = 0},
         OperationData{.op = Operation::GetArray, .text = "get_arr", .argCount = 0},
         OperationData{.op = Operation::PushConstInt, .text = "push_int", .argCount = 1},
@@ -62,5 +66,6 @@ namespace GobLang
         OperationData{.op = Operation::Equals, .text = "eq", .argCount = 0},
         OperationData{.op = Operation::Jump, .text = "goto", .argCount = sizeof(size_t)},
         OperationData{.op = Operation::JumpIfNot, .text = "goto_if_not", .argCount = sizeof(size_t)},
-        OperationData{.op = Operation::End, .text = "hlt", .argCount = 0}};
+        OperationData{.op = Operation::End, .text = "hlt", .argCount = 0},
+    };
 } // namespace SimpleLang

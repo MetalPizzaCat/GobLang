@@ -14,6 +14,8 @@ namespace GobLang
         void setItem(size_t i, MemoryValue const &item);
         MemoryValue *getItem(size_t i);
 
+        std::string toString() override;
+
     private:
         std::vector<MemoryValue> m_data;
     };

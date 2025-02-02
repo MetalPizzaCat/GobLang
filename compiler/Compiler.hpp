@@ -56,17 +56,19 @@ namespace GobLang::Compiler
 
         static std::vector<uint8_t> generateSetByteCode(Token *token);
 
-        //void appendByteCode(std::vector<uint8_t> const &code);
+        // void appendByteCode(std::vector<uint8_t> const &code);
 
         /**
          * @brief Generate and add byte code for the given compiler node. If node has mark attached this mark will be updated
-         * 
+         *
          * @param node Node to process
          * @param getter If true getter code will be generated, otherwise false
          */
         void appendCompilerNode(CompilerNode *node, bool getter);
 
         void addNewMarkReplacement(size_t mark, size_t address);
+
+        void appendByteCode(std::vector<uint8_t> const& bytes);
 
         ByteCode getByteCode() const { return m_byteCode; }
 
@@ -75,6 +77,11 @@ namespace GobLang::Compiler
         ~Compiler();
 
     private:
+        bool _doesVariableExist(size_t stringId);
+        int32_t _getLocalVariableAccessId(size_t id);
+        void _appendVariableBlock();
+        void _popVariableBlock();
+        void _appendVariable(size_t stringId);
         void _placeAddressForMark(size_t mark, size_t address, bool erase);
         void _compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it);
 
@@ -91,6 +98,9 @@ namespace GobLang::Compiler
         std::vector<uint8_t> m_bytes;
 
         std::vector<Token *> m_stack;
+        std::vector<SeparatorToken *> m_blockDepthStack;
+
+        std::vector<std::vector<size_t>> m_blockVariables = {{}};
 
         std::vector<GotoToken *> m_jumps;
 
@@ -100,7 +110,7 @@ namespace GobLang::Compiler
          *
          */
         std::map<size_t, std::vector<size_t>> m_jumpMarks;
-        
+
         std::map<size_t, size_t> m_jumpDestinations;
         /**
          * @brief Array for storing all tokens created during the conversion process, used only to be able to delete them once the process ends
@@ -115,6 +125,8 @@ namespace GobLang::Compiler
 
         bool m_isInConditionHead = false;
         size_t m_markCounter = 0;
+
+        bool m_isVariableDeclaration = false;
     };
 
 }

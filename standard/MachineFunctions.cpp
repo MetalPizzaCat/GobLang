@@ -9,30 +9,7 @@ void MachineFunctions::printLine(GobLang::Machine *machine)
     {
         return;
     }
-    switch (v->type)
-    {
-    case GobLang::Type::Null:
-        std::cout << "null" << std::endl;
-        break;
-    case GobLang::Type::Number:
-        std::cout << std::get<float>(v->value) << std::endl;
-        break;
-    case GobLang::Type::Bool:
-        std::cout << (std::get<bool>(v->value) ? "true" : "false") << std::endl;
-        break;
-    case GobLang::Type::Int:
-        std::cout << std::get<int32_t>(v->value) << std::endl;
-        break;
-    case GobLang::Type::UserData:
-        std::cerr << "Invalid data type" << std::endl;
-        break;
-    case GobLang::Type::MemoryObj:
-        std::cerr << std::get<GobLang::MemoryNode *>(v->value)->toString() << std::endl;
-        break;
-    case GobLang::Type::NativeFunction:
-        std::cerr << "Native function: " << &std::get<GobLang::FunctionValue>(v->value) << std::endl;
-        break;
-    }
+    std::cout << GobLang::valueToString(*v) << std::endl;
     delete v;
 }
 

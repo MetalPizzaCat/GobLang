@@ -37,4 +37,16 @@ namespace GobLang::Compiler
     private:
         bool m_value;
     };
+
+    class LocalVarToken : public Token
+    {
+    public:
+        explicit LocalVarToken(size_t row, size_t column, size_t id) : Token(row, column), m_varId(id) {}
+        size_t getId() const { return m_varId; }
+
+        std::string toString() override { return "LOC" + std::to_string(m_varId); }
+
+    private:
+        size_t m_varId;
+    };
 }

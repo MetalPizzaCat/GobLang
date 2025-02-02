@@ -8,7 +8,28 @@ void GobLang::Compiler::Compiler::compile()
 {
     for (std::vector<Token *>::const_iterator it = m_parser.getTokens().begin(); it != m_parser.getTokens().end(); it++)
     {
-        if (dynamic_cast<IdToken *>(*it) != nullptr || dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr)
+        if (IdToken *id = dynamic_cast<IdToken *>(*it); id != nullptr)
+        {
+            if (m_isVariableDeclaration)
+            {
+                _appendVariable(id->getId());
+                LocalVarToken *local = new LocalVarToken(id->getRow(), id->getColumn(), _getLocalVariableAccessId(id->getId()));
+                m_code.push_back(local);
+                m_compilerTokens.push_back(local);
+                m_isVariableDeclaration = false;
+            }
+            else if (int32_t varId = _getLocalVariableAccessId(id->getId()); varId != -1)
+            {
+                LocalVarToken *local = new LocalVarToken(id->getRow(), id->getColumn(), varId);
+                m_code.push_back(local);
+                m_compilerTokens.push_back(local);
+            }
+            else
+            {
+                m_code.push_back(*it);
+            }
+        }
+        else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr)
         {
             m_code.push_back(*it);
             continue;
@@ -58,7 +79,6 @@ void GobLang::Compiler::Compiler::generateByteCode()
             {
                 destMark = dest->getId();
                 isDestination = true;
-                std::cout << "Makred " << (*it)->toString() << std::endl;
             }
         }
         if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*it); sepTok != nullptr && sepTok->getSeparator() == Separator::End)
@@ -84,6 +104,10 @@ void GobLang::Compiler::Compiler::generateByteCode()
         {
             stack.push_back(new TokenCompilerNode(*it, isDestination, destMark));
         }
+        else if (dynamic_cast<LocalVarToken *>(*it) != nullptr)
+        {
+            stack.push_back(new LocalVarTokenCompilerNode(*it, isDestination, destMark));
+        }
         else if (JumpDestinationToken *destToken = dynamic_cast<JumpDestinationToken *>(*it); destToken != nullptr)
         {
             if (it + 1 != m_code.end())
@@ -107,7 +131,7 @@ void GobLang::Compiler::Compiler::generateByteCode()
             {
                 bytes.push_back((uint8_t)Operation::Jump);
             }
-            m_byteCode.operations.insert(m_byteCode.operations.end(), bytes.begin(), bytes.end());
+            appendByteCode(bytes);
             addNewMarkReplacement(jmpToken->getMark(), m_byteCode.operations.size());
             for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
             {
@@ -146,15 +170,23 @@ void GobLang::Compiler::Compiler::generateByteCode()
             stack.pop_back();
             if (opToken->getOperator() == Operator::Assign)
             {
-                appendCompilerNode(setter, false);
-                appendCompilerNode(valueToSet, true);
-                if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
+                if (LocalVarTokenCompilerNode *localNode = dynamic_cast<LocalVarTokenCompilerNode *>(setter); localNode != nullptr)
                 {
-                    m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
+                    appendCompilerNode(valueToSet, true);
+                    appendByteCode(localNode->getOperationSetBytes());
                 }
                 else
                 {
-                    m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
+                    appendCompilerNode(setter, false);
+                    appendCompilerNode(valueToSet, true);
+                    if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
+                    {
+                        m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
+                    }
+                    else
+                    {
+                        m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
+                    }
                 }
             }
             else
@@ -275,6 +307,11 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
     {
         out.push_back((uint8_t)GobLang::Operation::GetArray);
     }
+    else if (LocalVarToken *localVarToken = dynamic_cast<LocalVarToken *>(token); localVarToken != nullptr)
+    {
+        out.push_back((uint8_t)GobLang::Operation::GetLocal);
+        out.push_back((uint8_t)localVarToken->getId());
+    }
     return out;
 }
 
@@ -286,10 +323,11 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateSetByteCode(Token *tok
         out.push_back((uint8_t)GobLang::Operation::PushConstString);
         out.push_back((uint8_t)idToken->getId());
     }
-    // else if (ArrayIndexToken *arrToken = dynamic_cast<ArrayIndexToken *>(token); idToken != nullptr)
-    // {
-    //     out.push_back((uint8_t)SimpleLang::Operation::SetArray);
-    // }
+    else if (LocalVarToken *localVarToken = dynamic_cast<LocalVarToken *>(token); localVarToken != nullptr)
+    {
+        out.push_back((uint8_t)GobLang::Operation::SetLocal);
+        out.push_back((uint8_t)localVarToken->getId());
+    }
     return out;
 }
 
@@ -315,6 +353,11 @@ void GobLang::Compiler::Compiler::addNewMarkReplacement(size_t mark, size_t addr
     }
 }
 
+void GobLang::Compiler::Compiler::appendByteCode(std::vector<uint8_t> const &bytes)
+{
+    m_byteCode.operations.insert(m_byteCode.operations.end(), bytes.begin(), bytes.end());
+}
+
 size_t GobLang::Compiler::Compiler::getMarkCounterAndAdvance()
 {
     return m_markCounter++;
@@ -326,6 +369,52 @@ GobLang::Compiler::Compiler::~Compiler()
     {
         delete m_compilerTokens[i];
     }
+}
+
+bool GobLang::Compiler::Compiler::_doesVariableExist(size_t stringId)
+{
+    for (std::vector<std::vector<size_t>>::iterator it = m_blockVariables.begin(); it != m_blockVariables.end(); it++)
+    {
+        if (std::find(it->begin(), it->end(), stringId) != it->end())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t GobLang::Compiler::Compiler::_getLocalVariableAccessId(size_t id)
+{
+    size_t curr = 0;
+    bool found = false;
+    for (std::vector<std::vector<size_t>>::reverse_iterator it = m_blockVariables.rbegin(); it != m_blockVariables.rend(); it++)
+    {
+        if (found)
+        {
+            curr += it->size();
+        }
+        else if (std::vector<size_t>::iterator localIt = std::find(it->begin(), it->end(), id); localIt != it->end())
+        {
+            found = true;
+            curr = localIt - it->begin();
+        }
+    }
+    return found ? (int32_t)curr : -1;
+}
+
+void GobLang::Compiler::Compiler::_appendVariableBlock()
+{
+    m_blockVariables.push_back({});
+}
+
+void GobLang::Compiler::Compiler::_popVariableBlock()
+{
+    m_blockVariables.pop_back();
+}
+
+void GobLang::Compiler::Compiler::_appendVariable(size_t stringId)
+{
+    m_blockVariables.rbegin()->push_back(stringId);
 }
 
 void GobLang::Compiler::Compiler::_placeAddressForMark(size_t mark, size_t address, bool erase)
@@ -434,8 +523,10 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
         }
         break;
     case Separator::BlockOpen:
+        _appendVariableBlock();
         break;
     case Separator::BlockClose:
+        _popVariableBlock();
         dumpStack();
         if (!m_jumps.empty())
         {
@@ -510,8 +601,14 @@ void GobLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, std::
         m_stack.push_back(boolTok);
         m_compilerTokens.push_back(boolTok);
     }
-
     break;
+    case Keyword::Let:
+        if (it + 1 == m_parser.getTokens().end() || dynamic_cast<IdToken *>(*(it + 1)) == nullptr)
+        {
+            throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Missing variable name in variable declaration");
+        }
+        m_isVariableDeclaration = true;
+        break;
     default:
         throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Invalid keyword encountered");
         break;
