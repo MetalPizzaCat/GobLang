@@ -61,9 +61,13 @@ int main()
 {
     // std::string code = R"CLM(let a = 90;a = 10;)CLM";
     std::string code = R"CLM(let a = 90;
-   
     a = 10;
     d = "this is global";
+    let arrTest = array(8);
+    arrTest[2] = d;
+    arrTest[0] = 2;
+    arrTest[1] = array(3);
+    arrTest[1][1] = "Depth";
     let b = 90;
     print(a == b);
     let c = a + b;
@@ -73,7 +77,8 @@ int main()
     } else {
         let d = a;
     }
-    print(d);)CLM";
+    print(d);
+    print(arrTest))CLM";
     std::cout << "Source: " << code << std::endl;
     GobLang::Compiler::Parser comp(code);
     comp.parse();
