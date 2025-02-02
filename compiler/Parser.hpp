@@ -61,6 +61,8 @@ namespace GobLang::Compiler
 
         StringToken *parseString();
 
+        BoolConstToken * parseBool();
+
         SpecialCharacter const*parseSpecialCharacter(std::string::iterator const& it);
 
         /**

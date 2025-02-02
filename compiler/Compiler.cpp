@@ -29,7 +29,7 @@ void GobLang::Compiler::Compiler::compile()
                 m_code.push_back(*it);
             }
         }
-        else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr)
+        else if (dynamic_cast<IntToken *>(*it) != nullptr || dynamic_cast<StringToken *>(*it) != nullptr || dynamic_cast<BoolConstToken *>(*it) != nullptr)
         {
             m_code.push_back(*it);
             continue;
@@ -483,6 +483,10 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
                 m_stack.push_back(token);
                 m_functionCalls.push_back(token);
             }
+            else
+            {
+                m_stack.push_back(*it);
+            }
         }
         break;
     case Separator::Comma:
@@ -635,14 +639,6 @@ void GobLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, std::
             throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Else keyword must be followed by a code block");
         }
 
-        break;
-    case Keyword::True:
-    case Keyword::False:
-    {
-        BoolConstToken *boolTok = new BoolConstToken(keyToken->getRow(), keyToken->getColumn(), keyToken->getKeyword() == Keyword::True);
-        m_stack.push_back(boolTok);
-        m_compilerTokens.push_back(boolTok);
-    }
     break;
     case Keyword::Let:
         if (it + 1 == m_parser.getTokens().end() || dynamic_cast<IdToken *>(*(it + 1)) == nullptr)

@@ -17,11 +17,13 @@ void GobLang::Compiler::Parser::skipWhitespace()
 void GobLang::Compiler::Parser::parse()
 {
     std::vector<std::function<Token *(void)>> parsers = {
+        std::bind(&Parser::parseBool, this),
+        std::bind(&Parser::parseOperators, this),
         std::bind(&Parser::parseKeywords, this),
         std::bind(&Parser::parseInt, this),
         std::bind(&Parser::parseString, this),
         std::bind(&Parser::parseId, this),
-        std::bind(&Parser::parseOperators, this),
+        
         std::bind(&Parser::parseSeparators, this),
     };
 
@@ -207,7 +209,7 @@ GobLang::Compiler::StringToken *GobLang::Compiler::Parser::parseString()
 
     if (*m_rowIt != '"')
     {
-        
+
         return nullptr;
     }
     // we don't need to store opening and closing marks
@@ -260,6 +262,32 @@ GobLang::Compiler::SpecialCharacter const *GobLang::Compiler::Parser::parseSpeci
             return true;
         });
     return charIt == SpecialCharacters.end() ? nullptr : &*charIt;
+}
+
+GobLang::Compiler::BoolConstToken *GobLang::Compiler::Parser::parseBool()
+{
+    std::map<std::string, bool>::const_iterator it = std::find_if(
+        Booleans.begin(),
+        Booleans.end(),
+        [this](std::pair<std::string, bool> const &boo)
+        {
+            for (size_t i = 0; i < boo.first.size(); i++)
+            {
+                if (*(m_rowIt + i) != boo.first[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        });
+    if (it == Booleans.end())
+    {
+        return nullptr;
+    }
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(it->first.size());
+    return new BoolConstToken(row, column, it->second);
 }
 
 void GobLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)
