@@ -177,6 +177,17 @@ void GobLang::Compiler::Compiler::generateByteCode()
         }
         else if (OperatorToken *opToken = dynamic_cast<OperatorToken *>(*it); opToken != nullptr)
         {
+            if (opToken->getOperator() == Operator::Not)
+            {
+                // not only uses one argument
+                CompilerNode *value = stack[stack.size() - 1];
+                stack.pop_back();
+                std::vector<uint8_t> opBytes = value->getOperationGetBytes();
+                opBytes.push_back((uint8_t)opToken->getOperation());
+                stack.push_back(new OperationCompilerNode(opBytes, isDestination, destMark));
+                delete value;
+                continue;
+            }
             CompilerNode *setter = stack[stack.size() - 2];
             CompilerNode *valueToSet = stack[stack.size() - 1];
             stack.pop_back();
@@ -540,13 +551,16 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
                 }
                 m_code.push_back(*m_functionCalls.rbegin());
                 m_functionCalls.pop_back();
+                break;
             }
             else
             {
+                std::cout << t->toString() << std::endl;
                 m_code.push_back(t);
                 if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
                 {
                     m_isInConditionHead = false;
+                    break;
                 }
             }
         }
@@ -639,7 +653,7 @@ void GobLang::Compiler::Compiler::_compileKeywords(KeywordToken *keyToken, std::
             throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Else keyword must be followed by a code block");
         }
 
-    break;
+        break;
     case Keyword::Let:
         if (it + 1 == m_parser.getTokens().end() || dynamic_cast<IdToken *>(*(it + 1)) == nullptr)
         {

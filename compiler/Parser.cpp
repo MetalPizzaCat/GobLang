@@ -62,7 +62,7 @@ bool GobLang::Compiler::Parser::tryKeyword(std::string const &keyword)
 
 bool GobLang::Compiler::Parser::tryOperator(OperatorData const &op)
 {
-    for (size_t i = 0; i < strnlen(op.symbol, 2); i++)
+    for (size_t i = 0; i < strnlen(op.symbol, 3); i++)
     {
         if ((m_rowIt + i) == getEndOfTheLine() || *(m_rowIt + i) != op.symbol[i])
         {
@@ -99,7 +99,7 @@ GobLang::Compiler::OperatorToken *GobLang::Compiler::Parser::parseOperators()
         {
             size_t row = getLineNumber();
             size_t column = getColumnNumber();
-            size_t offset = strnlen(it->symbol, 2);
+            size_t offset = strnlen(it->symbol, 3);
             advanceRowIterator(offset);
             return new OperatorToken(row,
                                      column,

@@ -28,9 +28,9 @@ void runParsing(std::string const &code)
 }
 int main(int, char **)
 {
-    std::string code1 = "res = a || b && c";
+    std::string code1 = "res = !(fun(9) || h) and 2;";
     std::string code2 = "res = a && (b < 2 or b > 5)";
     runParsing(code1);
-    runParsing(code2);
+    //runParsing(code2);
     return EXIT_SUCCESS;
 }
