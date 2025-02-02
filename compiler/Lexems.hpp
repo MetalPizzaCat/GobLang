@@ -78,8 +78,6 @@ namespace GobLang::Compiler
         {"func", Keyword::Function},
         {"return", Keyword::Return},
         {"null", Keyword::Null},
-        {"true", Keyword::True},
-        {"false", Keyword::False},
         {"if", Keyword::If},
         {"while", Keyword::While},
         {"continue", Keyword::Continue},
@@ -88,6 +86,12 @@ namespace GobLang::Compiler
         {"else", Keyword::Else},
         {"let", Keyword::Let}};
 
+    static const std::map<std::string, bool> Booleans = {
+        {"true", true},
+        {"false", false},
+        {"True", true},
+        {"False", false}};
+        
     /**
      * @brief Static array containing info about all operators used in the compiler
      *
@@ -97,6 +101,7 @@ namespace GobLang::Compiler
         OperatorData{.symbol = ">=", .op = Operator::LessEq, .priority = 5, .operation = Operation::MoreOrEq},
         OperatorData{.symbol = "<=", .op = Operator::MoreEq, .priority = 5, .operation = Operation::LessOrEq},
         OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 2, .operation = Operation::Set},
+        OperatorData{.symbol = "!", .op = Operator::Not, .priority = 5, .operation = Operation::Not},
         OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::NotEq},
         OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::Less},
         OperatorData{.symbol = ">", .op = Operator::More, .priority = 5, .operation = Operation::More},
@@ -104,10 +109,10 @@ namespace GobLang::Compiler
         OperatorData{.symbol = "-", .op = Operator::Sub, .priority = 6, .operation = Operation::Sub},
         OperatorData{.symbol = "*", .op = Operator::Mul, .priority = 7, .operation = Operation::None},
         OperatorData{.symbol = "/", .op = Operator::Div, .priority = 7, .operation = Operation::None},
-        OperatorData{.symbol = "and", .op = Operator::And, .priority = 2, .operation = Operation::None},
-        OperatorData{.symbol = "&&", .op = Operator::And, .priority = 2, .operation = Operation::None},
-        OperatorData{.symbol = "or", .op = Operator::Or, .priority = 2, .operation = Operation::None},
-        OperatorData{.symbol = "||", .op = Operator::Or, .priority = 2, .operation = Operation::None}};
+        OperatorData{.symbol = "and", .op = Operator::And, .priority = 4, .operation = Operation::Add},
+        OperatorData{.symbol = "&&", .op = Operator::And, .priority = 4, .operation = Operation::And},
+        OperatorData{.symbol = "or", .op = Operator::Or, .priority = 3, .operation = Operation::Or},
+        OperatorData{.symbol = "||", .op = Operator::Or, .priority = 3, .operation = Operation::Or}};
 
     /**
      * @brief Static array containing info about all separators and similar elements used in the language

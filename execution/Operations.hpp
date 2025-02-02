@@ -32,6 +32,9 @@ namespace GobLang
         LessOrEq,
         MoreOrEq,
         NotEq,
+        And,
+        Or,
+        Not,
         /**
          * @brief Unconditionally jump. Uses sizeof(size_t) bytes to get the address to jump to
          */
