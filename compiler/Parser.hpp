@@ -141,6 +141,9 @@ namespace GobLang::Compiler
         const char *what() const throw() override;
         ParsingError(size_t row, size_t column, std::string const &msg);
 
+        size_t getRow() const { return m_row; }
+        size_t getColumn() const { return m_column; }
+
     private:
         std::string m_full;
         size_t m_row;

@@ -563,7 +563,6 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
             }
             else
             {
-                std::cout << t->toString() << std::endl;
                 m_code.push_back(t);
                 if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
                 {

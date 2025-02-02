@@ -3,6 +3,8 @@ project(goblang VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
+add_compile_definitions(GOB_LANG_VERSION_MINOR=1)
 list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Type.cpp
     execution/Operations.hpp
