@@ -100,7 +100,7 @@ namespace GobLang::Compiler
         OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5, .operation = Operation::Equals},
         OperatorData{.symbol = ">=", .op = Operator::LessEq, .priority = 5, .operation = Operation::MoreOrEq},
         OperatorData{.symbol = "<=", .op = Operator::MoreEq, .priority = 5, .operation = Operation::LessOrEq},
-        OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 2, .operation = Operation::Set},
+        OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 1, .operation = Operation::Set},
         OperatorData{.symbol = "!", .op = Operator::Not, .priority = 5, .operation = Operation::Not},
         OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::NotEq},
         OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::Less},
@@ -119,12 +119,12 @@ namespace GobLang::Compiler
      *
      */
     static const std::vector<SeparatorData> Separators = {
-        SeparatorData{.symbol = '(', .separator = Separator::BracketOpen, .priority = 0},
-        SeparatorData{.symbol = ')', .separator = Separator::BracketClose, .priority = 1},
-        SeparatorData{.symbol = '{', .separator = Separator::BlockOpen, .priority = 0},
-        SeparatorData{.symbol = '}', .separator = Separator::BlockClose, .priority = 1},
-        SeparatorData{.symbol = '[', .separator = Separator::ArrayOpen, .priority = 0},
-        SeparatorData{.symbol = ']', .separator = Separator::ArrayClose, .priority = 1},
+        SeparatorData{.symbol = '(', .separator = Separator::BracketOpen, .priority = 1},
+        SeparatorData{.symbol = ')', .separator = Separator::BracketClose, .priority = 2},
+        SeparatorData{.symbol = '{', .separator = Separator::BlockOpen, .priority = 1},
+        SeparatorData{.symbol = '}', .separator = Separator::BlockClose, .priority = 2},
+        SeparatorData{.symbol = '[', .separator = Separator::ArrayOpen, .priority = 1},
+        SeparatorData{.symbol = ']', .separator = Separator::ArrayClose, .priority = 2},
         SeparatorData{.symbol = '.', .separator = Separator::Dot, .priority = -1},
         SeparatorData{.symbol = ',', .separator = Separator::Comma, .priority = -1},
         SeparatorData{.symbol = ';', .separator = Separator::End, .priority = -1}
