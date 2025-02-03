@@ -115,6 +115,9 @@ namespace GobLang::Compiler
         std::vector<Token *> const &getTokens() const { return m_tokens; }
         std::vector<std::string> const &getIds() const { return m_ids; }
         std::vector<int32_t> const &getInts() const { return m_ints; }
+
+        size_t getTotalLineCount() const { return m_code.size(); }
+        size_t getFinalLineRowCount() const { return m_code.rbegin()->size(); }
         ~Parser();
 
     private:

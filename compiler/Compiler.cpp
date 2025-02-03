@@ -493,20 +493,18 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
         m_code.push_back(sepToken);
         break;
     case Separator::BracketOpen:
-        if (!m_isInConditionHead)
+        if (dynamic_cast<IdToken *>(*(it - 1)) != nullptr)
         {
-            if (dynamic_cast<IdToken *>(*(it - 1)) != nullptr)
-            {
-                FunctionCallToken *token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
-                m_compilerTokens.push_back(token);
-                m_stack.push_back(token);
-                m_functionCalls.push_back(token);
-            }
-            else
-            {
-                m_stack.push_back(*it);
-            }
+            FunctionCallToken *token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
+            m_compilerTokens.push_back(token);
+            m_stack.push_back(token);
+            m_functionCalls.push_back(token);
         }
+        else if (dynamic_cast<IfToken *>(*(it - 1)) == nullptr && dynamic_cast<WhileToken *>(*(it - 1)) == nullptr)
+        {
+            m_stack.push_back(*it);
+        }
+
         break;
     case Separator::Comma:
         if (!m_functionCalls.empty())
@@ -561,14 +559,14 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
                 m_functionCalls.pop_back();
                 break;
             }
+            else if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
+            {
+                m_code.push_back(t);
+                break;
+            }
             else
             {
                 m_code.push_back(t);
-                if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
-                {
-                    m_isInConditionHead = false;
-                    break;
-                }
             }
         }
         break;

@@ -1,8 +1,10 @@
 #include <iostream>
 #include <algorithm>
+#include <fstream>
 #include "compiler/Parser.hpp"
 #include "compiler/Compiler.hpp"
 #include "execution/Machine.hpp"
+#include "compiler/Validator.hpp"
 
 #include "standard/MachineFunctions.hpp"
 
@@ -59,11 +61,46 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 }
 int main()
 {
-    // std::string code = R"CLM(let a = 90;a = 10;)CLM";
-    std::string code = R"CLM(str = "hello"; print(str); str[0] = 'j'; print(str); print(sizeof(str));)CLM";
-    std::cout << "Source: " << code << std::endl;
-    
+    std::string file = "./code.gob";
+    std::vector<std::string> lines;
+    std::ifstream codeFile(file);
+    if (!codeFile.is_open())
+    {
+        std::cerr << "Unable to open code file" << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::string to;
+    while (std::getline(codeFile, to, '\n'))
+    {
+        lines.push_back(to);
+    }
 
+    GobLang::Compiler::Parser comp(lines);
+    comp.parse();
+    GobLang::Compiler::Validator validator(comp);
+    validator.validate();
+    GobLang::Compiler::Compiler compiler(comp);
+    compiler.compile();
+    compiler.printCode();
+    compiler.generateByteCode();
+    byteCodeToText(compiler.getByteCode().operations);
+
+    GobLang::Machine machine(compiler.getByteCode());
+    machine.addFunction(MachineFunctions::getSizeof, "sizeof");
+    machine.addFunction(MachineFunctions::printLine, "print");
+    machine.addFunction(MachineFunctions::createArrayOfSize, "array");
+    std::vector<size_t> debugPoints = {};
+    while (!machine.isAtTheEnd())
+    {
+        if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
+        {
+            std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << std::endl;
+            machine.printGlobalsInfo();
+            machine.printVariablesInfo();
+            machine.printStack();
+        }
+        machine.step();
+    }
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }

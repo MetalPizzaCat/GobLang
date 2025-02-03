@@ -5,6 +5,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
 add_compile_definitions(GOB_LANG_VERSION_MINOR=1)
+
+add_compile_definitions(LINES_BEFORE_ERROR=3)
+add_compile_definitions(LINES_AFTER_ERROR=3)
 list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Type.cpp
     execution/Operations.hpp

@@ -11,17 +11,62 @@
 #include <fstream>
 
 #include "compiler/Parser.hpp"
+#include "compiler/Validator.hpp"
 #include "compiler/Compiler.hpp"
 #include "execution/Machine.hpp"
 
 #include "execution/Machine.hpp"
 #include "standard/MachineFunctions.hpp"
 
+void byteCodeToText(std::vector<uint8_t> const &bytecode)
+{
+    size_t address = 0;
+    for (std::vector<uint8_t>::const_iterator it = bytecode.begin(); it != bytecode.end(); it++)
+    {
+        std::vector<GobLang::OperationData>::const_iterator opIt = std::find_if(
+            GobLang::Operations.begin(),
+            GobLang::Operations.end(),
+            [it](GobLang::OperationData const &a)
+            {
+                return (uint8_t)a.op == *it;
+            });
+        if (opIt != GobLang::Operations.end())
+        {
+            std::cout << std::hex << address << std::dec << ": " << (opIt->text) << " ";
+            if (opIt->argCount == sizeof(GobLang::ProgramAddressType))
+            {
+                size_t reconAddr = 0x0;
+                for (int32_t i = 0; i < sizeof(GobLang::ProgramAddressType); i++)
+                {
+                    it++;
+                    size_t offset = ((sizeof(GobLang::ProgramAddressType) - i - 1)) * 8;
+                    reconAddr |= (size_t)(*it) << offset;
+                }
+                address += sizeof(GobLang::ProgramAddressType);
+                std::cout << std::hex << reconAddr << std::dec;
+                ;
+            }
+            else
+            {
+                for (int32_t i = 0; i < opIt->argCount; i++)
+                {
+                    it++;
+                    address += 1;
+                    std::cout << std::to_string(*it);
+                }
+            }
+            address++;
+            std::cout << std::endl;
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
     std::vector<std::string> VersionArgs = {"-v", "--version"};
     std::vector<std::string> HelpArgs = {"-h", "--help"};
     std::vector<std::string> FileArgs = {"-i", "--input"};
+    std::vector<std::string> DecompArgs = {"-s", "--showbytes"};
     std::vector<std::string> args;
     for (int i = 0; i < argc; i++)
     {
@@ -39,9 +84,10 @@ int main(int argc, char **argv)
         std::cout << "GobLang v" << GOB_LANG_VERSION_MAJOR << "." << GOB_LANG_VERSION_MINOR << std::endl;
         std::cout << "Usage: goblang [-i file | -h | -v]" << std::endl;
         std::cout << "Options" << std::endl;
-        std::cout << "-v | --version : Display version of the interpreter" << std::endl;
-        std::cout << "-h | --help    : View help about the interpreter" << std::endl;
-        std::cout << "-i | --input   : Run code from file in a given location" << std::endl;
+        std::cout << "-v | --version    : Display version of the interpreter" << std::endl;
+        std::cout << "-h | --help       : View help about the interpreter" << std::endl;
+        std::cout << "-i | --input      : Run code from file in a given location" << std::endl;
+        std::cout << "-s | --showbytes  : Show bytecode before running code" << std::endl;
         return EXIT_SUCCESS;
     }
 
@@ -75,9 +121,16 @@ int main(int argc, char **argv)
     {
         GobLang::Compiler::Parser comp(lines);
         comp.parse();
+        GobLang::Compiler::Validator validator(comp);
+        validator.validate();
         GobLang::Compiler::Compiler compiler(comp);
         compiler.compile();
         compiler.generateByteCode();
+        verIt = std::find_first_of(args.begin(), args.end(), DecompArgs.begin(), DecompArgs.end());
+        if (verIt != args.end())
+        {
+            byteCodeToText(compiler.getByteCode().operations);
+        }
         GobLang::Machine machine(compiler.getByteCode());
         machine.addFunction(MachineFunctions::getSizeof, "sizeof");
         machine.addFunction(MachineFunctions::printLine, "print");
@@ -97,16 +150,19 @@ int main(int argc, char **argv)
     }
     catch (GobLang::Compiler::ParsingError e)
     {
-
-        for (int32_t i = std::max(0, (int32_t)e.getColumn() - 1); i < std::min(lines.size(), e.getColumn() + 2); i++)
+        size_t maxLine = std::min(lines.size(), e.getRow() + LINES_AFTER_ERROR);
+        size_t spaces = std::to_string(maxLine).size() + 2;
+        for (int32_t i = std::max(0, (int32_t)e.getRow() - LINES_BEFORE_ERROR); i < maxLine; i++)
         {
-            std::cout << lines[e.getColumn()] << std::endl;
-            if (i == e.getColumn())
+            std::string lineId = std::to_string(i + 1);
+
+            std::cout << (lineId + std::string(' ', maxLine - lineId.size())) << ": " << lines[i] << std::endl;
+            if (i == e.getRow())
             {
-                std::cout << std::string(' ', std::max((int32_t)e.getRow() - 1, 0)) << "~~~" << std::endl;
-                std::cout << e.what() << std::endl;
+                std::cout << std::string(std::max((int32_t)e.getColumn() - 1, 0) + spaces, ' ') << "~~~" << std::endl;
             }
         }
+        std::cout << e.what() << std::endl;
     }
     catch (GobLang::RuntimeException e)
     {
