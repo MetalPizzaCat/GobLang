@@ -68,14 +68,14 @@ namespace GobLang::Compiler
 
         void addNewMarkReplacement(size_t mark, size_t address);
 
-        void appendByteCode(std::vector<uint8_t> const& bytes);
+        void appendByteCode(std::vector<uint8_t> const &bytes);
 
         /**
          * @brief Get token of a while loop that is closest to the top of the jump stack.
-         * 
+         *
          * @return WhileToken* Token of a while loop that is closest to the top of the jump stack or nullptr if none are found
          */
-        WhileToken * getCurrentLoop();
+        WhileToken *getCurrentLoop();
 
         ByteCode getByteCode() const { return m_byteCode; }
 
@@ -97,6 +97,9 @@ namespace GobLang::Compiler
         bool _isElseChainToken(std::vector<Token *>::const_iterator const &it);
 
         bool _isElifChainToken(std::vector<Token *>::const_iterator const &it);
+        void _printTokenStack();
+
+        bool _isBranchKeyword(std::vector<Token *>::const_iterator const& it);
         /**
          * @brief code representation in reverse polish notation
          *
