@@ -2,6 +2,13 @@
 #include "Parser.hpp"
 namespace GobLang::Compiler
 {
+    enum class BranchType
+    {
+        If,
+        Elif,
+        Else,
+        While
+    };
     /**
      * @brief Class that validates that code was written according to the language rules
      */
@@ -33,18 +40,24 @@ namespace GobLang::Compiler
          * @return false
          */
         bool groupedExpr(TokenIterator const &it, TokenIterator &endIt);
-        bool functionCall(TokenIterator const& it, TokenIterator &endIt);
-        bool arrayAccess(TokenIterator const& it, TokenIterator &endIt);
-        bool call(TokenIterator const& it, TokenIterator &endIt);
-        bool arrayIndex(TokenIterator const& it, TokenIterator &endIt);
+        bool functionCall(TokenIterator const &it, TokenIterator &endIt);
+        bool arrayAccess(TokenIterator const &it, TokenIterator &endIt);
+        bool call(TokenIterator const &it, TokenIterator &endIt);
+        bool callOp(TokenIterator const &it, TokenIterator &endIt);
+        bool arrayIndex(TokenIterator const &it, TokenIterator &endIt);
         bool assignment(TokenIterator const &it, TokenIterator &endIt);
         bool arrayAssignment(TokenIterator const &it, TokenIterator &endIt);
         bool localVarCreation(TokenIterator const &it, TokenIterator &endIt);
 
         bool block(TokenIterator const &it, TokenIterator &endIt);
-        
+        bool code(TokenIterator const &it, TokenIterator &endIt);
+        bool branch(BranchType branch, TokenIterator const &it, TokenIterator &endIt);
+        bool ifElseChain(TokenIterator const &it, TokenIterator &endIt);
 
         TokenIterator getEnd() { return m_parser.getTokens().end(); }
+
+        size_t getRowForToken(TokenIterator const& it);
+        size_t getColumnForToken(TokenIterator const& it);
 
     private:
         Parser const &m_parser;

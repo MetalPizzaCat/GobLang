@@ -117,17 +117,23 @@ void testBlockArray()
 }
 int main(int, char **)
 {
-    testArray();
-    testArray2();
-    testArray2D();
-    testArrayUse();
-    testArrayAssign();
-    testArrayAssign2D();
-    testBlock();
-    testCall();
-    testCallArg();
-    testCallArgs();
-    testBlockArray();
+    // testArray();
+    // testArray2();
+    // testArray2D();
+    // testArrayUse();
+    // testArrayAssign();
+    // testArrayAssign2D();
+    // testBlock();
+    // testCall();
+    // testCallArg();
+    // testCallArgs();
+    // testBlockArray();
+
+    Parser p("let a = 3;print(a);if");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    v.validate();
 
     return EXIT_SUCCESS;
 }

@@ -409,5 +409,5 @@ const char *GobLang::Compiler::ParsingError::what() const throw()
 
 GobLang::Compiler::ParsingError::ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg)
 {
-    m_full = ("Error at line " + std::to_string(m_row) + " row " + std::to_string(m_column) + ": " + m_message);
+    m_full = ("Error at line " + std::to_string(m_row + 1) + " row " + std::to_string(m_column + 1) + ": " + m_message);
 }
