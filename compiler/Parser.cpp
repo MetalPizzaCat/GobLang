@@ -46,6 +46,7 @@ void GobLang::Compiler::Parser::parse()
         {
             throw ParsingError(getLineNumber(), getColumnNumber(), "Unknown character sequence");
         }
+        skipWhitespace();
     }
 }
 
@@ -311,7 +312,7 @@ GobLang::Compiler::CharToken *GobLang::Compiler::Parser::parseChar()
     }
     if (*(m_rowIt + offset) != '\'')
     {
-        char c =  *(m_rowIt + offset);
+        char c = *(m_rowIt + offset);
         return nullptr;
     }
     size_t row = getLineNumber();

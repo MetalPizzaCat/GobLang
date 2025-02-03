@@ -40,6 +40,8 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
     compiler/SpecialCharacter.hpp
     compiler/CompilerNode.hpp
     compiler/CompilerNode.cpp
+    compiler/Validator.hpp
+    compiler/Validator.cpp
 )
 
 add_executable(goblang
@@ -54,6 +56,12 @@ add_executable(gobc
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
     ${STD_SOURCE_FILES}
+)
+
+add_executable(gobtest
+    test.cpp
+    ${COMPILER_SOURCE_FILES}
+    ${COMMON_SOURCE_FILES}
 )
 
 target_link_options(goblang PRIVATE -static-libgcc -static-libstdc++)
