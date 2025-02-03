@@ -500,7 +500,7 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
             m_stack.push_back(token);
             m_functionCalls.push_back(token);
         }
-        else if (dynamic_cast<IfToken *>(*(it - 1)) == nullptr && dynamic_cast<WhileToken *>(*(it - 1)) == nullptr)
+        else if (!_isBranchKeyword(it - 1))
         {
             m_stack.push_back(*it);
         }
@@ -540,6 +540,7 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
         break;
 
     case Separator::BracketClose:
+        //_printTokenStack();
         while (!m_stack.empty())
         {
             Token *t = *(m_stack.rbegin());
@@ -707,4 +708,22 @@ bool GobLang::Compiler::Compiler::_isElifChainToken(std::vector<Token *>::const_
     }
     KeywordToken *key = dynamic_cast<KeywordToken *>(*it);
     return key != nullptr && key->getKeyword() == Keyword::Elif;
+}
+
+void GobLang::Compiler::Compiler::_printTokenStack()
+{
+    std::cout << "STack: " << std::endl;
+    for (std::vector<Token *>::iterator it = m_stack.begin(); it != m_stack.end(); it++)
+    {
+        std::cout << (*it)->toString() << std::endl;
+    }
+}
+
+bool GobLang::Compiler::Compiler::_isBranchKeyword(std::vector<Token *>::const_iterator const &it)
+{
+    if (KeywordToken *keyTok = dynamic_cast<KeywordToken *>(*it); keyTok != nullptr)
+    {
+        return keyTok->getKeyword() == Keyword::If || keyTok->getKeyword() == Keyword::Elif || keyTok->getKeyword() == Keyword::While;
+    }
+    return false;
 }
