@@ -32,11 +32,16 @@ namespace GobLang::Compiler
          * @return true
          * @return false
          */
-        bool groupedExpr(TokenIterator const &it, std::vector<Token *>::const_iterator &endIt);
+        bool groupedExpr(TokenIterator const &it, TokenIterator &endIt);
+        bool functionCall(TokenIterator const& it, TokenIterator &endIt);
+        bool arrayAccess(TokenIterator const& it, TokenIterator &endIt);
+        bool arrayIndex(TokenIterator const& it, TokenIterator &endIt);
         bool assignment(TokenIterator const &it, TokenIterator &endIt);
+        bool arrayAssignment(TokenIterator const &it, TokenIterator &endIt);
         bool localVarCreation(TokenIterator const &it, TokenIterator &endIt);
 
         bool block(TokenIterator const &it, TokenIterator &endIt);
+        
 
         TokenIterator getEnd() { return m_parser.getTokens().end(); }
 
