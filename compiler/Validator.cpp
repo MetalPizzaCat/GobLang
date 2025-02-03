@@ -1,5 +1,5 @@
 #include "Validator.hpp"
-
+#include <iostream>
 void GobLang::Compiler::Validator::validate()
 {
     for (TokenIterator it = m_parser.getTokens().begin(); it != m_parser.getTokens().end(); it++)
@@ -51,6 +51,19 @@ bool GobLang::Compiler::Validator::separator(TokenIterator const &it, Separator 
     return false;
 }
 
+bool GobLang::Compiler::Validator::keyword(TokenIterator const &it, Keyword word)
+{
+    if (it == getEnd())
+    {
+        return false;
+    }
+    else if (KeywordToken *t = dynamic_cast<KeywordToken *>(*it); t != nullptr)
+    {
+        return t->getKeyword() == word;
+    }
+    return false;
+}
+
 bool GobLang::Compiler::Validator::end(TokenIterator const &it)
 {
     return separator(it, Separator::End);
@@ -68,9 +81,9 @@ bool GobLang::Compiler::Validator::expr(TokenIterator const &it, TokenIterator &
     {
         return false;
     }
-    while (mathOperator(exprIt))
+    while (mathOperator(exprIt + 1))
     {
-        if (!mul(exprIt + 1, exprIt))
+        if (!mul(exprIt + 2, exprIt))
         {
             return false;
         }
@@ -83,7 +96,7 @@ bool GobLang::Compiler::Validator::mul(TokenIterator const &it, TokenIterator &e
 {
     if (operand(it))
     {
-        endIt = it + 1;
+        endIt = it;
         return true;
     }
     TokenIterator exprIt;
@@ -95,7 +108,7 @@ bool GobLang::Compiler::Validator::mul(TokenIterator const &it, TokenIterator &e
     {
         return false;
     }
-    if (!separator(exprIt, Separator::BracketClose))
+    if (!separator(exprIt + 1, Separator::BracketClose))
     {
         return false;
     }
@@ -114,17 +127,50 @@ bool GobLang::Compiler::Validator::groupedExpr(TokenIterator const &it, std::vec
     {
         return false;
     }
-    endIt = exprIt + 1;
+    endIt = exprIt;
     return true;
 }
 
 bool GobLang::Compiler::Validator::assignment(TokenIterator const &it, TokenIterator &endIt)
 {
     TokenIterator exprIt = it;
-    bool valid = id(it) && actionOperator(it + 1, Operator::Assign) && expr(it + 2, exprIt) && end(exprIt);
+    bool valid = id(it) && actionOperator(it + 1, Operator::Assign) && expr(it + 2, exprIt) && end(exprIt + 1);
     if (valid)
     {
         endIt = exprIt + 1;
+        return true;
     }
-    return valid;
+    return false;
+}
+
+bool GobLang::Compiler::Validator::localVarCreation(TokenIterator const &it, TokenIterator &endIt)
+{
+    TokenIterator exprIt = it;
+    bool valid = keyword(it, Keyword::Let) && assignment(it + 1, exprIt);
+    if (valid)
+    {
+        endIt = exprIt;
+        return true;
+    }
+    return false;
+}
+
+bool GobLang::Compiler::Validator::block(TokenIterator const &it, TokenIterator &endIt)
+{
+    if (!separator(it, Separator::BlockOpen))
+    {
+        return false;
+    }
+    TokenIterator exprIt = it;
+    do
+    {
+        exprIt++;
+        if (separator(exprIt, Separator::BlockClose))
+        {
+            endIt = exprIt;
+            // block ended after some about of operations
+            return true;
+        }
+    } while (localVarCreation(exprIt, exprIt) || assignment(exprIt, exprIt));
+    return false;
 }

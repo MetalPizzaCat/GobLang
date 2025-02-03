@@ -18,6 +18,7 @@ namespace GobLang::Compiler
         bool mathOperator(TokenIterator const &it);
         bool actionOperator(TokenIterator const &it, Operator op);
         bool separator(TokenIterator const &it, Separator sep);
+        bool keyword(TokenIterator const &it, Keyword word);
         bool end(TokenIterator const &it);
         bool operand(TokenIterator const &it);
 
@@ -33,6 +34,9 @@ namespace GobLang::Compiler
          */
         bool groupedExpr(TokenIterator const &it, std::vector<Token *>::const_iterator &endIt);
         bool assignment(TokenIterator const &it, TokenIterator &endIt);
+        bool localVarCreation(TokenIterator const &it, TokenIterator &endIt);
+
+        bool block(TokenIterator const &it, TokenIterator &endIt);
 
         TokenIterator getEnd() { return m_parser.getTokens().end(); }
 
