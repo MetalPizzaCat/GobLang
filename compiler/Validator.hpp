@@ -35,6 +35,7 @@ namespace GobLang::Compiler
         bool groupedExpr(TokenIterator const &it, TokenIterator &endIt);
         bool functionCall(TokenIterator const& it, TokenIterator &endIt);
         bool arrayAccess(TokenIterator const& it, TokenIterator &endIt);
+        bool call(TokenIterator const& it, TokenIterator &endIt);
         bool arrayIndex(TokenIterator const& it, TokenIterator &endIt);
         bool assignment(TokenIterator const &it, TokenIterator &endIt);
         bool arrayAssignment(TokenIterator const &it, TokenIterator &endIt);

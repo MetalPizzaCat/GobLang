@@ -76,6 +76,36 @@ void testArrayUse()
     assert(v.localVarCreation(p.getTokens().begin(), endIt));
 }
 
+void testCall()
+{
+    Parser p("a()");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    Validator::TokenIterator endIt;
+    assert(v.call(p.getTokens().begin(), endIt));
+}
+
+void testCallArg()
+{
+    Parser p("a(2)");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    Validator::TokenIterator endIt;
+    assert(v.call(p.getTokens().begin(), endIt));
+}
+
+void testCallArgs()
+{
+    Parser p("a(2, 2+2, a[0], a(b))");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    Validator::TokenIterator endIt;
+    assert(v.call(p.getTokens().begin(), endIt));
+}
+
 void testBlockArray()
 {
     Parser p("{let c = a + (3 - 0); let g = wawa[3]; wawa = (w / 2);}");
@@ -94,6 +124,9 @@ int main(int, char **)
     testArrayAssign();
     testArrayAssign2D();
     testBlock();
+    testCall();
+    testCallArg();
+    testCallArgs();
     testBlockArray();
 
     return EXIT_SUCCESS;
