@@ -94,12 +94,17 @@ bool GobLang::Compiler::Validator::expr(TokenIterator const &it, TokenIterator &
 
 bool GobLang::Compiler::Validator::mul(TokenIterator const &it, TokenIterator &endIt)
 {
+    TokenIterator exprIt;
+    if (arrayAccess(it, exprIt))
+    {
+        endIt = exprIt;
+        return true;
+    }
     if (operand(it))
     {
         endIt = it;
         return true;
     }
-    TokenIterator exprIt;
     if (!separator(it, Separator::BracketOpen))
     {
         return false;
@@ -131,10 +136,57 @@ bool GobLang::Compiler::Validator::groupedExpr(TokenIterator const &it, std::vec
     return true;
 }
 
+bool GobLang::Compiler::Validator::arrayAccess(TokenIterator const &it, TokenIterator &endIt)
+{
+    TokenIterator exprIt = it;
+    if (!id(it))
+    {
+        return false;
+    }
+    size_t depthCount = 0;
+    while (arrayIndex(exprIt, exprIt))
+    {
+        depthCount++;
+    }
+    if (depthCount > 0)
+    {
+        endIt = exprIt;
+        return true;
+    }
+    return false;
+}
+
+bool GobLang::Compiler::Validator::arrayIndex(TokenIterator const &it, TokenIterator &endIt)
+{
+    TokenIterator exprIt = it;
+    bool valid =
+        separator(exprIt + 1, Separator::ArrayOpen) &&
+        expr(exprIt + 2, exprIt) &&
+        separator(exprIt + 1, Separator::ArrayClose);
+    if (valid)
+    {
+        endIt = exprIt + 1;
+        return true;
+    }
+    return false;
+}
+
 bool GobLang::Compiler::Validator::assignment(TokenIterator const &it, TokenIterator &endIt)
 {
     TokenIterator exprIt = it;
     bool valid = id(it) && actionOperator(it + 1, Operator::Assign) && expr(it + 2, exprIt) && end(exprIt + 1);
+    if (valid)
+    {
+        endIt = exprIt + 1;
+        return true;
+    }
+    return false;
+}
+
+bool GobLang::Compiler::Validator::arrayAssignment(TokenIterator const &it, TokenIterator &endIt)
+{
+    TokenIterator exprIt = it;
+    bool valid = arrayAccess(it, exprIt) && actionOperator(exprIt + 1, Operator::Assign) && expr(exprIt + 2, exprIt) && end(exprIt + 1);
     if (valid)
     {
         endIt = exprIt + 1;
@@ -171,6 +223,6 @@ bool GobLang::Compiler::Validator::block(TokenIterator const &it, TokenIterator 
             // block ended after some about of operations
             return true;
         }
-    } while (localVarCreation(exprIt, exprIt) || assignment(exprIt, exprIt));
+    } while (localVarCreation(exprIt, exprIt) || arrayAssignment(exprIt, exprIt) || assignment(exprIt, exprIt));
     return false;
 }
