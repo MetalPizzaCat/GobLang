@@ -91,7 +91,7 @@ namespace GobLang::Compiler
         {"false", false},
         {"True", true},
         {"False", false}};
-        
+
     /**
      * @brief Static array containing info about all operators used in the compiler
      *
@@ -101,8 +101,8 @@ namespace GobLang::Compiler
         OperatorData{.symbol = ">=", .op = Operator::LessEq, .priority = 5, .operation = Operation::MoreOrEq},
         OperatorData{.symbol = "<=", .op = Operator::MoreEq, .priority = 5, .operation = Operation::LessOrEq},
         OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 1, .operation = Operation::Set},
-        OperatorData{.symbol = "!", .op = Operator::Not, .priority = 5, .operation = Operation::Not},
         OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::NotEq},
+        OperatorData{.symbol = "!", .op = Operator::Not, .priority = 5, .operation = Operation::Not},
         OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::Less},
         OperatorData{.symbol = ">", .op = Operator::More, .priority = 5, .operation = Operation::More},
         OperatorData{.symbol = "+", .op = Operator::Add, .priority = 6, .operation = Operation::Add},

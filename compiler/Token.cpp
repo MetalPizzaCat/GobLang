@@ -26,6 +26,21 @@ GobLang::Compiler::OperatorToken::OperatorToken(size_t row, size_t column, Opera
                              { return op.op == oper; }));
 }
 
+GobLang::Operation GobLang::Compiler::OperatorToken::getOperation() const
+{
+    if (!isUnary())
+    {
+        return m_data->operation;
+    }
+    switch (getOperator())
+    {
+    case Operator::Sub:
+        return Operation::Negate;
+    default:
+        return m_data->operation;
+    }
+}
+
 int32_t GobLang::Compiler::OperatorToken::getPriority() const
 {
     return m_data->priority;
@@ -33,7 +48,7 @@ int32_t GobLang::Compiler::OperatorToken::getPriority() const
 
 std::string GobLang::Compiler::OperatorToken::toString()
 {
-    return m_data->symbol;
+    return std::string(m_data->symbol) + (m_unary ? "u" : "");
 }
 
 std::string GobLang::Compiler::IdToken::toString()
@@ -80,4 +95,9 @@ std::string GobLang::Compiler::JumpDestinationToken::toString()
 std::string GobLang::Compiler::WhileToken::toString()
 {
     return "WHILE_M" + std::to_string(m_returnMark) + "_THEN_M" + std::to_string(getMark());
+}
+
+std::string GobLang::Compiler::FloatToken::toString()
+{
+    return "FLOAT" + std::to_string(m_id);
 }

@@ -61,24 +61,25 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 }
 int main()
 {
-    std::string file = "./code.gob";
-    std::vector<std::string> lines;
-    std::ifstream codeFile(file);
-    if (!codeFile.is_open())
-    {
-        std::cerr << "Unable to open code file" << std::endl;
-        return EXIT_FAILURE;
-    }
-    std::string to;
-    while (std::getline(codeFile, to, '\n'))
-    {
-        lines.push_back(to);
-    }
+    // std::string file = "./code.gob";
+    // std::vector<std::string> lines;
+    // std::ifstream codeFile(file);
+    // if (!codeFile.is_open())
+    // {
+    //     std::cerr << "Unable to open code file" << std::endl;
+    //     return EXIT_FAILURE;
+    // }
+    // std::string to;
+    // while (std::getline(codeFile, to, '\n'))
+    // {
+    //     lines.push_back(to);
+    // }
 
-    GobLang::Compiler::Parser comp(lines);
+    GobLang::Compiler::Parser comp("a =- 3; print(a);");
     comp.parse();
-    GobLang::Compiler::Validator validator(comp);
-    validator.validate();
+    comp.printCode();
+    // GobLang::Compiler::Validator validator(comp);
+    // validator.validate();
     GobLang::Compiler::Compiler compiler(comp);
     compiler.compile();
     compiler.printCode();

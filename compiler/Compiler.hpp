@@ -100,6 +100,17 @@ namespace GobLang::Compiler
         void _printTokenStack();
 
         bool _isBranchKeyword(std::vector<Token *>::const_iterator const& it);
+
+        void _addOperator(std::vector<Token *>::const_iterator const& it);
+
+        /**
+         * @brief Check if this is valid binary operation
+         * 
+         * @param it Iterator pointing to current operation token
+         * @return true This operator can be considered binary operator
+         * @return false This  operator is most likey an unary operator
+         */
+        bool _isValidBinaryOperation(std::vector<Token *>::const_iterator const& it);
         /**
          * @brief code representation in reverse polish notation
          *

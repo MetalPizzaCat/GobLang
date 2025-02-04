@@ -3,6 +3,7 @@
 #include "CompilerToken.hpp"
 #include <iostream>
 #include <deque>
+#include <iterator>
 
 void GobLang::Compiler::Compiler::compile()
 {
@@ -49,14 +50,14 @@ void GobLang::Compiler::Compiler::compile()
         {
             if ((*it)->getPriority() > getTopStackPriority())
             {
-                m_stack.push_back(*it);
+                _addOperator(it);
                 continue;
             }
             while (!m_stack.empty() && getTopStackPriority() >= (*it)->getPriority())
             {
                 m_code.push_back(popStack());
             }
-            m_stack.push_back(*it);
+            _addOperator(it);
         }
     }
     dumpStack();
@@ -180,7 +181,7 @@ void GobLang::Compiler::Compiler::generateByteCode()
         }
         else if (OperatorToken *opToken = dynamic_cast<OperatorToken *>(*it); opToken != nullptr)
         {
-            if (opToken->getOperator() == Operator::Not)
+            if (opToken->isUnary())
             {
                 // not only uses one argument
                 CompilerNode *value = stack[stack.size() - 1];
@@ -726,4 +727,35 @@ bool GobLang::Compiler::Compiler::_isBranchKeyword(std::vector<Token *>::const_i
         return keyTok->getKeyword() == Keyword::If || keyTok->getKeyword() == Keyword::Elif || keyTok->getKeyword() == Keyword::While;
     }
     return false;
+}
+
+void GobLang::Compiler::Compiler::_addOperator(std::vector<Token *>::const_iterator const &it)
+{
+    OperatorToken *tok = dynamic_cast<OperatorToken *>(*it);
+    tok->setIsUnary(!_isValidBinaryOperation(it));
+    m_stack.push_back(*it);
+}
+
+bool GobLang::Compiler::Compiler::_isValidBinaryOperation(std::vector<Token *>::const_iterator const &it)
+{
+    // this means that it is the first object in the code so there can be no previous objects to rely on
+    // but that also means there could be no other operand here, so it *has* to be unary
+    if (it == m_parser.getTokens().begin())
+    {
+        return false;
+    }
+    if (OperatorToken *sep = dynamic_cast<OperatorToken *>(*it); sep != nullptr && sep->getOperator() == Operator::Assign)
+    {
+        return true;
+    }
+    std::vector<Token *>::const_iterator prevIt = it - 1;
+    if (SeparatorToken *sep = dynamic_cast<SeparatorToken *>(*prevIt); sep != nullptr)
+    {
+        return sep->getSeparator() == Separator::ArrayClose || sep->getSeparator() == Separator::BracketClose;
+    }
+
+    return dynamic_cast<IdToken *>(*prevIt) ||
+           dynamic_cast<IntToken *>(*prevIt) ||
+           dynamic_cast<FloatToken *>(*prevIt) ||
+           dynamic_cast<BoolConstToken *>(*prevIt);
 }

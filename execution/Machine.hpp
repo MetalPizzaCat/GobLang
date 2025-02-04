@@ -151,6 +151,10 @@ namespace GobLang
 
         void _moreOrEq();
 
+        void _negate();
+
+        void _not();
+
         bool m_forcedEnd = false;
 
         MemoryNode *m_memoryRoot = new MemoryNode();
