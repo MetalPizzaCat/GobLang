@@ -115,25 +115,30 @@ void testBlockArray()
     Validator::TokenIterator endIt;
     assert(v.block(p.getTokens().begin(), endIt));
 }
-int main(int, char **)
-{
-    // testArray();
-    // testArray2();
-    // testArray2D();
-    // testArrayUse();
-    // testArrayAssign();
-    // testArrayAssign2D();
-    // testBlock();
-    // testCall();
-    // testCallArg();
-    // testCallArgs();
-    // testBlockArray();
 
-    Parser p("let a = 3;print(a);if");
+void testUnary()
+{
+    Parser p("!a");
     p.parse();
     p.printCode();
     Validator v(p);
-    v.validate();
+    Validator::TokenIterator endIt;
+    assert(v.unaryExpr(p.getTokens().begin(), endIt));
+}
+int main(int, char **)
+{
+    testArray();
+    testArray2();
+    testArray2D();
+    testArrayUse();
+    testArrayAssign();
+    testArrayAssign2D();
+    testBlock();
+    testCall();
+    testCallArg();
+    testCallArgs();
+    testBlockArray();
+    testUnary();
 
     return EXIT_SUCCESS;
 }

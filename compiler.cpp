@@ -76,7 +76,11 @@ int main()
     }
 
     GobLang::Compiler::Parser comp(lines);
+    int a = 3;
+    bool b = !(a < 3 || (a > 1 && !(a < 1)));
+    std::cout << (b ? "true" : "false") << std::endl;
     comp.parse();
+    comp.printCode();
     GobLang::Compiler::Validator validator(comp);
     validator.validate();
     GobLang::Compiler::Compiler compiler(comp);
@@ -89,12 +93,12 @@ int main()
     machine.addFunction(MachineFunctions::getSizeof, "sizeof");
     machine.addFunction(MachineFunctions::printLine, "print");
     machine.addFunction(MachineFunctions::createArrayOfSize, "array");
-    std::vector<size_t> debugPoints = {};
+    std::vector<size_t> debugPoints = { 0x42, 0x44,0x46,0x47};
     while (!machine.isAtTheEnd())
     {
         if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
         {
-            std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << std::endl;
+            std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << ". Memory state: " << std::endl;
             machine.printGlobalsInfo();
             machine.printVariablesInfo();
             machine.printStack();

@@ -26,6 +26,19 @@ bool GobLang::Compiler::Validator::id(TokenIterator const &it)
     return it != getEnd() && dynamic_cast<IdToken *>(*it) != nullptr;
 }
 
+bool GobLang::Compiler::Validator::unaryOperator(TokenIterator const &it)
+{
+    if (it == getEnd())
+    {
+        return false;
+    }
+    if (OperatorToken *op = dynamic_cast<OperatorToken *>(*it); op != nullptr)
+    {
+        return op->getOperator() == Operator::Not || op->getOperator() == Operator::Sub;
+    }
+    return false;
+}
+
 bool GobLang::Compiler::Validator::mathOperator(TokenIterator const &it)
 {
     if (it == getEnd())
@@ -110,6 +123,11 @@ bool GobLang::Compiler::Validator::expr(TokenIterator const &it, TokenIterator &
     return true;
 }
 
+bool GobLang::Compiler::Validator::unaryExpr(TokenIterator const &it, TokenIterator &endIt)
+{
+    return unaryOperator(it) && expr(it + 1, endIt);
+}
+
 bool GobLang::Compiler::Validator::mul(TokenIterator const &it, TokenIterator &endIt)
 {
     TokenIterator exprIt;
@@ -128,6 +146,11 @@ bool GobLang::Compiler::Validator::mul(TokenIterator const &it, TokenIterator &e
         endIt = it;
         return true;
     }
+    if (unaryExpr(it, exprIt))
+    {
+        endIt = exprIt;
+        return true;
+    }
     if (!separator(it, Separator::BracketOpen))
     {
         return false;
@@ -144,19 +167,6 @@ bool GobLang::Compiler::Validator::mul(TokenIterator const &it, TokenIterator &e
     return true;
 
     return false;
-}
-
-bool GobLang::Compiler::Validator::groupedExpr(TokenIterator const &it, std::vector<Token *>::const_iterator &endIt)
-{
-
-    TokenIterator exprIt;
-    bool valid = expr(it + 1, exprIt);
-    if (!valid || !separator(exprIt, Separator::BracketOpen))
-    {
-        return false;
-    }
-    endIt = exprIt;
-    return true;
 }
 
 bool GobLang::Compiler::Validator::arrayAccess(TokenIterator const &it, TokenIterator &endIt)
@@ -213,7 +223,7 @@ bool GobLang::Compiler::Validator::callOp(TokenIterator const &it, TokenIterator
     }
     if (!end(exprIt + 1))
     {
-        throw ParsingError(getRowForToken(exprIt + 1),  getColumnForToken(exprIt + 1), "Missing semicolon at the end of the expression");
+        throw ParsingError(getRowForToken(exprIt + 1), getColumnForToken(exprIt + 1), "Missing semicolon at the end of the expression");
         return false;
     }
     endIt = exprIt + 1;
@@ -248,7 +258,7 @@ bool GobLang::Compiler::Validator::assignment(TokenIterator const &it, TokenIter
     }
     if (!end(exprIt + 1))
     {
-        throw ParsingError(getRowForToken(exprIt + 1),  getColumnForToken(exprIt + 1), "Missing semicolon at the end of the expression");
+        throw ParsingError(getRowForToken(exprIt + 1), getColumnForToken(exprIt + 1), "Missing semicolon at the end of the expression");
     }
     endIt = exprIt + 1;
     return true;
