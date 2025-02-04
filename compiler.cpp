@@ -78,8 +78,8 @@ int main()
     GobLang::Compiler::Parser comp("a =- 3; print(a);");
     comp.parse();
     comp.printCode();
-    // GobLang::Compiler::Validator validator(comp);
-    // validator.validate();
+    GobLang::Compiler::Validator validator(comp);
+    validator.validate();
     GobLang::Compiler::Compiler compiler(comp);
     compiler.compile();
     compiler.printCode();
