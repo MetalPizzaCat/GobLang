@@ -1,0 +1,14 @@
+let a = array(3);
+let i = 0;
+let counter = 0;
+while(i < sizeof(a)){
+   a[i] = array(3);
+   let j = 0;
+   while(j < sizeof(a[i])){
+        a[i][j] = counter;
+        counter = counter + 1;
+        j = j + 1;
+   }
+   i = i + 1;
+}
+print(a);
