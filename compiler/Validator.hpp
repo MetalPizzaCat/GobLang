@@ -22,6 +22,7 @@ namespace GobLang::Compiler
 
         bool constant(TokenIterator const &it);
         bool id(TokenIterator const &it);
+        bool unaryOperator(TokenIterator const& it);
         bool mathOperator(TokenIterator const &it);
         bool actionOperator(TokenIterator const &it, Operator op);
         bool separator(TokenIterator const &it, Separator sep);
@@ -29,17 +30,33 @@ namespace GobLang::Compiler
         bool end(TokenIterator const &it);
         bool operand(TokenIterator const &it);
 
-        bool expr(TokenIterator const &it, TokenIterator &endIt);
-        bool mul(TokenIterator const &it, TokenIterator &endIt);
         /**
-         * @brief Expression between '(' and ')'
-         *
-         * @param it
-         * @param endIt
-         * @return true
-         * @return false
+         * @brief Repeating rule for expr = mul {op mul}
+         * 
+         * @param it 
+         * @param endIt 
+         * @return true 
+         * @return false 
          */
-        bool groupedExpr(TokenIterator const &it, TokenIterator &endIt);
+        bool expr(TokenIterator const &it, TokenIterator &endIt);
+        /**
+         * @brief Expressions which only use one operand. "!a" and "-a"
+         * 
+         * @param it 
+         * @param endIt 
+         * @return true 
+         * @return false 
+         */
+        bool unaryExpr(TokenIterator const& it, TokenIterator &endIt);
+        /**
+         * @brief Check that covers anything that follows this rule expr = arrayAccess | call | operand | (expr) 
+         * 
+         * @param it 
+         * @param endIt 
+         * @return true 
+         * @return false 
+         */
+        bool mul(TokenIterator const &it, TokenIterator &endIt);
         bool functionCall(TokenIterator const &it, TokenIterator &endIt);
         bool arrayAccess(TokenIterator const &it, TokenIterator &endIt);
         bool call(TokenIterator const &it, TokenIterator &endIt);
