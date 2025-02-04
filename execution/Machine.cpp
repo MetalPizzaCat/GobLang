@@ -80,11 +80,17 @@ void GobLang::Machine::step()
     case Operation::More:
         _more();
         break;
+    case Operation::Not:
+        _not();
+        break;
     case Operation::LessOrEq:
         _lessOrEq();
         break;
     case Operation::MoreOrEq:
         _moreOrEq();
+        break;
+    case Operation::Negate:
+        _negate();
         break;
     case Operation::End:
         m_forcedEnd = true;
@@ -529,6 +535,34 @@ void GobLang::Machine::_moreOrEq()
             throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");
         }
     }
+}
+
+void GobLang::Machine::_negate()
+{
+    MemoryValue val = *m_operationStack.rbegin();
+    m_operationStack.pop_back();
+    switch (val.type)
+    {
+    case Type::Int:
+        m_operationStack.push_back(MemoryValue{.type = Type::Int, .value = -std::get<int32_t>(val.value)});
+        break;
+    case Type::Number:
+        m_operationStack.push_back(MemoryValue{.type = Type::Number, .value = -std::get<float>(val.value)});
+        break;
+    default:
+        throw RuntimeException("Attempted to apply negate operation on a non numeric value");
+    }
+}
+
+void GobLang::Machine::_not()
+{
+    MemoryValue val = *m_operationStack.rbegin();
+    m_operationStack.pop_back();
+    if (val.type != Type::Bool)
+    {
+        throw RuntimeException("Attempted to negate non boolean value");
+    }
+    m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = !std::get<bool>(val.value)});
 }
 
 const char *GobLang::RuntimeException::what() const throw()
