@@ -142,6 +142,10 @@ namespace GobLang
         void _eq();
 
         void _neq();
+        
+        void _and();
+        
+        void _or();
 
         void _less();
 
@@ -150,6 +154,10 @@ namespace GobLang
         void _lessOrEq();
 
         void _moreOrEq();
+
+        void _negate();
+
+        void _not();
 
         bool m_forcedEnd = false;
 

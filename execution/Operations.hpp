@@ -36,6 +36,7 @@ namespace GobLang
         And,
         Or,
         Not,
+        Negate,
         /**
          * @brief Unconditionally jump. Uses sizeof(size_t) bytes to get the address to jump to
          */
@@ -75,6 +76,8 @@ namespace GobLang
         OperationData{.op = Operation::PushFalse, .text = "push_false", .argCount = 0},
         OperationData{.op = Operation::Equals, .text = "eq", .argCount = 0},
         OperationData{.op = Operation::NotEq, .text = "neq", .argCount = 0},
+        OperationData{.op = Operation::Not, .text = "not", .argCount = 0},
+        OperationData{.op = Operation::Negate, .text = "negate", .argCount = 0},
         OperationData{.op = Operation::More, .text = "more", .argCount = 0},
         OperationData{.op = Operation::Less, .text = "less", .argCount = 0},
         OperationData{.op = Operation::MoreOrEq, .text = "eqmore", .argCount = 0},

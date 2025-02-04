@@ -6,6 +6,8 @@ const char *GobLang::typeToString(Type type)
     {
     case Type::Null:
         return "Null";
+    case Type::Bool:
+        return "Bool";
     case Type::Number:
         return "Float";
     case Type::Int:

@@ -41,12 +41,16 @@ namespace GobLang::Compiler
     public:
         explicit OperatorToken(size_t row, size_t column, Operator oper);
         Operator getOperator() const { return m_data->op; }
-        Operation getOperation() const { return m_data->operation; }
+        Operation getOperation() const;
         virtual int32_t getPriority() const override;
         std::string toString() override;
 
+        bool isUnary() const { return m_unary; }
+        void setIsUnary(bool unary) { m_unary = unary; }
+
     private:
         OperatorData const *m_data;
+        bool m_unary;
     };
 
     class IdToken : public Token
@@ -94,6 +98,18 @@ namespace GobLang::Compiler
     {
     public:
         explicit IntToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
+        std::string toString() override;
+
+        size_t getId() const { return m_id; }
+
+    private:
+        size_t m_id;
+    };
+
+    class FloatToken : public Token
+    {
+    public:
+        explicit FloatToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
         std::string toString() override;
 
         size_t getId() const { return m_id; }
