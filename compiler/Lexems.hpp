@@ -109,7 +109,7 @@ namespace GobLang::Compiler
         OperatorData{.symbol = "-", .op = Operator::Sub, .priority = 6, .operation = Operation::Sub},
         OperatorData{.symbol = "*", .op = Operator::Mul, .priority = 7, .operation = Operation::None},
         OperatorData{.symbol = "/", .op = Operator::Div, .priority = 7, .operation = Operation::None},
-        OperatorData{.symbol = "and", .op = Operator::And, .priority = 4, .operation = Operation::Add},
+        OperatorData{.symbol = "and", .op = Operator::And, .priority = 4, .operation = Operation::And},
         OperatorData{.symbol = "&&", .op = Operator::And, .priority = 4, .operation = Operation::And},
         OperatorData{.symbol = "or", .op = Operator::Or, .priority = 3, .operation = Operation::Or},
         OperatorData{.symbol = "||", .op = Operator::Or, .priority = 3, .operation = Operation::Or}};

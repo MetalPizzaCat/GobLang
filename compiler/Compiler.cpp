@@ -598,7 +598,6 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
             {
                 whileToken->setReturnMark(getMarkCounterAndAdvance());
                 GotoToken *loopJump = new GotoToken(sepToken->getRow(), sepToken->getColumn(), whileToken->getReturnMark());
-                m_jumps.push_back(loopJump);
                 m_compilerTokens.push_back(loopJump);
                 m_code.push_back(loopJump);
             }

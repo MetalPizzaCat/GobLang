@@ -142,6 +142,10 @@ namespace GobLang
         void _eq();
 
         void _neq();
+        
+        void _and();
+        
+        void _or();
 
         void _less();
 
