@@ -758,5 +758,7 @@ bool GobLang::Compiler::Compiler::_isValidBinaryOperation(std::vector<Token *>::
     return dynamic_cast<IdToken *>(*prevIt) ||
            dynamic_cast<IntToken *>(*prevIt) ||
            dynamic_cast<FloatToken *>(*prevIt) ||
+           dynamic_cast<CharToken *>(*prevIt) ||
+            dynamic_cast<StringToken *>(*prevIt)||
            dynamic_cast<BoolConstToken *>(*prevIt);
 }

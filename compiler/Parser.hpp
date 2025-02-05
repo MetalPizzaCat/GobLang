@@ -19,11 +19,13 @@ namespace GobLang::Compiler
          */
         void skipWhitespace();
 
-        /**
+         /**
          * @brief Checks if there is a comment and if so advances to the next line
          * 
+         * @return true Found a comment and moved to the next line
+         * @return false Didn't find any comments
          */
-        void skipComments();
+        bool skipComments();
 
         void parse();
 
