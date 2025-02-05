@@ -1,0 +1,21 @@
+print_line("Width: ");
+let width = to_int(input());
+print_line("Height: ");
+let height = to_int(input());
+
+let i = 0;
+while(i < height){
+    let j = 0;
+    while(j < width){
+        if(i == 0 || i == (height - 1) || j == 0 || j == (width - 1)){
+            print('*');
+        }
+        else{
+            print(' ');
+        }
+        
+        j = j + 1;
+    }
+    print_line("");
+    i = i + 1;
+}

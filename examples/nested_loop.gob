@@ -11,4 +11,4 @@ while(i < sizeof(a)){
    }
    i = i + 1;
 }
-print(a);
+print_line(a);

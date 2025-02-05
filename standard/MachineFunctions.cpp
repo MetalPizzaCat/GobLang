@@ -14,6 +14,17 @@ void MachineFunctions::printLine(GobLang::Machine *machine)
     delete v;
 }
 
+void MachineFunctions::print(GobLang::Machine *machine)
+{
+    GobLang::MemoryValue *v = machine->getStackTopAndPop();
+    if (v == nullptr)
+    {
+        return;
+    }
+    std::cout << GobLang::valueToString(*v);
+    delete v;
+}
+
 void MachineFunctions::createArrayOfSize(GobLang::Machine *machine)
 {
     GobLang::MemoryValue *sizeVal = machine->getStackTopAndPop();
