@@ -74,6 +74,8 @@ namespace GobLang
 
         ArrayNode *createArrayOfSize(int32_t size);
 
+        StringNode *createString(std::string const &str);
+
         void popStack();
 
         void pushToStack(MemoryValue const &val);
@@ -82,7 +84,7 @@ namespace GobLang
 
         /**
          * @brief Set local variable value using id. If id is larger than current amount of variables the array will be expanded to match the id
-         * 
+         *
          * @param id id of the variable
          * @param val Value of the variable
          */
@@ -90,7 +92,7 @@ namespace GobLang
 
         /**
          * @brief Get value of a local variable. Beware that addressing id that is no longer in use by the block that created it is undefined behaviour
-         * 
+         *
          * @param id Id of the local variable
          * @return MemoryValue* Value of the local variable or nullptr if no value uses this id
          */
@@ -143,9 +145,9 @@ namespace GobLang
         void _eq();
 
         void _neq();
-        
+
         void _and();
-        
+
         void _or();
 
         void _less();
