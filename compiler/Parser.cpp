@@ -12,6 +12,18 @@ void GobLang::Compiler::Parser::skipWhitespace()
     {
         advanceRowIterator(1);
     }
+    if(m_rowIt == getEndOfTheLine())
+    {
+        advanceLineIterator(1);
+    }
+}
+
+void GobLang::Compiler::Parser::skipComments()
+{
+    if (*m_rowIt == '#')
+    {
+        advanceLineIterator(1);
+    }
 }
 
 void GobLang::Compiler::Parser::parse()
@@ -31,6 +43,7 @@ void GobLang::Compiler::Parser::parse()
     while (m_rowIt != getEndOfTheLine() && m_lineIt != m_code.end())
     {
         skipWhitespace();
+        skipComments();
 
         Token *token = nullptr;
         for (std::function<Token *(void)> &f : parsers)
@@ -47,6 +60,7 @@ void GobLang::Compiler::Parser::parse()
             throw ParsingError(getLineNumber(), getColumnNumber(), "Unknown character sequence");
         }
         skipWhitespace();
+        skipComments();
     }
 }
 
@@ -341,6 +355,15 @@ void GobLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEnd
         {
             advanceRowIterator(offset - currentOffset, stopAtEndOfTheLine);
         }
+    }
+}
+
+void GobLang::Compiler::Parser::advanceLineIterator(size_t offset)
+{
+    m_lineIt += offset;
+    if (m_lineIt != m_code.end())
+    {
+        m_rowIt = m_lineIt->begin();
     }
 }
 
