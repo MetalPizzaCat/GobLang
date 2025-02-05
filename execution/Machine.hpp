@@ -74,7 +74,15 @@ namespace GobLang
 
         ArrayNode *createArrayOfSize(int32_t size);
 
-        StringNode *createString(std::string const &str);
+        /**
+         * @brief Create a new string object in memory
+         * 
+         * @param str Base string to store in memory
+         * @param alwaysNew If true that means that it will skip search and always create new memory object. 
+         * This is useful to avoid messing variables that were set from constants
+         * @return StringNode* Pointer to new string object or other string object that was found in memory
+         */
+        StringNode *createString(std::string const &str, bool alwaysNew = false);
 
         void popStack();
 

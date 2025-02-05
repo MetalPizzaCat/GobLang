@@ -168,12 +168,12 @@ GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
     return node;
 }
 
-GobLang::StringNode *GobLang::Machine::createString(std::string const &str)
+GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool alwaysNew)
 {
     MemoryNode *root = m_memoryRoot;
     StringNode *node = nullptr;
     // avoid making instance for each call, check if there is anything that uses this already
-    while (root != nullptr)
+    while (root != nullptr && !alwaysNew)
     {
         if (StringNode *strNode = dynamic_cast<StringNode *>(root); strNode != nullptr && strNode->getString() == str)
         {
@@ -365,7 +365,8 @@ void GobLang::Machine::_pushConstString()
 {
     MemoryNode *root = m_memoryRoot;
     std::string &str = m_constStrings[(size_t)m_operations[m_programCounter + 1]];
-    StringNode *node = createString(str);
+    // we always create a new string object because otherwise each variable will share same pointer to constant string which can be altered
+    StringNode *node = createString(str, true);
 
     m_programCounter++;
     m_operationStack.push_back(MemoryValue{.type = Type::MemoryObj, .value = node});
