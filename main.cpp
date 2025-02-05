@@ -155,8 +155,12 @@ int main(int argc, char **argv)
         for (int32_t i = std::max(0, (int32_t)e.getRow() - LINES_BEFORE_ERROR); i < maxLine; i++)
         {
             std::string lineId = std::to_string(i + 1);
-
-            std::cout << (lineId + std::string(' ', maxLine - lineId.size())) << ": " << lines[i] << std::endl;
+            size_t spaceCount = 0;
+            if (lineId.size() < maxLine)
+            {
+                spaceCount = maxLine - lineId.size();
+            }
+            std::cout << (lineId) << ": " << lines[i] << std::endl;
             if (i == e.getRow())
             {
                 std::cout << std::string(std::max((int32_t)e.getColumn() - 1, 0) + spaces, ' ') << "~~~" << std::endl;

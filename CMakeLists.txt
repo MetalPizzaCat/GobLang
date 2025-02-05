@@ -19,6 +19,8 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Memory.cpp
     execution/Array.hpp
     execution/Array.cpp
+    execution/Exception.hpp
+    execution/Exception.cpp
 )
 
 

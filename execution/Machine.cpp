@@ -614,7 +614,4 @@ void GobLang::Machine::_not()
     m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = !std::get<bool>(val.value)});
 }
 
-const char *GobLang::RuntimeException::what() const throw()
-{
-    return m_msg.c_str();
-}
+

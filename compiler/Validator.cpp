@@ -91,6 +91,26 @@ bool GobLang::Compiler::Validator::keyword(TokenIterator const &it, Keyword word
     return false;
 }
 
+bool GobLang::Compiler::Validator::loopControlKeyWord(TokenIterator const &it, TokenIterator &endIt)
+{
+    if (it == getEnd())
+    {
+        return false;
+    }
+    else if (KeywordToken *t = dynamic_cast<KeywordToken *>(*it);
+             t != nullptr &&
+             !(t->getKeyword() == Keyword::Break || t->getKeyword() == Keyword::Continue))
+    {
+        return false;
+    }
+    if (end(it + 1))
+    {
+        endIt = it + 1;
+        return true;
+    }
+    return false;
+}
+
 bool GobLang::Compiler::Validator::end(TokenIterator const &it)
 {
     return separator(it, Separator::End);
@@ -324,7 +344,8 @@ bool GobLang::Compiler::Validator::code(TokenIterator const &it, TokenIterator &
            assignment(it, endIt) ||
            callOp(it, endIt) ||
            ifElseChain(it, endIt) ||
-           branch(BranchType::While, it, endIt);
+           branch(BranchType::While, it, endIt) ||
+           loopControlKeyWord(it, endIt);
 }
 
 bool GobLang::Compiler::Validator::branch(BranchType branch, TokenIterator const &it, TokenIterator &endIt)

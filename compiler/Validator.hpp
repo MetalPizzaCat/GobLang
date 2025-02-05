@@ -22,7 +22,7 @@ namespace GobLang::Compiler
 
         bool constant(TokenIterator const &it);
         bool id(TokenIterator const &it);
-        bool unaryOperator(TokenIterator const& it);
+        bool unaryOperator(TokenIterator const &it);
         bool mathOperator(TokenIterator const &it);
         bool actionOperator(TokenIterator const &it, Operator op);
         bool separator(TokenIterator const &it, Separator sep);
@@ -32,29 +32,33 @@ namespace GobLang::Compiler
 
         /**
          * @brief Repeating rule for expr = mul {op mul}
-         * 
-         * @param it 
-         * @param endIt 
-         * @return true 
-         * @return false 
+         *
+         * @param it
+         * @param endIt
+         * @return true
+         * @return false
          */
         bool expr(TokenIterator const &it, TokenIterator &endIt);
         /**
          * @brief Expressions which only use one operand. "!a" and "-a"
-         * 
-         * @param it 
-         * @param endIt 
-         * @return true 
-         * @return false 
+         *
+         * @param it
+         * @param endIt
+         * @return true
+         * @return false
          */
-        bool unaryExpr(TokenIterator const& it, TokenIterator &endIt);
         /**
-         * @brief Check that covers anything that follows this rule expr = arrayAccess | call | operand | (expr) 
-         * 
-         * @param it 
-         * @param endIt 
-         * @return true 
-         * @return false 
+         * @brief Check if keyword is `break` of `continue` ending with ';'
+         */
+        bool loopControlKeyWord(TokenIterator const &it, TokenIterator &endIt);
+        bool unaryExpr(TokenIterator const &it, TokenIterator &endIt);
+        /**
+         * @brief Check that covers anything that follows this rule expr = arrayAccess | call | operand | (expr)
+         *
+         * @param it
+         * @param endIt
+         * @return true
+         * @return false
          */
         bool mul(TokenIterator const &it, TokenIterator &endIt);
         bool functionCall(TokenIterator const &it, TokenIterator &endIt);
@@ -73,8 +77,8 @@ namespace GobLang::Compiler
 
         TokenIterator getEnd() { return m_parser.getTokens().end(); }
 
-        size_t getRowForToken(TokenIterator const& it);
-        size_t getColumnForToken(TokenIterator const& it);
+        size_t getRowForToken(TokenIterator const &it);
+        size_t getColumnForToken(TokenIterator const &it);
 
     private:
         Parser const &m_parser;
