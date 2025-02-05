@@ -11,6 +11,7 @@
 #include "Operations.hpp"
 #include "Value.hpp"
 #include "Array.hpp"
+#include "Exception.hpp"
 #include "../compiler/ByteCode.hpp"
 
 namespace GobLang
@@ -180,15 +181,5 @@ namespace GobLang
         std::vector<int32_t> m_constInts;
         std::vector<float> m_constFloats;
         std::vector<std::string> m_constStrings;
-    };
-
-    class RuntimeException : public std::exception
-    {
-    public:
-        const char *what() const throw() override;
-        explicit RuntimeException(std::string const &msg) : m_msg(msg) {}
-
-    private:
-        std::string m_msg;
     };
 }
