@@ -19,6 +19,12 @@ namespace GobLang::Compiler
          */
         void skipWhitespace();
 
+        /**
+         * @brief Checks if there is a comment and if so advances to the next line
+         * 
+         */
+        void skipComments();
+
         void parse();
 
         /**
@@ -81,6 +87,13 @@ namespace GobLang::Compiler
          * @param stopAtEndOfTheLine If true `m_rowIt` will always be at position upon line switch, otherwise it will continue till end of offset
          */
         void advanceRowIterator(size_t offset, bool stopAtEndOfTheLine = false);
+
+        /**
+         * @brief Advances `m_lineIt` and resets `m_rowIt` to the start of the new line
+         * 
+         * @param offset The amount to advance by
+         */
+        void advanceLineIterator(size_t offset);
 
         /**
          * @brief Get number of the the current line(row) starting from 0
