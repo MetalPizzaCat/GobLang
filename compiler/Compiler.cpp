@@ -591,9 +591,11 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
                 GotoToken *elifPair = *m_jumps.rbegin();
                 elifPair->setMark(getMarkCounterAndAdvance());
                 JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), elifPair->getMark());
+                m_jumps.pop_back();
                 m_compilerTokens.push_back(dest);
                 m_code.push_back(dest);
             }
+            
             else if (WhileToken *whileToken = dynamic_cast<WhileToken *>(jump); whileToken != nullptr)
             {
                 whileToken->setReturnMark(getMarkCounterAndAdvance());
