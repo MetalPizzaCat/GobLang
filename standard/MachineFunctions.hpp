@@ -13,10 +13,12 @@ namespace MachineFunctions
 
     /**
      * @brief Read a full line of user input and put it onto the stack
-     * 
-     * @param machine 
+     *
+     * @param machine
      */
     void input(GobLang::Machine *machine);
+
+    void inputChar(GobLang::Machine *machine);
 
     namespace Math
     {

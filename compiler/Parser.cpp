@@ -12,18 +12,20 @@ void GobLang::Compiler::Parser::skipWhitespace()
     {
         advanceRowIterator(1);
     }
-    if(m_rowIt == getEndOfTheLine())
+    if (m_rowIt == getEndOfTheLine())
     {
         advanceLineIterator(1);
     }
 }
 
-void GobLang::Compiler::Parser::skipComments()
+bool GobLang::Compiler::Parser::skipComments()
 {
-    if (*m_rowIt == '#')
+    if ((m_rowIt != getEndOfTheLine() && *m_rowIt == '#') || m_rowIt == getEndOfTheLine())
     {
         advanceLineIterator(1);
+        return true;
     }
+    return false;
 }
 
 void GobLang::Compiler::Parser::parse()
@@ -43,7 +45,10 @@ void GobLang::Compiler::Parser::parse()
     while (m_rowIt != getEndOfTheLine() && m_lineIt != m_code.end())
     {
         skipWhitespace();
-        skipComments();
+        if (skipComments())
+        {
+            continue;
+        }
 
         Token *token = nullptr;
         for (std::function<Token *(void)> &f : parsers)

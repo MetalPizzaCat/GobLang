@@ -48,6 +48,13 @@ void MachineFunctions::input(GobLang::Machine *machine)
     machine->pushToStack(GobLang::MemoryValue{.type = GobLang::Type::MemoryObj, .value = machine->createString(input)});
 }
 
+void MachineFunctions::inputChar(GobLang::Machine *machine)
+{
+    char ch;
+    std::cin >> ch;
+    machine->pushToStack(GobLang::MemoryValue{.type = GobLang::Type::Char, .value = ch});
+}
+
 void MachineFunctions::Math::toInt(GobLang::Machine *machine)
 {
     using namespace GobLang;

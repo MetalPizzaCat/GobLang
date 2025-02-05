@@ -139,6 +139,7 @@ int main(int argc, char **argv)
         machine.addFunction(MachineFunctions::Math::toInt, "to_int");
         machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
         machine.addFunction(MachineFunctions::Math::randomInt, "rand");
+        machine.addFunction(MachineFunctions::inputChar, "get_char");
         std::vector<size_t> debugPoints = {};
         while (!machine.isAtTheEnd())
         {
