@@ -93,7 +93,11 @@ int main()
     machine.addFunction(MachineFunctions::getSizeof, "sizeof");
     machine.addFunction(MachineFunctions::printLine, "print");
     machine.addFunction(MachineFunctions::createArrayOfSize, "array");
-    std::vector<size_t> debugPoints = { 0x42, 0x44,0x46,0x47};
+    machine.addFunction(MachineFunctions::input, "input");
+    machine.addFunction(MachineFunctions::Math::toInt, "to_int");
+    machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
+    machine.addFunction(MachineFunctions::Math::randomInt, "rand");
+    std::vector<size_t> debugPoints = {};
     while (!machine.isAtTheEnd())
     {
         if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())

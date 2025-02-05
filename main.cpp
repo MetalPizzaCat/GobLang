@@ -135,6 +135,10 @@ int main(int argc, char **argv)
         machine.addFunction(MachineFunctions::getSizeof, "sizeof");
         machine.addFunction(MachineFunctions::printLine, "print");
         machine.addFunction(MachineFunctions::createArrayOfSize, "array");
+        machine.addFunction(MachineFunctions::input, "input");
+        machine.addFunction(MachineFunctions::Math::toInt, "to_int");
+        machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
+        machine.addFunction(MachineFunctions::Math::randomInt, "rand");
         std::vector<size_t> debugPoints = {};
         while (!machine.isAtTheEnd())
         {

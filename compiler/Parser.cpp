@@ -230,7 +230,6 @@ GobLang::Compiler::StringToken *GobLang::Compiler::Parser::parseString()
     }
     // we don't need to store opening and closing marks
     size_t offset = 1;
-    std::cout << *(m_rowIt + offset) << std::endl;
     std::string str;
     for (; (m_rowIt + offset) != getEndOfTheLine() && *(m_rowIt + offset) != '"'; offset++)
     {

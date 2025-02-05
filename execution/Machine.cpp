@@ -168,6 +168,28 @@ GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
     return node;
 }
 
+GobLang::StringNode *GobLang::Machine::createString(std::string const &str)
+{
+    MemoryNode *root = m_memoryRoot;
+    StringNode *node = nullptr;
+    // avoid making instance for each call, check if there is anything that uses this already
+    while (root != nullptr)
+    {
+        if (StringNode *strNode = dynamic_cast<StringNode *>(root); strNode != nullptr && strNode->getString() == str)
+        {
+            node = strNode;
+            break;
+        }
+        root = root->getNext();
+    }
+    if (node == nullptr)
+    {
+        node = new StringNode(str);
+        m_memoryRoot->push_back(node);
+    }
+    return node;
+}
+
 void GobLang::Machine::popStack()
 {
     m_operationStack.pop_back();
@@ -343,32 +365,14 @@ void GobLang::Machine::_pushConstString()
 {
     MemoryNode *root = m_memoryRoot;
     std::string &str = m_constStrings[(size_t)m_operations[m_programCounter + 1]];
-    StringNode *node = nullptr;
-    // avoid making instance for each call, check if there is anything that uses this already
-    while (root != nullptr)
-    {
-        if (StringNode *strNode = dynamic_cast<StringNode *>(root); strNode != nullptr && strNode->getString() == str)
-        {
-            node = strNode;
-            break;
-        }
-        root = root->getNext();
-    }
-    if (node == nullptr)
-    {
-        node = new StringNode(str);
-        m_memoryRoot->push_back(node);
-    }
+    StringNode *node = createString(str);
+
     m_programCounter++;
     m_operationStack.push_back(MemoryValue{.type = Type::MemoryObj, .value = node});
 }
 
 void GobLang::Machine::_getArray()
 {
-    // for (size_t i = 0; i < m_operationStack.size(); i++)
-    // {
-    //     std::cout << (m_operationStack.size() - i - 1) << " -> " << typeToString(m_operationStack[i].type) << std::endl;
-    // }
     MemoryValue index = m_operationStack[m_operationStack.size() - 2];
     MemoryValue array = m_operationStack[m_operationStack.size() - 1];
     m_operationStack.pop_back();
@@ -613,5 +617,3 @@ void GobLang::Machine::_not()
     }
     m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = !std::get<bool>(val.value)});
 }
-
-
