@@ -50,4 +50,15 @@ namespace GobLang::Compiler
     private:
         size_t m_varId;
     };
+
+    class LocalVarShrinkToken : public Token
+    {
+    public:
+        explicit LocalVarShrinkToken(size_t row, size_t column, size_t amount) : Token(row, column), m_amount(amount) {}
+        size_t getAmount() const { return m_amount; }
+
+        std::string toString() override;
+    private:
+        size_t m_amount;
+    };
 }

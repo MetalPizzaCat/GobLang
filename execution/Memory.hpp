@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <iostream>
 #include "Type.hpp"
 namespace GobLang
 {
@@ -17,7 +18,7 @@ namespace GobLang
          * @return true
          * @return false
          */
-        bool isDead() const { return m_dead; }
+        bool isDead() const { return m_dead || m_refCount <= 0; }
         /**
          * @brief Get the next node in the list
          *
@@ -32,11 +33,30 @@ namespace GobLang
         void insert(MemoryNode *node);
 
         /**
+         * @brief Erase current m_next by replacing it with the child of that object. Does not call any memory freeing functions
+         *
+         */
+        void eraseNext();
+
+        /**
          * @brief Insert a node at the end of the chain
          *
          * @param node Node to insert
          */
-        void push_back(MemoryNode *node);
+        void pushBack(MemoryNode *node);
+
+        void increaseRefCount();
+
+        void decreaseRefCount();
+
+        int32_t getRefCount() const { return m_refCount; }
+
+        /**
+         * @brief Size of the memory chain
+         *
+         * @return size_t
+         */
+        size_t length();
 
         /**
          * @brief Check if this memory value is equal to other value. This should be overriden to have type specific to avoid java situation
@@ -62,6 +82,8 @@ namespace GobLang
          *
          */
         bool m_dead = false;
+
+        int32_t m_refCount = 0;
     };
 
     class StringNode : public MemoryNode

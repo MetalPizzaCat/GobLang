@@ -4,7 +4,7 @@ project(goblang VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
-add_compile_definitions(GOB_LANG_VERSION_MINOR=1)
+add_compile_definitions(GOB_LANG_VERSION_MINOR=2)
 
 add_compile_definitions(LINES_BEFORE_ERROR=3)
 add_compile_definitions(LINES_AFTER_ERROR=3)

@@ -9,14 +9,48 @@ void GobLang::MemoryNode::insert(MemoryNode *node)
     }
 }
 
-void GobLang::MemoryNode::push_back(MemoryNode *node)
+void GobLang::MemoryNode::eraseNext()
 {
+    if (m_next != nullptr)
+    {
+        m_next = m_next->m_next;
+    }
+}
+
+void GobLang::MemoryNode::pushBack(MemoryNode *node)
+{
+    if (node == nullptr)
+    {
+        // don't pollute the memory
+        return;
+    }
     MemoryNode *curr = this;
     while (curr->m_next != nullptr)
     {
         curr = curr->m_next;
     }
     curr->m_next = node;
+}
+
+void GobLang::MemoryNode::increaseRefCount()
+{
+    m_refCount++;
+}
+
+void GobLang::MemoryNode::decreaseRefCount()
+{
+    m_refCount--;
+}
+
+size_t GobLang::MemoryNode::length()
+{
+    MemoryNode *curr = this->m_next;
+    size_t size = 1;
+    for (; curr != nullptr; curr = curr->m_next)
+    {
+        size++;
+    }
+    return size;
 }
 
 bool GobLang::MemoryNode::equalsTo(MemoryNode *other)
@@ -36,7 +70,7 @@ void GobLang::StringNode::setCharAt(char ch, size_t ind)
 
 bool GobLang::StringNode::equalsTo(MemoryNode *other)
 {
-    if(StringNode* otherStr = dynamic_cast<StringNode*>(other); otherStr != nullptr)
+    if (StringNode *otherStr = dynamic_cast<StringNode *>(other); otherStr != nullptr)
     {
         return otherStr->getString() == getString();
     }
