@@ -16,6 +16,8 @@ namespace GobLang
 
         size_t getSize() const { return m_data.size(); }
 
+        virtual ~ArrayNode();
+
     private:
         std::vector<MemoryValue> m_data;
     };
