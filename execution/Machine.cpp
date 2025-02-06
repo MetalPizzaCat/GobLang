@@ -235,11 +235,12 @@ GobLang::MemoryValue *GobLang::Machine::getLocalVariableValue(size_t id)
 
 void GobLang::Machine::shrinkLocalVariableStackBy(size_t size)
 {
-    for (int32_t i = m_variables.size() - 1; i >= m_variables.size() - size; i--)
+    for (size_t i = 0; i < size; i++)
     {
-        if (m_variables[i].type == Type::MemoryObj)
+        size_t ind = m_variables.size() - i - 1;
+        if (m_variables[ind].type == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(m_variables[i].value)->decreaseRefCount();
+            std::get<MemoryNode *>(m_variables[ind].value)->decreaseRefCount();
         }
     }
     // possibly add m_variables.resize(m_variables.size() - size)

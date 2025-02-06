@@ -158,7 +158,14 @@ struct MemoryValue
 };
 ```
 
-# Using
+## Garbage collection
+
+There is a very basic garbage collector implemented into the interpreter that uses reference counting to know when to delete objects. 
+Every object is created with ref count being set to 0 and on every assignment operation(which includes operations like setting a global value, local value and array value) it increases the ref count by 1. On the same operations it checks if object that is being replaced by set operation is object and if so, decreases ref counter for that object.
+
+Similar operation occurs when shrinking the local variable array, although it only performs ref count decrease.
+
+# Using the interpreter
 
 To execute the code call `goblang -i <code_with_file>` in the terminal
 Options: 
@@ -198,12 +205,7 @@ impl Type{
     func method2() {}
 }
 ```
-## Garbage collection
 
-Currently there is no system for managing memory so anytime object is created it stays there forever.
-Some possible ideas:
- * A useful way to do this would be to add instructions which would hint interpreter that some local variables can be erased. 
- * Checking both global and local variable storage for references to any memory object, although this will require some form of cyclical reference check to avoid creating an infinite loop
 ## Strong typing
 
 While right now there are no 'compile' time type checks, i do want to add them to the project. As well as ability to disallow globals, requiring to tell the parser all functions in advance instead of assuming that they will be added after generating bytecode
