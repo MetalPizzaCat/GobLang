@@ -582,7 +582,10 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
         break;
     case Separator::BlockClose:
         dumpStack();
-        m_code.push_back(new LocalVarShrinkToken(sepToken->getRow(), sepToken->getColumn(), m_blockVariables.rbegin()->size()));
+        if (m_blockVariables.rbegin()->size() > 0)
+        {
+            m_code.push_back(new LocalVarShrinkToken(sepToken->getRow(), sepToken->getColumn(), m_blockVariables.rbegin()->size()));
+        }
         _popVariableBlock();
         if (!m_jumps.empty())
         {
