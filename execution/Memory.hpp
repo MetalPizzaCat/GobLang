@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <cstdint>
 #include "Type.hpp"
 namespace GobLang
 {
