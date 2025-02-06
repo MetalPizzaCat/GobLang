@@ -242,6 +242,11 @@ void GobLang::Compiler::Compiler::generateByteCode()
 
             stack.push_back(new ArrayCompilerNode(array, index, isDestination, destMark));
         }
+        else if (LocalVarShrinkToken *shrinkTok = dynamic_cast<LocalVarShrinkToken *>(*it); shrinkTok != nullptr)
+        {
+            m_byteCode.operations.push_back((uint8_t)Operation::ShrinkLocal);
+            m_byteCode.operations.push_back((uint8_t)shrinkTok->getAmount());
+        }
     }
     for (std::vector<CompilerNode *>::iterator it = stack.begin(); it != stack.end(); it++)
     {
@@ -576,8 +581,12 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
         _appendVariableBlock();
         break;
     case Separator::BlockClose:
-        _popVariableBlock();
         dumpStack();
+        if (m_blockVariables.rbegin()->size() > 0)
+        {
+            m_code.push_back(new LocalVarShrinkToken(sepToken->getRow(), sepToken->getColumn(), m_blockVariables.rbegin()->size()));
+        }
+        _popVariableBlock();
         if (!m_jumps.empty())
         {
             GotoToken *jump = *m_jumps.rbegin();
@@ -595,7 +604,7 @@ void GobLang::Compiler::Compiler::_compileSeparators(SeparatorToken *sepToken, s
                 m_compilerTokens.push_back(dest);
                 m_code.push_back(dest);
             }
-            
+
             else if (WhileToken *whileToken = dynamic_cast<WhileToken *>(jump); whileToken != nullptr)
             {
                 whileToken->setReturnMark(getMarkCounterAndAdvance());
@@ -759,6 +768,6 @@ bool GobLang::Compiler::Compiler::_isValidBinaryOperation(std::vector<Token *>::
            dynamic_cast<IntToken *>(*prevIt) ||
            dynamic_cast<FloatToken *>(*prevIt) ||
            dynamic_cast<CharToken *>(*prevIt) ||
-            dynamic_cast<StringToken *>(*prevIt)||
+           dynamic_cast<StringToken *>(*prevIt) ||
            dynamic_cast<BoolConstToken *>(*prevIt);
 }

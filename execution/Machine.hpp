@@ -106,6 +106,8 @@ namespace GobLang
          */
         MemoryValue *getLocalVariableValue(size_t id);
 
+        void shrinkLocalVariableStackBy(size_t size);
+
         /**
          * @brief Create a custom variable that will be accessible in code. Useful for binding with c code
          *
@@ -114,10 +116,9 @@ namespace GobLang
          */
         void createVariable(std::string const &name, MemoryValue const &value);
 
-        ~Machine()
-        {
-            delete m_memoryRoot;
-        }
+        void collectGarbage();
+
+        ~Machine();
 
     private:
         ProgramAddressType _getAddressFromByteCode(size_t start);
@@ -169,6 +170,8 @@ namespace GobLang
         void _negate();
 
         void _not();
+
+        void _shrink();
 
         bool m_forcedEnd = false;
 

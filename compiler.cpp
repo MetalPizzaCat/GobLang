@@ -91,7 +91,8 @@ int main()
 
     GobLang::Machine machine(compiler.getByteCode());
     machine.addFunction(MachineFunctions::getSizeof, "sizeof");
-    machine.addFunction(MachineFunctions::printLine, "print");
+    machine.addFunction(MachineFunctions::printLine, "print_line");
+    machine.addFunction(MachineFunctions::print, "print");
     machine.addFunction(MachineFunctions::createArrayOfSize, "array");
     machine.addFunction(MachineFunctions::input, "input");
     machine.addFunction(MachineFunctions::Math::toInt, "to_int");

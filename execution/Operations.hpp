@@ -46,6 +46,10 @@ namespace GobLang
          */
         JumpIfNot,
         /**
+         * @brief Shrink local variable array by n variables
+         */
+        ShrinkLocal,
+        /**
          * @brief End program execution
          */
         End
@@ -84,6 +88,7 @@ namespace GobLang
         OperationData{.op = Operation::LessOrEq, .text = "eqless", .argCount = 0},
         OperationData{.op = Operation::Jump, .text = "goto", .argCount = sizeof(size_t)},
         OperationData{.op = Operation::JumpIfNot, .text = "goto_if_not", .argCount = sizeof(size_t)},
+        OperationData{.op = Operation::ShrinkLocal, .text = "local_free", .argCount = 1},
         OperationData{.op = Operation::End, .text = "hlt", .argCount = 0},
     };
 } // namespace SimpleLang

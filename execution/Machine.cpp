@@ -31,6 +31,7 @@ void GobLang::Machine::step()
         break;
     case Operation::Set:
         _set();
+        collectGarbage();
         break;
     case Operation::Get:
         _get();
@@ -40,6 +41,7 @@ void GobLang::Machine::step()
         break;
     case Operation::SetLocal:
         _setLocal();
+        collectGarbage();
         break;
     case Operation::PushConstInt:
         _pushConstInt();
@@ -55,6 +57,7 @@ void GobLang::Machine::step()
         break;
     case Operation::SetArray:
         _setArray();
+        collectGarbage();
         break;
     case Operation::Jump:
         _jump();
@@ -97,6 +100,10 @@ void GobLang::Machine::step()
         break;
     case Operation::Negate:
         _negate();
+        break;
+    case Operation::ShrinkLocal:
+        _shrink();
+        collectGarbage();
         break;
     case Operation::End:
         m_forcedEnd = true;
@@ -164,7 +171,7 @@ GobLang::MemoryValue *GobLang::Machine::getStackTopAndPop()
 GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
 {
     ArrayNode *node = new ArrayNode(size);
-    m_memoryRoot->push_back(node);
+    m_memoryRoot->pushBack(node);
     return node;
 }
 
@@ -185,7 +192,7 @@ GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool
     if (node == nullptr)
     {
         node = new StringNode(str);
-        m_memoryRoot->push_back(node);
+        m_memoryRoot->pushBack(node);
     }
     return node;
 }
@@ -206,6 +213,14 @@ void GobLang::Machine::setLocalVariableValue(size_t id, MemoryValue const &val)
     {
         m_variables.resize(id + 1);
     }
+    if (val.type == Type::MemoryObj)
+    {
+        std::get<MemoryNode *>(val.value)->increaseRefCount();
+    }
+    if (m_variables[id].type == Type::MemoryObj)
+    {
+        std::get<MemoryNode *>(m_variables[id].value)->decreaseRefCount();
+    }
     m_variables[id] = val;
 }
 
@@ -218,9 +233,56 @@ GobLang::MemoryValue *GobLang::Machine::getLocalVariableValue(size_t id)
     return &m_variables[id];
 }
 
+void GobLang::Machine::shrinkLocalVariableStackBy(size_t size)
+{
+    for (size_t i = 0; i < size; i++)
+    {
+        size_t ind = m_variables.size() - i - 1;
+        if (m_variables[ind].type == Type::MemoryObj)
+        {
+            std::get<MemoryNode *>(m_variables[ind].value)->decreaseRefCount();
+        }
+    }
+    // possibly add m_variables.resize(m_variables.size() - size)
+}
+
 void GobLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
 {
     m_globals[name] = value;
+}
+
+void GobLang::Machine::collectGarbage()
+{
+    MemoryNode *prev = m_memoryRoot;
+    MemoryNode *curr = m_memoryRoot->getNext();
+    while (curr != nullptr)
+    {
+        if (!curr->isDead())
+        {
+            prev = curr;
+            curr = curr->getNext();
+            continue;
+        }
+        // if we are deleting then prev should stay the same while
+        // curr gets deleted
+        MemoryNode *del = curr;
+        prev->eraseNext();
+        curr = prev->getNext();
+
+        delete del;
+    }
+}
+
+GobLang::Machine::~Machine()
+{
+    MemoryNode *root = m_memoryRoot->getNext();
+    while (root != nullptr)
+    {
+        MemoryNode *del = root;
+        root = root->getNext();
+        delete del;
+    }
+    delete m_memoryRoot;
 }
 
 GobLang::ProgramAddressType GobLang::Machine::_getAddressFromByteCode(size_t start)
@@ -292,6 +354,14 @@ void GobLang::Machine::_set()
     StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
     if (memStr != nullptr)
     {
+        if (val.type == Type::MemoryObj)
+        {
+            std::get<MemoryNode *>(val.value)->increaseRefCount();
+        }
+        if (m_globals.count(memStr->getString()) > 0 && m_globals[memStr->getString()].type == Type::MemoryObj)
+        {
+            std::get<MemoryNode *>(m_globals[memStr->getString()].value)->decreaseRefCount();
+        }
         m_globals[memStr->getString()] = val;
     }
 }
@@ -617,4 +687,11 @@ void GobLang::Machine::_not()
         throw RuntimeException("Attempted to negate non boolean value");
     }
     m_operationStack.push_back(MemoryValue{.type = Type::Bool, .value = !std::get<bool>(val.value)});
+}
+
+void GobLang::Machine::_shrink()
+{
+    m_programCounter++;
+    size_t amount = (size_t)m_operations[m_programCounter];
+    shrinkLocalVariableStackBy(amount);
 }
