@@ -58,7 +58,12 @@ namespace GobLang::Compiler
         size_t getAmount() const { return m_amount; }
 
         std::string toString() override;
+
     private:
         size_t m_amount;
+    };
+
+    class FunctionDeclarationToken : public Token
+    {
     };
 }

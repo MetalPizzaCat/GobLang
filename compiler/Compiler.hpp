@@ -1,56 +1,22 @@
 #pragma once
-#include "Parser.hpp"
+#include "ReversePolishGenerator.hpp"
 #include <vector>
 #include <cstdint>
 #include "ByteCode.hpp"
-#include "CompilerToken.hpp"
+
 #include "CompilerNode.hpp"
 namespace GobLang::Compiler
 {
     class Compiler
     {
     public:
-        explicit Compiler(Parser const &parser) : m_parser(parser) {}
-
-        /**
-         * @brief Convert given parsed data into reverse polish notation representation of code
-         *
-         */
-        void compile();
+        explicit Compiler(ReversePolishGenerator const &generator) : m_generator(generator) {}
 
         /**
          * @brief Generate byte code that can be used by the interpreter and write it into the `m_byteCode` variable
          *
          */
         void generateByteCode();
-
-        /**
-         * @brief Dump all contents of the stack into the reverse polish notation array
-         *
-         */
-        void dumpStack();
-
-        void dumpStackWhile(std::function<bool(Token *)> const &cond);
-
-        /**
-         * @brief Get priority for the top item on the stack or -1 if stack is empty
-         *
-         * @return int32_t Priority
-         */
-        int32_t getTopStackPriority();
-
-        /**
-         * @brief Pop the last item from the stack and return it
-         *
-         * @return Token* Token from top of the stack or nullptr if stack is empty
-         */
-        Token *popStack();
-
-        /**
-         * @brief Prints the parsed sequence using the token data
-         *
-         */
-        void printCode();
 
         static std::vector<uint8_t> generateGetByteCode(Token *token);
 
@@ -70,60 +36,15 @@ namespace GobLang::Compiler
 
         void appendByteCode(std::vector<uint8_t> const &bytes);
 
-        /**
-         * @brief Get token of a while loop that is closest to the top of the jump stack.
-         *
-         * @return WhileToken* Token of a while loop that is closest to the top of the jump stack or nullptr if none are found
-         */
-        WhileToken *getCurrentLoop();
 
         ByteCode getByteCode() const { return m_byteCode; }
 
-        size_t getMarkCounterAndAdvance();
-
-        ~Compiler();
 
     private:
-        bool _doesVariableExist(size_t stringId);
-        int32_t _getLocalVariableAccessId(size_t id);
-        void _appendVariableBlock();
-        void _popVariableBlock();
-        void _appendVariable(size_t stringId);
+       
         void _placeAddressForMark(size_t mark, size_t address, bool erase);
-        void _compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it);
-
-        void _compileKeywords(KeywordToken *keyToken, std::vector<Token *>::const_iterator const &it);
-
-        bool _isElseChainToken(std::vector<Token *>::const_iterator const &it);
-
-        bool _isElifChainToken(std::vector<Token *>::const_iterator const &it);
-        void _printTokenStack();
-
-        bool _isBranchKeyword(std::vector<Token *>::const_iterator const& it);
-
-        void _addOperator(std::vector<Token *>::const_iterator const& it);
-
-        /**
-         * @brief Check if this is valid binary operation
-         * 
-         * @param it Iterator pointing to current operation token
-         * @return true This operator can be considered binary operator
-         * @return false This  operator is most likey an unary operator
-         */
-        bool _isValidBinaryOperation(std::vector<Token *>::const_iterator const& it);
-        /**
-         * @brief code representation in reverse polish notation
-         *
-         */
-        std::vector<Token *> m_code;
+      
         std::vector<uint8_t> m_bytes;
-
-        std::vector<Token *> m_stack;
-        std::vector<SeparatorToken *> m_blockDepthStack;
-
-        std::vector<std::vector<size_t>> m_blockVariables = {{}};
-
-        std::vector<GotoToken *> m_jumps;
 
         /**
          * @brief Jump map used in bytecode generation to know which places require which marks.
@@ -133,21 +54,11 @@ namespace GobLang::Compiler
         std::map<size_t, std::vector<size_t>> m_jumpMarks;
 
         std::map<size_t, size_t> m_jumpDestinations;
-        /**
-         * @brief Array for storing all tokens created during the conversion process, used only to be able to delete them once the process ends
-         *
-         */
-        std::vector<Token *> m_compilerTokens;
-
-        std::vector<FunctionCallToken *> m_functionCalls;
+       
 
         ByteCode m_byteCode;
-        Parser const &m_parser;
 
-        bool m_isInConditionHead = false;
-        size_t m_markCounter = 0;
-
-        bool m_isVariableDeclaration = false;
+        ReversePolishGenerator const & m_generator;
     };
 
 }

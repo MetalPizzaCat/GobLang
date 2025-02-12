@@ -20,6 +20,7 @@ namespace GobLang::Compiler
         While,
         Continue,
         Break,
+        FunctionReturnType
     };
 
     enum class Operator
@@ -49,6 +50,7 @@ namespace GobLang::Compiler
         ArrayOpen,    // [
         ArrayClose,   // ]
         Dot,
+        Colon, // :
         Comma, // ,
         End,   // ;
     };
@@ -73,8 +75,8 @@ namespace GobLang::Compiler
      *
      */
     static const std::map<std::string, Keyword> Keywords = {
-        {"int", Keyword::Int},
-        {"float", Keyword::Float},
+        //{"int", Keyword::Int},
+        //{"float", Keyword::Float},
         {"func", Keyword::Function},
         {"return", Keyword::Return},
         {"null", Keyword::Null},
@@ -84,6 +86,8 @@ namespace GobLang::Compiler
         {"break", Keyword::Break},
         {"elif", Keyword::Elif},
         {"else", Keyword::Else},
+        // this is kinda cheating but it's also less clunky than whole special parser
+        {"->", Keyword::FunctionReturnType},
         {"let", Keyword::Let}};
 
     static const std::map<std::string, bool> Booleans = {
@@ -127,7 +131,8 @@ namespace GobLang::Compiler
         SeparatorData{.symbol = ']', .separator = Separator::ArrayClose, .priority = 2},
         SeparatorData{.symbol = '.', .separator = Separator::Dot, .priority = -1},
         SeparatorData{.symbol = ',', .separator = Separator::Comma, .priority = -1},
-        SeparatorData{.symbol = ';', .separator = Separator::End, .priority = -1}
+        SeparatorData{.symbol = ';', .separator = Separator::End, .priority = -1},
+        SeparatorData{.symbol = ':', .separator = Separator::Colon, .priority = -1}
 
     };
 }

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include "compiler/Parser.hpp"
+#include "compiler/ReversePolishGenerator.hpp"
 #include "compiler/Compiler.hpp"
 #include "execution/Machine.hpp"
 #include "compiler/Validator.hpp"
@@ -61,55 +62,59 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 }
 int main()
 {
-    std::string file = "./code.gob";
-    std::vector<std::string> lines;
-    std::ifstream codeFile(file);
-    if (!codeFile.is_open())
-    {
-        std::cerr << "Unable to open code file" << std::endl;
-        return EXIT_FAILURE;
-    }
-    std::string to;
-    while (std::getline(codeFile, to, '\n'))
-    {
-        lines.push_back(to);
-    }
+    // std::string file = "./code.gob";
+    // std::vector<std::string> lines;
+    // std::ifstream codeFile(file);
+    // if (!codeFile.is_open())
+    // {
+    //     std::cerr << "Unable to open code file" << std::endl;
+    //     return EXIT_FAILURE;
+    // }
+    // std::string to;
+    // while (std::getline(codeFile, to, '\n'))
+    // {
+    //     lines.push_back(to);
+    // }
 
-    GobLang::Compiler::Parser comp(lines);
+    GobLang::Compiler::Parser comp("func name(a,b,c){a = a}");
     int a = 3;
     bool b = !(a < 3 || (a > 1 && !(a < 1)));
     std::cout << (b ? "true" : "false") << std::endl;
     comp.parse();
     comp.printCode();
-    GobLang::Compiler::Validator validator(comp);
-    validator.validate();
-    GobLang::Compiler::Compiler compiler(comp);
-    compiler.compile();
-    compiler.printCode();
-    compiler.generateByteCode();
-    byteCodeToText(compiler.getByteCode().operations);
+    // GobLang::Compiler::Validator validator(comp);
+    // validator.validate();
+    GobLang::Compiler::ReversePolishGenerator rev(comp);
+    rev.compile();
+    rev.printCode();
+    rev.printFunctions();
+    // GobLang::Compiler::Compiler compiler(comp);
+    // compiler.compile();
+    // compiler.printCode();
+    // compiler.generateByteCode();
+    // byteCodeToText(compiler.getByteCode().operations);
 
-    GobLang::Machine machine(compiler.getByteCode());
-    machine.addFunction(MachineFunctions::getSizeof, "sizeof");
-    machine.addFunction(MachineFunctions::printLine, "print_line");
-    machine.addFunction(MachineFunctions::print, "print");
-    machine.addFunction(MachineFunctions::createArrayOfSize, "array");
-    machine.addFunction(MachineFunctions::input, "input");
-    machine.addFunction(MachineFunctions::Math::toInt, "to_int");
-    machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
-    machine.addFunction(MachineFunctions::Math::randomInt, "rand");
-    std::vector<size_t> debugPoints = {};
-    while (!machine.isAtTheEnd())
-    {
-        if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
-        {
-            std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << ". Memory state: " << std::endl;
-            machine.printGlobalsInfo();
-            machine.printVariablesInfo();
-            machine.printStack();
-        }
-        machine.step();
-    }
+    // GobLang::Machine machine(compiler.getByteCode());
+    // machine.addFunction(MachineFunctions::getSizeof, "sizeof");
+    // machine.addFunction(MachineFunctions::printLine, "print_line");
+    // machine.addFunction(MachineFunctions::print, "print");
+    // machine.addFunction(MachineFunctions::createArrayOfSize, "array");
+    // machine.addFunction(MachineFunctions::input, "input");
+    // machine.addFunction(MachineFunctions::Math::toInt, "to_int");
+    // machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
+    // machine.addFunction(MachineFunctions::Math::randomInt, "rand");
+    // std::vector<size_t> debugPoints = {};
+    // while (!machine.isAtTheEnd())
+    // {
+    //     if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
+    //     {
+    //         std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << ". Memory state: " << std::endl;
+    //         machine.printGlobalsInfo();
+    //         machine.printVariablesInfo();
+    //         machine.printStack();
+    //     }
+    //     machine.step();
+    // }
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }

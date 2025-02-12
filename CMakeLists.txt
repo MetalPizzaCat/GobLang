@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(goblang VERSION 0.1.0 LANGUAGES C CXX)
+project(goblang VERSION 0.3.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
-add_compile_definitions(GOB_LANG_VERSION_MINOR=2)
+add_compile_definitions(GOB_LANG_VERSION_MINOR=3)
 
 add_compile_definitions(LINES_BEFORE_ERROR=3)
 add_compile_definitions(LINES_AFTER_ERROR=3)
@@ -24,6 +24,7 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Array.cpp
     execution/Exception.hpp
     execution/Exception.cpp
+    execution/Function.hpp
 )
 
 
@@ -50,6 +51,9 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
     compiler/CompilerNode.cpp
     compiler/Validator.hpp
     compiler/Validator.cpp
+    compiler/ReversePolishGenerator.hpp
+    compiler/ReversePolishGenerator.cpp
+    compiler/FunctionTokenSequence.hpp
 )
 
 add_executable(goblang
@@ -59,8 +63,8 @@ add_executable(goblang
     ${STD_SOURCE_FILES}
 )
 
-add_executable(gobc
-    compiler.cpp
+add_executable(indev
+    indev.cpp
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
     ${STD_SOURCE_FILES}
@@ -73,4 +77,4 @@ add_executable(gobtest
 )
 
 target_link_options(goblang PRIVATE -static-libgcc -static-libstdc++)
-target_link_options(gobc PRIVATE -static-libgcc -static-libstdc++)
+target_link_options(indev PRIVATE -static-libgcc -static-libstdc++)
