@@ -34,6 +34,8 @@ namespace GobLang::Compiler
 
         void addNewMarkReplacement(size_t mark, size_t address);
 
+        void addFunctionAddressUsage(size_t funcNameId, size_t address);
+
         void appendByteCode(std::vector<uint8_t> const &bytes);
 
 
@@ -42,6 +44,7 @@ namespace GobLang::Compiler
 
     private:
        
+        void _generateBytecodeFor(std::vector<Token*> const& tokens, bool createHaltInstruction);
         void _placeAddressForMark(size_t mark, size_t address, bool erase);
       
         std::vector<uint8_t> m_bytes;
@@ -53,8 +56,18 @@ namespace GobLang::Compiler
          */
         std::map<size_t, std::vector<size_t>> m_jumpMarks;
 
+        /**
+         * @brief List of all addresses to replace with future marks. Key is where to write the address and value is what address to write
+         * 
+         */
         std::map<size_t, size_t> m_jumpDestinations;
-       
+        
+        /**
+         * @brief List of all addresses to replace with future function addresses. Key is where to write the address and value is what address to write
+         * 
+         */
+        std::map<size_t, std::vector<size_t>> m_functionCallDestinations;
+    
 
         ByteCode m_byteCode;
 
