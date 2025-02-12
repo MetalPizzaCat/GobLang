@@ -11,6 +11,7 @@
 #include <fstream>
 
 #include "compiler/Parser.hpp"
+#include "compiler/ReversePolishGenerator.hpp"
 #include "compiler/Validator.hpp"
 #include "compiler/Compiler.hpp"
 #include "execution/Machine.hpp"
@@ -123,8 +124,9 @@ int main(int argc, char **argv)
         comp.parse();
         GobLang::Compiler::Validator validator(comp);
         validator.validate();
-        GobLang::Compiler::Compiler compiler(comp);
-        compiler.compile();
+        GobLang::Compiler::ReversePolishGenerator generator(comp);
+        generator.compile();
+        GobLang::Compiler::Compiler compiler(generator);
         compiler.generateByteCode();
         verIt = std::find_first_of(args.begin(), args.end(), DecompArgs.begin(), DecompArgs.end());
         if (verIt != args.end())

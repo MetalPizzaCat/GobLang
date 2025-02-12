@@ -32,8 +32,9 @@ void GobLang::Compiler::Parser::parse()
 {
     std::vector<std::function<Token *(void)>> parsers = {
         std::bind(&Parser::parseBool, this),
-        std::bind(&Parser::parseOperators, this),
         std::bind(&Parser::parseKeywords, this),
+        std::bind(&Parser::parseOperators, this),
+
         std::bind(&Parser::parseInt, this),
         std::bind(&Parser::parseChar, this),
         std::bind(&Parser::parseString, this),
