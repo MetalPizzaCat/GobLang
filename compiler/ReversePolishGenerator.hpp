@@ -44,14 +44,14 @@ namespace GobLang::Compiler
          *
          */
         void printCode();
-        
+
         /**
          * @brief Prints the parsed sequences for functions
-         * 
+         *
          */
         void printFunctions();
 
-        void addToken(Token * token);
+        void addToken(Token *token);
 
         /**
          * @brief Get token of a while loop that is closest to the top of the jump stack.
@@ -65,11 +65,9 @@ namespace GobLang::Compiler
         std::vector<Token *> const &getCode() const { return m_code; }
 
         std::vector<std::string> const &getIds() const { return m_parser.getIds(); }
-        std::vector<int32_t> const &getInts() const
-        {
-            return m_parser.getInts();
-            ;
-        }
+        std::vector<int32_t> const &getInts() const { return m_parser.getInts(); }
+
+        std::vector<FunctionTokenSequence *> const &getFuncs() const { return m_funcs; }
 
         ~ReversePolishGenerator();
 
@@ -122,8 +120,8 @@ namespace GobLang::Compiler
 
         std::vector<GotoToken *> m_jumps;
 
-        std::vector<FunctionTokenSequence*> m_funcs;
-        FunctionTokenSequence * m_currentFunction = nullptr;
+        std::vector<FunctionTokenSequence *> m_funcs;
+        FunctionTokenSequence *m_currentFunction = nullptr;
 
         std::vector<Token *>::const_iterator m_it;
 

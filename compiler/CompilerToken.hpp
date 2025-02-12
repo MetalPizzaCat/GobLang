@@ -8,13 +8,19 @@ namespace GobLang::Compiler
     {
     public:
         explicit FunctionCallToken(size_t row, size_t column) : Token(row, column) {}
+        explicit FunctionCallToken(size_t row, size_t column, size_t funcId) : Token(row, column), m_funcId(funcId), m_usesLocalFunc(true) {}
 
-        std::string toString() override { return "CALL_" + std::to_string(m_argCount); }
+        std::string toString() override;
         void increaseArgCount();
         int32_t getArgCount() const { return m_argCount; }
 
+        size_t getFuncId() const { return m_funcId; }
+        bool usesLocalFunction() const { return m_usesLocalFunc; }
+
     private:
         int32_t m_argCount = 0;
+        size_t m_funcId = 0;
+        bool m_usesLocalFunc = false;
     };
 
     class ArrayIndexToken : public Token
@@ -63,7 +69,16 @@ namespace GobLang::Compiler
         size_t m_amount;
     };
 
-    class FunctionDeclarationToken : public Token
+    class ReturnToken : public Token
     {
+    public:
+        explicit ReturnToken(size_t row, size_t column, bool hasVal) : Token(row, column), m_hasVal(hasVal) {}
+
+        std::string toString() override;
+
+        bool hasValue() const { return m_hasVal; }
+
+    private:
+        bool m_hasVal;
     };
 }

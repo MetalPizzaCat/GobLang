@@ -76,7 +76,7 @@ int main()
     //     lines.push_back(to);
     // }
 
-    GobLang::Compiler::Parser comp("func name(a,b,c){a = a}");
+    GobLang::Compiler::Parser comp("func name(a,b,c){if(a > b) {a = c; return;} else {a = b} return;} func cool(a){return a * 2;} b = gl(2) + cool(5);");
     int a = 3;
     bool b = !(a < 3 || (a > 1 && !(a < 1)));
     std::cout << (b ? "true" : "false") << std::endl;
@@ -88,11 +88,9 @@ int main()
     rev.compile();
     rev.printCode();
     rev.printFunctions();
-    // GobLang::Compiler::Compiler compiler(comp);
-    // compiler.compile();
-    // compiler.printCode();
-    // compiler.generateByteCode();
-    // byteCodeToText(compiler.getByteCode().operations);
+    GobLang::Compiler::Compiler compiler(rev);
+    compiler.generateByteCode();
+    byteCodeToText(compiler.getByteCode().operations);
 
     // GobLang::Machine machine(compiler.getByteCode());
     // machine.addFunction(MachineFunctions::getSizeof, "sizeof");

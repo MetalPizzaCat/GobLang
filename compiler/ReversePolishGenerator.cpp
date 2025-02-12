@@ -10,19 +10,28 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
             {
                 _appendVariable(id->getId());
                 LocalVarToken *local = new LocalVarToken(id->getRow(), id->getColumn(), _getLocalVariableAccessId(id->getId()));
-                m_code.push_back(local);
+                addToken(local);
                 m_compilerTokens.push_back(local);
                 m_isVariableDeclaration = false;
+            }
+            else if ((m_it + 1) != m_parser.getTokens().end() && std::find_if(m_funcs.begin(), m_funcs.end(), [id](FunctionTokenSequence *f)
+                                                                              { return f->getInfo()->nameId == id->getId(); }) != m_funcs.end())
+            {
+                // if we found that this id is used by a function we skip it and let function assign the local call
+                if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(m_it + 1)); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
+                {
+                    continue;
+                }
             }
             else if (int32_t varId = _getLocalVariableAccessId(id->getId()); varId != -1)
             {
                 LocalVarToken *local = new LocalVarToken(id->getRow(), id->getColumn(), varId);
-                m_code.push_back(local);
+                addToken(local);
                 m_compilerTokens.push_back(local);
             }
             else
             {
-                m_code.push_back(*m_it);
+                addToken(*m_it);
             }
         }
         else if (dynamic_cast<IntToken *>(*m_it) != nullptr ||
@@ -30,7 +39,7 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
                  dynamic_cast<BoolConstToken *>(*m_it) != nullptr ||
                  dynamic_cast<CharToken *>(*m_it) != nullptr)
         {
-            m_code.push_back(*m_it);
+            addToken(*m_it);
             continue;
         }
         else if (KeywordToken *keyTok = dynamic_cast<KeywordToken *>(*m_it); keyTok != nullptr)
@@ -50,7 +59,7 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
             }
             while (!m_stack.empty() && getTopStackPriority() >= (*m_it)->getPriority())
             {
-                m_code.push_back(popStack());
+                addToken(popStack());
             }
             _addOperator(m_it);
         }
@@ -63,7 +72,7 @@ void GobLang::Compiler::ReversePolishGenerator::dumpStack()
     // dump the remaining stack
     for (std::vector<Token *>::const_reverse_iterator it = m_stack.rbegin(); it != m_stack.rend(); it++)
     {
-        m_code.push_back(*it);
+        addToken(*it);
     }
     m_stack.clear();
 }
@@ -72,7 +81,7 @@ void GobLang::Compiler::ReversePolishGenerator::dumpStackWhile(std::function<boo
 {
     for (int32_t i = m_stack.size() - 1; i >= 0 && cond(m_stack[i]); i--)
     {
-        m_code.push_back(m_stack[i]);
+        addToken(m_stack[i]);
         m_stack.pop_back();
     }
 }
@@ -118,18 +127,20 @@ void GobLang::Compiler::ReversePolishGenerator::printFunctions()
         std::cout << ")";
         for (std::vector<Token *>::const_iterator tokIt = (*it)->getTokens().begin(); tokIt != (*it)->getTokens().end(); tokIt++)
         {
-            std::cout << (*tokIt)->toString() << " " << std::endl;
+            std::cout << (*tokIt)->toString() << " ";
         }
+        std::cout << std::endl;
     }
 }
 
 void GobLang::Compiler::ReversePolishGenerator::addToken(Token *token)
 {
-    if(m_currentFunction == nullptr)
+    if (m_currentFunction == nullptr)
     {
         m_code.push_back(token);
     }
-    else{
+    else
+    {
         m_currentFunction->addToken(token);
     }
 }
@@ -217,12 +228,25 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
     {
     case Separator::End:
         dumpStack();
-        m_code.push_back(sepToken);
+        addToken(sepToken);
         break;
     case Separator::BracketOpen:
-        if (dynamic_cast<IdToken *>(*(it - 1)) != nullptr)
+        if (IdToken *funcNameToken = dynamic_cast<IdToken *>(*(it - 1)); funcNameToken != nullptr)
         {
-            FunctionCallToken *token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
+            std::vector<FunctionTokenSequence *>::iterator funcIt = std::find_if(m_funcs.begin(),
+                                                                                 m_funcs.end(),
+                                                                                 [funcNameToken](FunctionTokenSequence *f)
+                                                                                 { return f->getInfo()->nameId == funcNameToken->getId(); });
+            FunctionCallToken *token;
+            if (funcIt == m_funcs.end())
+            {
+                token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
+            }
+            else
+            {
+                token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn(), funcIt - m_funcs.begin());
+            }
+
             m_compilerTokens.push_back(token);
             m_stack.push_back(token);
             m_functionCalls.push_back(token);
@@ -260,7 +284,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
             do
             {
                 arrayPopToken = *(m_stack.rbegin());
-                m_code.push_back(arrayPopToken);
+                addToken(arrayPopToken);
                 m_stack.pop_back();
             } while (!m_stack.empty() && dynamic_cast<ArrayIndexToken *>(arrayPopToken) == nullptr);
         }
@@ -283,18 +307,18 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
                 {
                     (*m_functionCalls.rbegin())->increaseArgCount();
                 }
-                m_code.push_back(*m_functionCalls.rbegin());
+                addToken(*m_functionCalls.rbegin());
                 m_functionCalls.pop_back();
                 break;
             }
             else if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
             {
-                m_code.push_back(t);
+                addToken(t);
                 break;
             }
             else
             {
-                m_code.push_back(t);
+                addToken(t);
             }
         }
         break;
@@ -305,7 +329,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
         dumpStack();
         if (m_blockVariables.rbegin()->size() > 0)
         {
-            m_code.push_back(new LocalVarShrinkToken(sepToken->getRow(), sepToken->getColumn(), m_blockVariables.rbegin()->size()));
+            addToken(new LocalVarShrinkToken(sepToken->getRow(), sepToken->getColumn(), m_blockVariables.rbegin()->size()));
         }
         _popVariableBlock();
         if (!m_jumps.empty())
@@ -323,7 +347,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
                 JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), elifPair->getMark());
                 m_jumps.pop_back();
                 m_compilerTokens.push_back(dest);
-                m_code.push_back(dest);
+                addToken(dest);
             }
 
             else if (WhileToken *whileToken = dynamic_cast<WhileToken *>(jump); whileToken != nullptr)
@@ -331,7 +355,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
                 whileToken->setReturnMark(getMarkCounterAndAdvance());
                 GotoToken *loopJump = new GotoToken(sepToken->getRow(), sepToken->getColumn(), whileToken->getReturnMark());
                 m_compilerTokens.push_back(loopJump);
-                m_code.push_back(loopJump);
+                addToken(loopJump);
             }
             jump->setMark(getMarkCounterAndAdvance());
             JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), jump->getMark());
@@ -340,11 +364,15 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
                 GotoToken *elseJump = new GotoToken(sepToken->getRow(), sepToken->getColumn());
                 m_jumps.push_back(elseJump);
                 m_compilerTokens.push_back(elseJump);
-                m_code.push_back(elseJump);
+                addToken(elseJump);
             }
 
             m_compilerTokens.push_back(dest);
-            m_code.push_back(dest);
+            addToken(dest);
+        }
+        else if (m_currentFunction != nullptr)
+        {
+            m_currentFunction = nullptr;
         }
         break;
     }
@@ -405,7 +433,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileKeywords(KeywordToken *k
         {
             LoopControlToken *contTok = new LoopControlToken(keyToken->getRow(), keyToken->getColumn(), false, whileTok);
             m_compilerTokens.push_back(contTok);
-            m_code.push_back(contTok);
+            addToken(contTok);
         }
         break;
     case Keyword::Break:
@@ -413,13 +441,28 @@ void GobLang::Compiler::ReversePolishGenerator::_compileKeywords(KeywordToken *k
         {
             LoopControlToken *contTok = new LoopControlToken(keyToken->getRow(), keyToken->getColumn(), true, whileTok);
             m_compilerTokens.push_back(contTok);
-            m_code.push_back(contTok);
+            addToken(contTok);
         }
         break;
     case Keyword::Function:
         // functions have their own way of being parsed to avoid messing with the header
         _compileFunction(it, m_it);
         break;
+    case Keyword::Return:
+    {
+        bool hasVal = true;
+        if (it + 1 != m_parser.getTokens().end())
+        {
+            if (SeparatorToken *nextTok = dynamic_cast<SeparatorToken *>(*(it + 1)); nextTok != nullptr && nextTok->getSeparator() == Separator::End)
+            {
+                hasVal = false;
+            }
+        }
+        ReturnToken *ret = new ReturnToken((*it)->getRow(), (*it)->getColumn(), hasVal);
+        m_compilerTokens.push_back(ret);
+        m_stack.push_back(ret);
+    }
+    break;
     default:
         throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Invalid keyword encountered");
         break;
