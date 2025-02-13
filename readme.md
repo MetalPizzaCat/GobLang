@@ -138,9 +138,28 @@ and now this function can be called from goblang like this
 ```
     let a = example(9);
 ```
-### Writing functions
+## Custom functions
 
-In the future i want to add support for writing custom functions inside the language itself, however this would require proper planning and actually implementing some form of garbage collection
+Custom functions can be written using the `func` keyword. Functions can not be defined inside of other functions and can be called from any point at code.
+Calling a function before it is defined will result in interpreter assuming that a call to global function was requested.
+Creating functions
+
+```
+# A simple function that adds values of all arguments
+func example(a,c,d){
+    return a + c + d;
+}
+print(example(1,2,3));
+```
+Functions can have any amount of arguments or have zero
+
+```
+func hello_world(){
+    print_line("hello world");
+}
+```
+
+Functions can access global variables the same way as any other part of the code, however they have their own local variables and stack array meaning that they can not directly affect the state of the local code that called it
 
 # Interpreter
 
@@ -174,19 +193,7 @@ Options:
 * -i or --input      : Run code from file in a given location
 * -s or --showbytes  : Show bytecode before running code
 
-# Possible future additions
-## Custom functions
 
-Ability to write functions that will be created and called inside the same goblang code will considerably increase the usability of the language. 
-This would require creation of a call stack as well as proper monitoring of the stack to ensure that it gets cleared once function is over
-
-Example of possible syntax
-
-```
-func example(a,c,d){
-    return a + c + d;
-}
-```
 ## Custom types
 Custom types would be similar to `struct` in c and would just be plain data types, with possibly rust style syntax for adding methods
 
