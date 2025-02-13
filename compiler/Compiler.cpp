@@ -101,6 +101,14 @@ void GobLang::Compiler::Compiler::appendByteCode(std::vector<uint8_t> const &byt
     m_byteCode.operations.insert(m_byteCode.operations.end(), bytes.begin(), bytes.end());
 }
 
+void GobLang::Compiler::Compiler::printLocalFunctionInfo()
+{
+    for (std::vector<Function>::const_iterator it = m_byteCode.functions.begin(); it != m_byteCode.functions.end(); it++)
+    {
+        std::cout << it->nameId << ": " << std::hex << it->start << std::dec << std::endl;
+    }
+}
+
 void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> const &tokens, bool createHaltInstruction)
 {
     std::vector<CompilerNode *> stack;
