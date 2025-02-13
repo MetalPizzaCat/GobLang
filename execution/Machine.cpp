@@ -233,19 +233,20 @@ void GobLang::Machine::pushToStack(MemoryValue const &val)
 
 void GobLang::Machine::setLocalVariableValue(size_t id, MemoryValue const &val)
 {
-    if (id >= m_variables.size())
+    std::vector<MemoryValue> &varFrame = m_variables.back();
+    if (id >= varFrame.size())
     {
-        m_variables.resize(id + 1);
+        varFrame.resize(id + 1);
     }
     if (val.type == Type::MemoryObj)
     {
         std::get<MemoryNode *>(val.value)->increaseRefCount();
     }
-    if (m_variables.back()[id].type == Type::MemoryObj)
+    if (varFrame[id].type == Type::MemoryObj)
     {
-        std::get<MemoryNode *>(m_variables.back()[id].value)->decreaseRefCount();
+        std::get<MemoryNode *>(varFrame[id].value)->decreaseRefCount();
     }
-    m_variables.back()[id] = val;
+    varFrame[id] = val;
 }
 
 GobLang::MemoryValue *GobLang::Machine::getLocalVariableValue(size_t id)
@@ -259,13 +260,12 @@ GobLang::MemoryValue *GobLang::Machine::getLocalVariableValue(size_t id)
 
 void GobLang::Machine::shrinkLocalVariableStackBy(size_t size)
 {
-    // TODO: Maybe replace this with reverse iterators?
-    for (size_t i = 0; i < size; i++)
+    size_t i = 0;
+    for (std::vector<MemoryValue>::reverse_iterator it = m_variables.back().rbegin(); it != m_variables.back().rend() && i < size; it++, i++)
     {
-        size_t ind = m_variables.size() - i - 1;
-        if (m_variables.back()[ind].type == Type::MemoryObj)
+        if (it->type == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(m_variables.back()[ind].value)->decreaseRefCount();
+            std::get<MemoryNode *>(it->value)->decreaseRefCount();
         }
     }
     // possibly add m_variables.resize(m_variables.size() - size)

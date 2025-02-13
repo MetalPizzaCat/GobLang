@@ -100,7 +100,7 @@ int main()
     machine.addFunction(MachineFunctions::Math::toInt, "to_int");
     machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
     machine.addFunction(MachineFunctions::Math::randomInt, "rand");
-    std::vector<size_t> debugPoints = {};
+    std::vector<size_t> debugPoints = {0x66,0x68};
     while (!machine.isAtTheEnd())
     {
         if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())

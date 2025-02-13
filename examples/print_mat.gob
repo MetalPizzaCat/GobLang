@@ -1,0 +1,29 @@
+func print_mat(mat){
+    let i = 0;
+    let m = sizeof(mat);
+    while(i < m){
+        let j = 0;
+        let n = sizeof(mat[i]);
+        while(j < n){
+            print(mat[i][j]);
+            print(' ');
+            j = j + 1;
+        }
+        print_line("");
+        i = i + 1;
+    }
+}
+
+mat1 = array(2);
+mat1[0] = array(2);
+mat1[1] = array(2);
+
+mat1[0][0] = 12;
+mat1[0][1] = 7;
+mat1[1][0] = 4;
+mat1[1][1] = 5;
+
+print("mat size: ");
+print_line(sizeof(mat1));
+print_mat(mat1);
+
