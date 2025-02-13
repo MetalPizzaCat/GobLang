@@ -489,6 +489,11 @@ void GobLang::Machine::_callLocal()
     for (std::vector<MemoryValue>::reverse_iterator it = args.rbegin(); it != args.rend(); it++)
     {
         *it = _getFromTopAndPop();
+        // for the entirety of the value being in the function we assume that it is in use so we can not delete it
+        if (it->type == Type::MemoryObj)
+        {
+            std::get<MemoryNode *>(it->value)->increaseRefCount();
+        }
     }
     m_variables.push_back(args);
     m_operationStack.push_back({});
