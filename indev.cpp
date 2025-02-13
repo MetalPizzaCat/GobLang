@@ -76,7 +76,7 @@ int main()
     //     lines.push_back(to);
     // }
 
-    GobLang::Compiler::Parser comp("func name(a,b,c){if(a > b) {a = c; return;} else {a = b} return;} func cool(a){return a * 2;} b = gl(2) + cool(5);");
+    GobLang::Compiler::Parser comp("func rec(text, count){if (count < 10) {print(count); print(\": \");print_line(text); rec(text, count + 1);}} rec(\"hello\", 0);");
     int a = 3;
     bool b = !(a < 3 || (a > 1 && !(a < 1)));
     std::cout << (b ? "true" : "false") << std::endl;
@@ -90,29 +90,30 @@ int main()
     rev.printFunctions();
     GobLang::Compiler::Compiler compiler(rev);
     compiler.generateByteCode();
+    //compiler.printLocalFunctionInfo();
     byteCodeToText(compiler.getByteCode().operations);
 
-    // GobLang::Machine machine(compiler.getByteCode());
-    // machine.addFunction(MachineFunctions::getSizeof, "sizeof");
-    // machine.addFunction(MachineFunctions::printLine, "print_line");
-    // machine.addFunction(MachineFunctions::print, "print");
-    // machine.addFunction(MachineFunctions::createArrayOfSize, "array");
-    // machine.addFunction(MachineFunctions::input, "input");
-    // machine.addFunction(MachineFunctions::Math::toInt, "to_int");
-    // machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
-    // machine.addFunction(MachineFunctions::Math::randomInt, "rand");
-    // std::vector<size_t> debugPoints = {};
-    // while (!machine.isAtTheEnd())
-    // {
-    //     if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
-    //     {
-    //         std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << ". Memory state: " << std::endl;
-    //         machine.printGlobalsInfo();
-    //         machine.printVariablesInfo();
-    //         machine.printStack();
-    //     }
-    //     machine.step();
-    // }
+    GobLang::Machine machine(compiler.getByteCode());
+    machine.addFunction(MachineFunctions::getSizeof, "sizeof");
+    machine.addFunction(MachineFunctions::printLine, "print_line");
+    machine.addFunction(MachineFunctions::print, "print");
+    machine.addFunction(MachineFunctions::createArrayOfSize, "array");
+    machine.addFunction(MachineFunctions::input, "input");
+    machine.addFunction(MachineFunctions::Math::toInt, "to_int");
+    machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
+    machine.addFunction(MachineFunctions::Math::randomInt, "rand");
+    std::vector<size_t> debugPoints = {};
+    while (!machine.isAtTheEnd())
+    {
+        if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
+        {
+            std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << ". Memory state: " << std::endl;
+            machine.printGlobalsInfo();
+            machine.printVariablesInfo();
+            machine.printStack();
+        }
+        machine.step();
+    }
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }

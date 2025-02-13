@@ -76,9 +76,9 @@ namespace GobLang
 
         /**
          * @brief Create a new string object in memory
-         * 
+         *
          * @param str Base string to store in memory
-         * @param alwaysNew If true that means that it will skip search and always create new memory object. 
+         * @param alwaysNew If true that means that it will skip search and always create new memory object.
          * This is useful to avoid messing variables that were set from constants
          * @return StringNode* Pointer to new string object or other string object that was found in memory
          */
@@ -108,6 +108,8 @@ namespace GobLang
 
         void shrinkLocalVariableStackBy(size_t size);
 
+        void removeFunctionFrame();
+
         /**
          * @brief Create a custom variable that will be accessible in code. Useful for binding with c code
          *
@@ -121,6 +123,14 @@ namespace GobLang
         ~Machine();
 
     private:
+        inline MemoryValue _operationTop() { return m_operationStack.back().back(); }
+
+        inline MemoryValue _getFromTopAndPop()
+        {
+            MemoryValue v = _operationTop();
+            popStack();
+            return v;
+        }
         ProgramAddressType _getAddressFromByteCode(size_t start);
 
         void _jump();
@@ -131,6 +141,10 @@ namespace GobLang
 
         void _subInt();
 
+        void _mulInt();
+
+        void _divInt();
+
         void _set();
 
         void _get();
@@ -140,6 +154,12 @@ namespace GobLang
         void _getLocal();
 
         void _call();
+
+        void _callLocal();
+
+        void _return();
+
+        void _returnWithValue();
 
         void _pushConstInt();
 
@@ -178,7 +198,7 @@ namespace GobLang
         MemoryNode *m_memoryRoot = new MemoryNode();
         size_t m_programCounter = 0;
         std::vector<uint8_t> m_operations;
-        std::vector<MemoryValue> m_operationStack;
+        std::vector<std::vector<MemoryValue>> m_operationStack = {{}};
         /**
          * @brief Special dictionary that can be written externally and internally which uses strings to identify variables.
          *
@@ -190,9 +210,16 @@ namespace GobLang
          *  These variables can only be addressed by their index and will be overriden once the id is used in a different block
          *
          */
-        std::vector<MemoryValue> m_variables;
+        std::vector<std::vector<MemoryValue>> m_variables = {{}};
         std::vector<int32_t> m_constInts;
         std::vector<float> m_constFloats;
         std::vector<std::string> m_constStrings;
+        std::vector<Function> m_functions;
+
+        /**
+         * @brief Return locations for all of the call operations. This points to where the jump happened from
+         *
+         */
+        std::vector<size_t> m_callStack;
     };
 }

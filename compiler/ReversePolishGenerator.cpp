@@ -372,6 +372,13 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
         }
         else if (m_currentFunction != nullptr)
         {
+            if (dynamic_cast<ReturnToken *>(*(it - 1)) == nullptr)
+            {
+                ReturnToken *ret = new ReturnToken((*it)->getRow(), (*it)->getColumn(), false);
+                m_compilerTokens.push_back(ret);
+                addToken(ret);
+            }
+            _popVariableBlock();
             m_currentFunction = nullptr;
         }
         break;
@@ -447,6 +454,17 @@ void GobLang::Compiler::ReversePolishGenerator::_compileKeywords(KeywordToken *k
     case Keyword::Function:
         // functions have their own way of being parsed to avoid messing with the header
         _compileFunction(it, m_it);
+        if (m_currentFunction != nullptr)
+        {
+            _appendVariableBlock();
+            for (
+                std::vector<FunctionArgInfo>::const_iterator argIt = m_currentFunction->getInfo()->arguments.begin();
+                argIt != m_currentFunction->getInfo()->arguments.end();
+                argIt++)
+            {
+                _appendVariable(argIt->nameId);
+            }
+        }
         break;
     case Keyword::Return:
     {
@@ -493,7 +511,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileFunction(
         throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Expected '('");
     }
     currIt++;
-    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*currIt); sepTok != nullptr && sepTok->getSeparator() != Separator::BracketClose)
+    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*currIt); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketClose)
     {
         end = currIt;
         m_currentFunction = new FunctionTokenSequence(func);

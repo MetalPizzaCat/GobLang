@@ -41,7 +41,7 @@ namespace GobLang::Compiler
 
         ByteCode getByteCode() const { return m_byteCode; }
 
-
+        void printLocalFunctionInfo();
     private:
        
         void _generateBytecodeFor(std::vector<Token*> const& tokens, bool createHaltInstruction);
