@@ -312,6 +312,32 @@ bool GobLang::Compiler::Validator::localVarCreation(TokenIterator const &it, Tok
     return false;
 }
 
+bool GobLang::Compiler::Validator::returnOperation(TokenIterator const &it, TokenIterator &endIt)
+{
+    TokenIterator exprIt;
+    if (!keyword(it, Keyword::Return))
+    {
+        return false;
+    }
+    exprIt = it + 1;
+    if (end(exprIt))
+    {
+        endIt = exprIt;
+        return true;
+    }
+    if (!expr(exprIt, exprIt))
+    {
+        throw ParsingError(getRowForToken(exprIt), getColumnForToken(exprIt), "Expected an expression or ';'");
+    }
+    exprIt++;
+    if (end(exprIt))
+    {
+        endIt = exprIt;
+        return true;
+    }
+    return false;
+}
+
 bool GobLang::Compiler::Validator::block(TokenIterator const &it, TokenIterator &endIt)
 {
     if (!separator(it, Separator::BlockOpen))
@@ -339,11 +365,13 @@ bool GobLang::Compiler::Validator::block(TokenIterator const &it, TokenIterator 
 bool GobLang::Compiler::Validator::code(TokenIterator const &it, TokenIterator &endIt)
 {
     return block(it, endIt) ||
+           function(it, endIt) ||
            localVarCreation(it, endIt) ||
            arrayAssignment(it, endIt) ||
            assignment(it, endIt) ||
            callOp(it, endIt) ||
            ifElseChain(it, endIt) ||
+           returnOperation(it, endIt) ||
            branch(BranchType::While, it, endIt) ||
            loopControlKeyWord(it, endIt);
 }
@@ -417,6 +445,46 @@ bool GobLang::Compiler::Validator::ifElseChain(TokenIterator const &it, TokenIte
         // try as many of these as we can
     }
     branch(BranchType::Else, exprIt + 1, exprIt);
+    endIt = exprIt;
+    return true;
+}
+
+bool GobLang::Compiler::Validator::function(TokenIterator const &it, TokenIterator &endIt)
+{
+    TokenIterator exprIt;
+    if (!keyword(it, Keyword::Function))
+    {
+        return false;
+    }
+    exprIt = it + 1;
+    if (!id(exprIt))
+    {
+        throw ParsingError(getRowForToken(exprIt), getColumnForToken(exprIt), "Expected function name");
+    }
+    exprIt++;
+    if (!separator(exprIt, Separator::BracketOpen))
+    {
+        throw ParsingError(getRowForToken(exprIt), getColumnForToken(exprIt), "Expected '('");
+    }
+    do
+    {
+        exprIt++;
+        if (separator(exprIt, Separator::BracketClose))
+        {
+
+            exprIt++;
+            break;
+        }
+        else if (separator(exprIt, Separator::Comma))
+        {
+            exprIt++;
+        }
+    } while (expr(exprIt, exprIt) && (separator(exprIt + 1, Separator::Comma) || separator(exprIt + 1, Separator::BracketClose)));
+
+    if (!block(exprIt, exprIt))
+    {
+        throw ParsingError(getRowForToken(exprIt), getColumnForToken(exprIt), "Expected function body'");
+    }
     endIt = exprIt;
     return true;
 }

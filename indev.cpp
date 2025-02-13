@@ -62,28 +62,26 @@ void byteCodeToText(std::vector<uint8_t> const &bytecode)
 }
 int main()
 {
-    // std::string file = "./code.gob";
-    // std::vector<std::string> lines;
-    // std::ifstream codeFile(file);
-    // if (!codeFile.is_open())
-    // {
-    //     std::cerr << "Unable to open code file" << std::endl;
-    //     return EXIT_FAILURE;
-    // }
-    // std::string to;
-    // while (std::getline(codeFile, to, '\n'))
-    // {
-    //     lines.push_back(to);
-    // }
+    std::string file = "./code.gob";
+    std::vector<std::string> lines;
+    std::ifstream codeFile(file);
+    if (!codeFile.is_open())
+    {
+        std::cerr << "Unable to open code file" << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::string to;
+    while (std::getline(codeFile, to, '\n'))
+    {
+        lines.push_back(to);
+    }
 
-    GobLang::Compiler::Parser comp("func rec(text, count){if (count < 10) {print(count); print(\": \");print_line(text); rec(text, count + 1);}} rec(\"hello\", 0);");
-    int a = 3;
-    bool b = !(a < 3 || (a > 1 && !(a < 1)));
-    std::cout << (b ? "true" : "false") << std::endl;
+    //GobLang::Compiler::Parser comp("func rec(text, count){if (count < 10) {print(count); print(\": \");print_line(text); rec(text, count + 1);}} rec(\"hello\", 0);");
+    GobLang::Compiler::Parser comp(lines);
     comp.parse();
     comp.printCode();
-    // GobLang::Compiler::Validator validator(comp);
-    // validator.validate();
+    GobLang::Compiler::Validator validator(comp);
+    validator.validate();
     GobLang::Compiler::ReversePolishGenerator rev(comp);
     rev.compile();
     rev.printCode();

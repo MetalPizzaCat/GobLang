@@ -125,6 +125,36 @@ void testUnary()
     Validator::TokenIterator endIt;
     assert(v.unaryExpr(p.getTokens().begin(), endIt));
 }
+
+void testFunction()
+{
+    Parser p("func a1 (){a = 2;}");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    Validator::TokenIterator endIt;
+    assert(v.function(p.getTokens().begin(), endIt));
+}
+
+void testFunctionArgs()
+{
+    Parser p("func b2(a,b,c,d){a = 2; return;}");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    Validator::TokenIterator endIt;
+    assert(v.function(p.getTokens().begin(), endIt));
+}
+
+void testFunctionArgs2()
+{
+    Parser p("func b2(a,b,c,d){a = 2; return a + b + c + d;}");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    Validator::TokenIterator endIt;
+    assert(v.function(p.getTokens().begin(), endIt));
+}
 int main(int, char **)
 {
     testArray();
@@ -139,6 +169,7 @@ int main(int, char **)
     testCallArgs();
     testBlockArray();
     testUnary();
-
+    testFunction();
+    testFunctionArgs2();
     return EXIT_SUCCESS;
 }

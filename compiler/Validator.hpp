@@ -69,11 +69,22 @@ namespace GobLang::Compiler
         bool assignment(TokenIterator const &it, TokenIterator &endIt);
         bool arrayAssignment(TokenIterator const &it, TokenIterator &endIt);
         bool localVarCreation(TokenIterator const &it, TokenIterator &endIt);
+        bool returnOperation(TokenIterator const& it, TokenIterator &endIt);
 
         bool block(TokenIterator const &it, TokenIterator &endIt);
         bool code(TokenIterator const &it, TokenIterator &endIt);
         bool branch(BranchType branch, TokenIterator const &it, TokenIterator &endIt);
         bool ifElseChain(TokenIterator const &it, TokenIterator &endIt);
+        
+        /**
+         * @brief "Function" id ({id,}) block
+         * 
+         * @param it 
+         * @param endIt 
+         * @return true 
+         * @return false 
+         */
+        bool function(TokenIterator const& it, TokenIterator &endIt);
 
         TokenIterator getEnd() { return m_parser.getTokens().end(); }
 
