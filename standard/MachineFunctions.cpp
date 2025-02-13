@@ -8,6 +8,7 @@ void MachineFunctions::printLine(GobLang::Machine *machine)
     GobLang::MemoryValue *v = machine->getStackTopAndPop();
     if (v == nullptr)
     {
+        std::cerr << "Invalid value to print" << std::endl;
         return;
     }
     std::cout << GobLang::valueToString(*v) << std::endl;
@@ -19,6 +20,7 @@ void MachineFunctions::print(GobLang::Machine *machine)
     GobLang::MemoryValue *v = machine->getStackTopAndPop();
     if (v == nullptr)
     {
+        std::cerr << "Invalid value to print" << std::endl;
         return;
     }
     std::cout << GobLang::valueToString(*v);
