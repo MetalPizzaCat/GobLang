@@ -79,6 +79,11 @@ bool GobLang::Compiler::Parser::tryKeyword(std::string const &keyword)
             return false;
         }
     }
+    // there should be a non keyword character after the keyword for it to be valid
+    if (m_rowIt + keyword.size() != getEndOfTheLine() && std::isalnum(*(m_rowIt + keyword.size())))
+    {
+        return false;
+    }
     return true;
 }
 
