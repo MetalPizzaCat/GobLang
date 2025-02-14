@@ -8,7 +8,7 @@ namespace GobLang
         Null,
         Char,
         Bool,
-        Number,
+        Float,
         Int,
         UserData,
         MemoryObj,

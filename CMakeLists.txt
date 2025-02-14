@@ -3,8 +3,10 @@ project(goblang VERSION 0.3.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(USE_STATIC_BUILD ON CACHE BOOL "Build static executable")
+
 add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
-add_compile_definitions(GOB_LANG_VERSION_MINOR=3)
+add_compile_definitions(GOB_LANG_VERSION_MINOR=4)
 
 add_compile_definitions(LINES_BEFORE_ERROR=3)
 add_compile_definitions(LINES_AFTER_ERROR=3)
@@ -75,6 +77,8 @@ add_executable(gobtest
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
 )
-
-target_link_options(goblang PRIVATE -static-libgcc -static-libstdc++)
-target_link_options(indev PRIVATE -static-libgcc -static-libstdc++)
+if(${USE_STATIC_BUILD})
+    message("Running a static build")
+    target_link_options(goblang PRIVATE -static-libgcc -static-libstdc++)
+    target_link_options(indev PRIVATE -static-libgcc -static-libstdc++)
+endif()

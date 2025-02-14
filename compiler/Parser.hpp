@@ -19,9 +19,9 @@ namespace GobLang::Compiler
          */
         void skipWhitespace();
 
-         /**
+        /**
          * @brief Checks if there is a comment and if so advances to the next line
-         * 
+         *
          * @return true Found a comment and moved to the next line
          * @return false Didn't find any comments
          */
@@ -65,6 +65,8 @@ namespace GobLang::Compiler
 
         IntToken *parseInt();
 
+        FloatToken *parseFloat();
+
         SeparatorToken *parseSeparators();
 
         StringToken *parseString();
@@ -92,7 +94,7 @@ namespace GobLang::Compiler
 
         /**
          * @brief Advances `m_lineIt` and resets `m_rowIt` to the start of the new line
-         * 
+         *
          * @param offset The amount to advance by
          */
         void advanceLineIterator(size_t offset);
@@ -130,6 +132,7 @@ namespace GobLang::Compiler
         std::vector<Token *> const &getTokens() const { return m_tokens; }
         std::vector<std::string> const &getIds() const { return m_ids; }
         std::vector<int32_t> const &getInts() const { return m_ints; }
+        std::vector<float> const &getFloats() const { return m_floats; }
 
         size_t getTotalLineCount() const { return m_code.size(); }
         size_t getFinalLineRowCount() const { return m_code.rbegin()->size(); }
@@ -140,6 +143,7 @@ namespace GobLang::Compiler
         std::vector<std::string> m_ids;
         std::vector<std::string> m_strings;
         std::vector<int32_t> m_ints;
+        std::vector<float> m_floats;
         std::vector<std::string> m_code;
         /**
          * @brief Pointer to the current character in the row

@@ -29,6 +29,7 @@ namespace GobLang
          */
         SetArray,
         PushConstInt,
+        PushConstFloat,
         PushConstChar,
         PushConstString,
         PushTrue,
@@ -91,6 +92,7 @@ namespace GobLang
         OperationData{.op = Operation::SetArray, .text = "set_arr", .argCount = 0},
         OperationData{.op = Operation::GetArray, .text = "get_arr", .argCount = 0},
         OperationData{.op = Operation::PushConstInt, .text = "push_int", .argCount = 1},
+        OperationData{.op = Operation::PushConstFloat, .text = "push_float", .argCount = 1},
         OperationData{.op = Operation::PushConstChar, .text = "push_char", .argCount = 1},
         OperationData{.op = Operation::PushConstString, .text = "push_str", .argCount = 1},
         OperationData{.op = Operation::PushTrue, .text = "push_true", .argCount = 0},

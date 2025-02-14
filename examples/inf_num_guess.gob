@@ -15,8 +15,8 @@ while(true){
     print("Guess the number from 0 to 25 and you have 5 attempts to so! Write your input: ");
     while(guess != number){
         # input is also a global exposed function, just calls std::cout
-        # to_int is required because there is no implicit type conversion
-        guess = to_int(input());
+        # int is required because there is no implicit type conversion
+        guess = int(input());
         
         # use if-elif-else to check if value is guessed correctly
         if(guess > number){

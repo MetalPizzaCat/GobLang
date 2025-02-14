@@ -134,14 +134,7 @@ int main(int argc, char **argv)
             byteCodeToText(compiler.getByteCode().operations);
         }
         GobLang::Machine machine(compiler.getByteCode());
-        machine.addFunction(MachineFunctions::getSizeof, "sizeof");
-        machine.addFunction(MachineFunctions::printLine, "print_line");
-        machine.addFunction(MachineFunctions::print, "print");
-        machine.addFunction(MachineFunctions::createArrayOfSize, "array");
-        machine.addFunction(MachineFunctions::input, "input");
-        machine.addFunction(MachineFunctions::Math::toInt, "to_int");
-        machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
-        machine.addFunction(MachineFunctions::Math::randomInt, "rand");
+        MachineFunctions::bind(&machine);
         std::vector<size_t> debugPoints = {};
         while (!machine.isAtTheEnd())
         {
