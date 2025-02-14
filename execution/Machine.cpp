@@ -381,8 +381,8 @@ void GobLang::Machine::_jumpIf()
 
 void GobLang::Machine::_add()
 {
-    MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
+    MemoryValue a = _getFromTopAndPop();
     if (a.type != b.type)
     {
         throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
@@ -396,8 +396,18 @@ void GobLang::Machine::_add()
     case Type::Float:
         c = std::get<float>(a.value) + std::get<float>(b.value);
         break;
+    case Type::MemoryObj:
+    {
+        StringNode *str1 = dynamic_cast<StringNode *>(std::get<MemoryNode *>(a.value));
+        StringNode *str2 = dynamic_cast<StringNode *>(std::get<MemoryNode *>(b.value));
+        if (str1 != nullptr && str2 != nullptr)
+        {
+            c = createString(str1->getString() + str2->getString());
+        }
+    }
+    break;
     default:
-        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
+        throw RuntimeException(std::string("Invalid type used for math operation: ") + typeToString(a.type));
     }
     pushToStack(MemoryValue{.type = a.type, .value = c});
 }
