@@ -2,6 +2,19 @@
 #include "../execution/Array.hpp"
 #include "../execution/Memory.hpp"
 #include <random>
+void MachineFunctions::bind(GobLang::Machine *machine)
+{
+    machine->addFunction(MachineFunctions::getSizeof, "sizeof");
+    machine->addFunction(MachineFunctions::printLine, "print_line");
+    machine->addFunction(MachineFunctions::print, "print");
+    machine->addFunction(MachineFunctions::toString, "str");
+    machine->addFunction(MachineFunctions::createArrayOfSize, "array");
+    machine->addFunction(MachineFunctions::input, "input");
+    machine->addFunction(MachineFunctions::Math::toInt, "int");
+    machine->addFunction(MachineFunctions::Math::toFloat, "float");
+    machine->addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
+    machine->addFunction(MachineFunctions::Math::randomInt, "rand");
+}
 void MachineFunctions::printLine(GobLang::Machine *machine)
 
 {
@@ -54,6 +67,15 @@ void MachineFunctions::getSizeof(GobLang::Machine *machine)
     delete array;
 }
 
+void MachineFunctions::toString(GobLang::Machine *machine)
+{
+    GobLang::MemoryValue *val = machine->getStackTopAndPop();
+    machine->pushToStack(GobLang::MemoryValue{
+        .type = GobLang::Type::MemoryObj,
+        .value = machine->createString(GobLang::valueToString(*val))});
+    delete val;
+}
+
 void MachineFunctions::input(GobLang::Machine *machine)
 {
     std::string input;
@@ -77,7 +99,7 @@ void MachineFunctions::Math::toInt(GobLang::Machine *machine)
     case Type::Int:
         machine->pushToStack(*value);
         break;
-    case GobLang::Type::Number:
+    case GobLang::Type::Float:
         machine->pushToStack(MemoryValue{.type = Type::Int, .value = (int32_t)std::get<float>(value->value)});
         break;
     case GobLang::Type::MemoryObj:
@@ -99,6 +121,41 @@ void MachineFunctions::Math::toInt(GobLang::Machine *machine)
         }
     default:
         throw RuntimeException(std::string("Unable to convert type ") + typeToString(value->type) + " to int");
+    }
+    delete value;
+}
+
+void MachineFunctions::Math::toFloat(GobLang::Machine *machine)
+{
+    using namespace GobLang;
+    MemoryValue *value = machine->getStackTopAndPop();
+    switch (value->type)
+    {
+    case Type::Int:
+        machine->pushToStack(MemoryValue{.type = Type::Float, .value = (float)std::get<float>(value->value)});
+        break;
+    case GobLang::Type::Float:
+        machine->pushToStack(*value);
+        break;
+    case GobLang::Type::MemoryObj:
+        try
+        {
+            if (StringNode *node = dynamic_cast<StringNode *>(std::get<MemoryNode *>(value->value)); node != nullptr)
+            {
+                machine->pushToStack(MemoryValue{.type = Type::Float, .value = std::stof(node->getString())});
+                break;
+            }
+        }
+        catch (std::invalid_argument e)
+        {
+            throw RuntimeException(std::string("Unable to convert string to float. ") + e.what());
+        }
+        catch (std::out_of_range e)
+        {
+            throw RuntimeException(std::string("Unable to convert string to float. ") + e.what());
+        }
+    default:
+        throw RuntimeException(std::string("Unable to convert type ") + typeToString(value->type) + " to float");
     }
     delete value;
 }
@@ -133,8 +190,4 @@ void MachineFunctions::Math::randomInt(GobLang::Machine *machine)
 
     std::uniform_int_distribution<int32_t> distr(DEFAULT_MIN_RAND_INT, DEFAULT_MAX_RAND_INT);
     machine->pushToStack(GobLang::MemoryValue{.type = GobLang::Type::Int, .value = distr(generator)});
-}
-
-void MachineFunctions::Math::toFloat(GobLang::Machine *machine)
-{
 }

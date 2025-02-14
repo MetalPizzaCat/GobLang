@@ -13,7 +13,7 @@ bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
         return true;
     case Type::Bool:
         return std::get<bool>(a.value) == std::get<bool>(b.value);
-    case Type::Number:
+    case Type::Float:
         return std::get<float>(a.value) == std::get<float>(b.value);
     case Type::Int:
         return std::get<int32_t>(a.value) == std::get<int32_t>(b.value);
@@ -38,7 +38,7 @@ std::string GobLang::valueToString(MemoryValue const &val)
         return "null";
     case Type::Bool:
         return std::get<bool>(val.value) ? "true" : "false";
-    case Type::Number:
+    case Type::Float:
         return std::to_string(std::get<float>(val.value));
     case Type::Int:
         return std::to_string(std::get<int32_t>(val.value));

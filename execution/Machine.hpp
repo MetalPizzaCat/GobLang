@@ -137,13 +137,13 @@ namespace GobLang
 
         void _jumpIf();
 
-        void _addInt();
+        void _add();
 
-        void _subInt();
+        void _sub();
 
-        void _mulInt();
+        void _mul();
 
-        void _divInt();
+        void _div();
 
         void _set();
 
@@ -162,6 +162,8 @@ namespace GobLang
         void _returnWithValue();
 
         void _pushConstInt();
+
+        void _pushConstFloat();
 
         void _pushConstChar();
 

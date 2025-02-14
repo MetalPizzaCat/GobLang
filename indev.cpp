@@ -76,7 +76,7 @@ int main()
         lines.push_back(to);
     }
 
-    //GobLang::Compiler::Parser comp("func rec(text, count){if (count < 10) {print(count); print(\": \");print_line(text); rec(text, count + 1);}} rec(\"hello\", 0);");
+    // GobLang::Compiler::Parser comp("func rec(text, count){if (count < 10) {print(count); print(\": \");print_line(text); rec(text, count + 1);}} rec(\"hello\", 0);");
     GobLang::Compiler::Parser comp(lines);
     comp.parse();
     comp.printCode();
@@ -88,19 +88,12 @@ int main()
     rev.printFunctions();
     GobLang::Compiler::Compiler compiler(rev);
     compiler.generateByteCode();
-    //compiler.printLocalFunctionInfo();
+    // compiler.printLocalFunctionInfo();
     byteCodeToText(compiler.getByteCode().operations);
 
     GobLang::Machine machine(compiler.getByteCode());
-    machine.addFunction(MachineFunctions::getSizeof, "sizeof");
-    machine.addFunction(MachineFunctions::printLine, "print_line");
-    machine.addFunction(MachineFunctions::print, "print");
-    machine.addFunction(MachineFunctions::createArrayOfSize, "array");
-    machine.addFunction(MachineFunctions::input, "input");
-    machine.addFunction(MachineFunctions::Math::toInt, "to_int");
-    machine.addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
-    machine.addFunction(MachineFunctions::Math::randomInt, "rand");
-    std::vector<size_t> debugPoints = {0x66,0x68};
+    MachineFunctions::bind(&machine);
+    std::vector<size_t> debugPoints = {};
     while (!machine.isAtTheEnd())
     {
         if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())

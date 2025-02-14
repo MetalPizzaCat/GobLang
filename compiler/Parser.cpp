@@ -34,7 +34,7 @@ void GobLang::Compiler::Parser::parse()
         std::bind(&Parser::parseBool, this),
         std::bind(&Parser::parseKeywords, this),
         std::bind(&Parser::parseOperators, this),
-
+        std::bind(&Parser::parseFloat, this),
         std::bind(&Parser::parseInt, this),
         std::bind(&Parser::parseChar, this),
         std::bind(&Parser::parseString, this),
@@ -213,6 +213,71 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseInt()
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
     return new IntToken(row, column, index);
+}
+
+GobLang::Compiler::FloatToken *GobLang::Compiler::Parser::parseFloat()
+{
+    if (!std::isdigit(*m_rowIt))
+    {
+        return nullptr;
+    }
+    std::string num;
+    size_t offset = 0;
+    bool hasSeparator = false;
+    while ((m_rowIt + offset) != getEndOfTheLine() && (std::isdigit(*(m_rowIt + offset)) || (*(m_rowIt + offset)) == '.'))
+    {
+        if ((*(m_rowIt + offset)) == '.')
+        {
+            if (!hasSeparator)
+            {
+                hasSeparator = true;
+            }
+            else
+            {
+                throw ParsingError(m_rowIt - m_lineIt->begin(),
+                                   m_lineIt - m_code.begin(), "Malformed float constant");
+            }
+        }
+        num.push_back(*(m_rowIt + offset));
+        offset++;
+    }
+    if (!hasSeparator)
+    {
+        return nullptr;
+    }
+    size_t index = std::string::npos;
+    try
+    {
+        float numVal = std::stof(num);
+        std::vector<float>::iterator it = std::find(m_floats.begin(), m_floats.end(), numVal);
+        if (it == m_floats.end())
+        {
+            m_floats.push_back(numVal);
+            index = m_floats.size() - 1;
+        }
+        else
+        {
+            index = it - m_floats.begin();
+        }
+    }
+    catch (std::invalid_argument e)
+    {
+        return nullptr;
+    }
+    catch (std::out_of_range e)
+    {
+        throw ParsingError(
+            m_rowIt - m_lineIt->begin(),
+            m_lineIt - m_code.begin(),
+            "Constant number is too large, valid range is " +
+                std::to_string(std::numeric_limits<float>::min()) +
+                "< x < " +
+                std::to_string(std::numeric_limits<float>::max()));
+    }
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(offset);
+    return new FloatToken(row, column, index);
 }
 
 GobLang::Compiler::SeparatorToken *GobLang::Compiler::Parser::parseSeparators()

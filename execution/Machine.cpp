@@ -6,6 +6,7 @@ GobLang::Machine::Machine(Compiler::ByteCode const &code)
     m_constInts = code.ints;
     m_constStrings = code.ids;
     m_operations = code.operations;
+    m_constFloats = code.floats;
     m_functions = code.functions;
 }
 void GobLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
@@ -22,16 +23,16 @@ void GobLang::Machine::step()
     switch ((Operation)m_operations[m_programCounter])
     {
     case Operation::Add:
-        _addInt();
+        _add();
         break;
     case Operation::Sub:
-        _subInt();
+        _sub();
         break;
     case Operation::Mul:
-        _mulInt();
+        _mul();
         break;
     case Operation::Div:
-        _divInt();
+        _div();
         break;
     case Operation::Call:
         _call();
@@ -55,6 +56,9 @@ void GobLang::Machine::step()
         break;
     case Operation::PushConstInt:
         _pushConstInt();
+        break;
+    case Operation::PushConstFloat:
+        _pushConstFloat();
         break;
     case Operation::PushConstChar:
         _pushConstChar();
@@ -375,36 +379,96 @@ void GobLang::Machine::_jumpIf()
     }
 }
 
-void GobLang::Machine::_addInt()
+void GobLang::Machine::_add()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    Value c = std::get<int32_t>(a.value) + std::get<int32_t>(b.value);
-    pushToStack(MemoryValue{.type = Type::Int, .value = c});
+    if (a.type != b.type)
+    {
+        throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+    }
+    Value c;
+    switch (a.type)
+    {
+    case Type::Int:
+        c = std::get<int32_t>(a.value) + std::get<int32_t>(b.value);
+        break;
+    case Type::Float:
+        c = std::get<float>(a.value) + std::get<float>(b.value);
+        break;
+    default:
+        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
+    }
+    pushToStack(MemoryValue{.type = a.type, .value = c});
 }
 
-void GobLang::Machine::_subInt()
+void GobLang::Machine::_sub()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    Value c = std::get<int32_t>(b.value) - std::get<int32_t>(a.value);
-    pushToStack(MemoryValue{.type = Type::Int, .value = c});
+    if (a.type != b.type)
+    {
+        throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+    }
+    Value c;
+    switch (a.type)
+    {
+    case Type::Int:
+        c = std::get<int32_t>(b.value) - std::get<int32_t>(a.value);
+        break;
+    case Type::Float:
+        c = std::get<float>(b.value) - std::get<float>(a.value);
+        break;
+    default:
+        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
+    }
+    pushToStack(MemoryValue{.type = a.type, .value = c});
 }
 
-void GobLang::Machine::_mulInt()
+void GobLang::Machine::_mul()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    Value c = std::get<int32_t>(b.value) * std::get<int32_t>(a.value);
-    pushToStack(MemoryValue{.type = Type::Int, .value = c});
+    if (a.type != b.type)
+    {
+        throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+    }
+    Value c;
+    switch (a.type)
+    {
+    case Type::Int:
+        c = std::get<int32_t>(b.value) * std::get<int32_t>(a.value);
+        break;
+    case Type::Float:
+        c = std::get<float>(b.value) * std::get<float>(a.value);
+        break;
+    default:
+        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
+    }
+    pushToStack(MemoryValue{.type = a.type, .value = c});
 }
 
-void GobLang::Machine::_divInt()
+void GobLang::Machine::_div()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    Value c = std::get<int32_t>(b.value) / std::get<int32_t>(a.value);
-    pushToStack(MemoryValue{.type = Type::Int, .value = c});
+    if (a.type != b.type)
+    {
+        throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+    }
+    Value c;
+    switch (a.type)
+    {
+    case Type::Int:
+        c = std::get<int32_t>(b.value) / std::get<int32_t>(a.value);
+        break;
+    case Type::Float:
+        c = std::get<float>(b.value) / std::get<float>(a.value);
+        break;
+    default:
+        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
+    }
+    pushToStack(MemoryValue{.type = a.type, .value = c});
 }
 
 void GobLang::Machine::_set()
@@ -521,6 +585,12 @@ void GobLang::Machine::_returnWithValue()
 void GobLang::Machine::_pushConstInt()
 {
     pushToStack(MemoryValue{.type = Type::Int, .value = m_constInts[(size_t)m_operations[m_programCounter + 1]]});
+    m_programCounter++;
+}
+
+void GobLang::Machine::_pushConstFloat()
+{
+    pushToStack(MemoryValue{.type = Type::Float, .value = m_constFloats[(size_t)m_operations[m_programCounter + 1]]});
     m_programCounter++;
 }
 
@@ -658,7 +728,7 @@ void GobLang::Machine::_less()
         case Type::Int:
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) < std::get<int32_t>(b.value)});
             break;
-        case Type::Number:
+        case Type::Float:
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) < std::get<int32_t>(b.value)});
             break;
         default:
@@ -682,7 +752,7 @@ void GobLang::Machine::_more()
         case Type::Int:
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) > std::get<int32_t>(b.value)});
             break;
-        case Type::Number:
+        case Type::Float:
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) > std::get<int32_t>(b.value)});
             break;
         default:
@@ -706,7 +776,7 @@ void GobLang::Machine::_lessOrEq()
         case Type::Int:
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) <= std::get<int32_t>(b.value)});
             break;
-        case Type::Number:
+        case Type::Float:
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) <= std::get<int32_t>(b.value)});
             break;
         default:
@@ -730,7 +800,7 @@ void GobLang::Machine::_moreOrEq()
         case Type::Int:
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) >= std::get<int32_t>(b.value)});
             break;
-        case Type::Number:
+        case Type::Float:
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) >= std::get<int32_t>(b.value)});
             break;
         default:
@@ -747,8 +817,8 @@ void GobLang::Machine::_negate()
     case Type::Int:
         pushToStack(MemoryValue{.type = Type::Int, .value = -std::get<int32_t>(val.value)});
         break;
-    case Type::Number:
-        pushToStack(MemoryValue{.type = Type::Number, .value = -std::get<float>(val.value)});
+    case Type::Float:
+        pushToStack(MemoryValue{.type = Type::Float, .value = -std::get<float>(val.value)});
         break;
     default:
         throw RuntimeException("Attempted to apply negate operation on a non numeric value");

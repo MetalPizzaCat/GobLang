@@ -1,1 +1,9 @@
-func rec(text, count){if (count < 10) {print(count); print(\": \");print_line(text); rec(text, count + 1);}} rec(\"hello\", 0);
+func rec(text, count){
+    if (count < 10) {
+        print(count);
+        print(": ");
+        print_line(text); 
+        rec(text, count + 1);
+    }
+} 
+rec("hello", 0);

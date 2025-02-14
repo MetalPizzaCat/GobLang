@@ -66,6 +66,7 @@ namespace GobLang::Compiler
 
         std::vector<std::string> const &getIds() const { return m_parser.getIds(); }
         std::vector<int32_t> const &getInts() const { return m_parser.getInts(); }
+        std::vector<float> const &getFloats() const { return m_parser.getFloats(); }
 
         std::vector<FunctionTokenSequence *> const &getFuncs() const { return m_funcs; }
 

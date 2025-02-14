@@ -34,10 +34,11 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
                 addToken(*m_it);
             }
         }
-        else if (dynamic_cast<IntToken *>(*m_it) != nullptr ||
-                 dynamic_cast<StringToken *>(*m_it) != nullptr ||
-                 dynamic_cast<BoolConstToken *>(*m_it) != nullptr ||
-                 dynamic_cast<CharToken *>(*m_it) != nullptr)
+        else if (dynamic_cast<IntToken *>(*m_it) ||
+                 dynamic_cast<FloatToken *>(*m_it) ||
+                 dynamic_cast<CharToken *>(*m_it) ||
+                 dynamic_cast<StringToken *>(*m_it) ||
+                 dynamic_cast<BoolConstToken *>(*m_it))
         {
             addToken(*m_it);
             continue;

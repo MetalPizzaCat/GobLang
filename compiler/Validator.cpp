@@ -17,6 +17,7 @@ bool GobLang::Compiler::Validator::constant(TokenIterator const &it)
 {
     return it != getEnd() && (dynamic_cast<StringToken *>(*it) != nullptr ||
                               dynamic_cast<IntToken *>(*it) != nullptr ||
+                              dynamic_cast<FloatToken *>(*it) != nullptr || 
                               dynamic_cast<CharToken *>(*it) != nullptr ||
                               dynamic_cast<BoolConstToken *>(*it) != nullptr);
 }
