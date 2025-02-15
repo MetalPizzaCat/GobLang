@@ -82,10 +82,6 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateSetByteCode(Token *tok
 
 void GobLang::Compiler::Compiler::appendCompilerNode(CompilerNode *node, bool getter)
 {
-    if (node->hasMark())
-    {
-        m_jumpDestinations[node->getMark()] = m_byteCode.operations.size() - 1;
-    }
     std::vector<uint8_t> code = getter ? node->getOperationGetBytes() : node->getOperationSetBytes();
     m_byteCode.operations.insert(m_byteCode.operations.end(), code.begin(), code.end());
 }
