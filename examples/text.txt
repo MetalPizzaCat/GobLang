@@ -1,0 +1,8 @@
+Programming — composition of sequence of instructions,
+ called programs,
+  that computers can follow to perform tasks.
+These programs are used in a wide range of applications in nearly every field.  
+A large portion of programming is dedicated to writing and debugging  
+source code and majority of programming languages require writing code using text based format.
+ However certain programming languages allow developers to express their logic using different methods, 
+ such as visual programming languages that use various geometrical shapes to represent the source code.

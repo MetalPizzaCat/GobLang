@@ -1,0 +1,22 @@
+func read_all_lines(file)
+{
+    let result = array(0);
+    while(!file_is_eof(file))
+    {
+        append(result, file_read_line(file));
+    }
+    return result;
+}
+
+
+file = file_open("./text.txt", true);
+if(!file_is_open(file)){
+    print_line("Unable to open file");
+}
+else{
+    print_line("File contents:" );
+    let lines = read_all_lines(file);
+    print_line("File lines: " + str(sizeof(lines)));
+    print_line(lines);
+    file_close(file);
+}
