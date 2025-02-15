@@ -1,6 +1,7 @@
 #include "MachineFunctions.hpp"
 #include "../execution/Array.hpp"
 #include "../execution/Memory.hpp"
+#include "File.hpp"
 #include <random>
 void MachineFunctions::bind(GobLang::Machine *machine)
 {
@@ -9,11 +10,18 @@ void MachineFunctions::bind(GobLang::Machine *machine)
     machine->addFunction(MachineFunctions::print, "print");
     machine->addFunction(MachineFunctions::toString, "str");
     machine->addFunction(MachineFunctions::createArrayOfSize, "array");
+    machine->addFunction(MachineFunctions::append, "append");
     machine->addFunction(MachineFunctions::input, "input");
     machine->addFunction(MachineFunctions::Math::toInt, "int");
     machine->addFunction(MachineFunctions::Math::toFloat, "float");
     machine->addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
     machine->addFunction(MachineFunctions::Math::randomInt, "rand");
+    machine->addFunction(MachineFunctions::File::openFile, "file_open");
+    machine->addFunction(MachineFunctions::File::closeFile, "file_close");
+    machine->addFunction(MachineFunctions::File::writeToFile, "file_write");
+    machine->addFunction(MachineFunctions::File::isFileOpen, "file_is_open");
+    machine->addFunction(MachineFunctions::File::readLineFromFile, "file_read_line");
+    machine->addFunction(MachineFunctions::File::isFileEnded, "file_is_eof");
 }
 void MachineFunctions::printLine(GobLang::Machine *machine)
 
@@ -47,6 +55,28 @@ void MachineFunctions::createArrayOfSize(GobLang::Machine *machine)
         .type = GobLang::Type::MemoryObj,
         .value = machine->createArrayOfSize(std::get<int32_t>(sizeVal->value))});
     delete sizeVal;
+}
+
+void MachineFunctions::append(GobLang::Machine *machine)
+{
+    using namespace GobLang;
+    GobLang::MemoryValue *val = machine->getStackTopAndPop();
+    GobLang::MemoryValue *array = machine->getStackTopAndPop();
+
+    if (array == nullptr || array->type != Type::MemoryObj)
+    {
+        throw GobLang::RuntimeException("Attempted to append to a non array object");
+    }
+    if (val == nullptr)
+    {
+        throw GobLang::RuntimeException("Missing value for the append operation");
+    }
+    if (GobLang::ArrayNode *arrayNode = dynamic_cast<GobLang::ArrayNode *>(std::get<GobLang::MemoryNode *>(array->value)); arrayNode != nullptr)
+    {
+        arrayNode->append(*val);
+    }
+    delete val;
+    delete array;
 }
 
 void MachineFunctions::getSizeof(GobLang::Machine *machine)

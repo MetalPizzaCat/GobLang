@@ -11,7 +11,7 @@ namespace GobLang
     class Machine;
     class MemoryNode;
     using FunctionValue = std::function<void(Machine *)>;
-    using Value = std::variant<bool, char, float, int32_t, void *, MemoryNode *, FunctionValue>;
+    using Value = std::variant<bool, char, float, int32_t, MemoryNode *, FunctionValue>;
 
     struct MemoryValue
     {

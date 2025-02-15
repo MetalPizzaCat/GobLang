@@ -12,8 +12,6 @@ const char *GobLang::typeToString(Type type)
         return "Float";
     case Type::Int:
         return "Int";
-    case Type::UserData:
-        return "UserData";
     case Type::MemoryObj:
         return "Object";
     case Type::NativeFunction:

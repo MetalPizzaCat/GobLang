@@ -8,16 +8,18 @@ namespace MachineFunctions
 
     /**
      * @brief Bind all standard functions to the instance of the machine
-     * 
+     *
      * @param machine Instance of the interpreter to bind to
      */
     void bind(GobLang::Machine *machine);
-    
+
     void printLine(GobLang::Machine *machine);
 
     void print(GobLang::Machine *machine);
 
     void createArrayOfSize(GobLang::Machine *machine);
+
+    void append(GobLang::Machine * machine);
 
     void getSizeof(GobLang::Machine *machine);
 
@@ -43,4 +45,5 @@ namespace MachineFunctions
         void toFloat(GobLang::Machine *machine);
 
     }
+
 }

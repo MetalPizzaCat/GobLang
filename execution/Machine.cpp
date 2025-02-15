@@ -130,7 +130,7 @@ void GobLang::Machine::step()
         m_forcedEnd = true;
         break;
     default:
-        std::cerr << "Invalid op code: " << (int32_t)m_operations[m_programCounter] << std::endl;
+        std::cerr << "Invalid op code: " << (int32_t)m_operations[m_programCounter] << " at " << std::hex << m_programCounter << std::dec << std::endl;
         break;
     }
     m_programCounter++;
@@ -185,7 +185,7 @@ GobLang::MemoryValue *GobLang::Machine::getStackTop()
 
 GobLang::MemoryValue *GobLang::Machine::getStackTopAndPop()
 {
-    if (m_operationStack.empty())
+    if (m_operationStack.back().empty())
     {
         return nullptr;
     }
@@ -223,6 +223,11 @@ GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool
         m_memoryRoot->pushBack(node);
     }
     return node;
+}
+
+void GobLang::Machine::addObject(MemoryNode *obj)
+{
+    m_memoryRoot->pushBack(obj);
 }
 
 void GobLang::Machine::popStack()
