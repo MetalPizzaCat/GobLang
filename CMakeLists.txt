@@ -33,6 +33,8 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
 list(APPEND STD_SOURCE_FILES execution/Type.hpp
     standard/MachineFunctions.hpp
     standard/MachineFunctions.cpp
+    standard/File.hpp
+    standard/File.cpp
 )
 
 

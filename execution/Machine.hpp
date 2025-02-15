@@ -84,6 +84,13 @@ namespace GobLang
          */
         StringNode *createString(std::string const &str, bool alwaysNew = false);
 
+        /**
+         * @brief Register object to be handled by the garbage collector. This object will be ref counted and deleted once it is no longer in use 
+         * 
+         * @param obj Object to register
+         */
+        void addObject(MemoryNode * obj);
+
         void popStack();
 
         void pushToStack(MemoryValue const &val);

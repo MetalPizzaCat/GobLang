@@ -59,6 +59,16 @@ std::string GobLang::ArrayNode::toString()
     return text + "]";
 }
 
+void GobLang::ArrayNode::append(MemoryValue const &item)
+{
+    // check if object that we are setting is itself to avoid creating a ref cycle
+    if (item.type == Type::MemoryObj && std::get<MemoryNode *>(item.value) != this)
+    {
+        std::get<MemoryNode *>(item.value)->increaseRefCount();
+    }
+    m_data.push_back(item);
+}
+
 GobLang::ArrayNode::~ArrayNode()
 {
     for (std::vector<MemoryValue>::iterator it = m_data.begin(); it != m_data.end(); it++)
