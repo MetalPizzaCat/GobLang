@@ -16,6 +16,8 @@ namespace GobLang
 
         size_t getSize() const { return m_data.size(); }
 
+        void append(MemoryValue const& item);
+
         virtual ~ArrayNode();
 
     private:

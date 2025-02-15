@@ -10,7 +10,6 @@ namespace GobLang
         Bool,
         Float,
         Int,
-        UserData,
         MemoryObj,
         NativeFunction,
     };
