@@ -60,6 +60,11 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
     compiler/FunctionTokenSequence.hpp
 )
 
+
+
+list(APPEND JIT_SOURCE_FILES 
+)
+
 add_executable(goblang
     main.cpp
     ${COMPILER_SOURCE_FILES}
@@ -79,6 +84,15 @@ add_executable(gobtest
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
 )
+
+add_executable(gobjit
+    jit.cpp
+    ${COMPILER_SOURCE_FILES}
+    ${COMMON_SOURCE_FILES}
+    ${STD_SOURCE_FILES}
+    ${JIT_SOURCE_FILES}
+)
+
 if(${USE_STATIC_BUILD})
     message("Running a static build")
     target_link_options(goblang PRIVATE -static-libgcc -static-libstdc++)
