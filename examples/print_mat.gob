@@ -26,4 +26,3 @@ mat1[1][1] = 5;
 print("mat size: ");
 print_line(sizeof(mat1));
 print_mat(mat1);
-

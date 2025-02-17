@@ -129,7 +129,7 @@ namespace GobLang
 
         ~Machine();
 
-    private:
+    protected:
         inline MemoryValue _operationTop() { return m_operationStack.back().back(); }
 
         inline MemoryValue _getFromTopAndPop()
@@ -162,7 +162,8 @@ namespace GobLang
 
         void _call();
 
-        void _callLocal();
+        // virtual so jit can make it a interpreter stub
+        virtual void _callLocal();
 
         void _return();
 

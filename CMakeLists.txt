@@ -62,39 +62,47 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
 
 
 
-list(APPEND JIT_SOURCE_FILES 
+list(APPEND JIT_SOURCE_FILES jit_compiler/JIT.hpp
+    jit_compiler/Compiler.cpp
 )
+
+
+
+add_library(goblang_common STATIC
+    ${COMMON_SOURCE_FILES}
+    ${STD_SOURCE_FILES}
+    ${COMPILER_SOURCE_FILES}
+)
+
+
 
 add_executable(goblang
     main.cpp
-    ${COMPILER_SOURCE_FILES}
-    ${COMMON_SOURCE_FILES}
-    ${STD_SOURCE_FILES}
 )
 
 add_executable(indev
     indev.cpp
-    ${COMPILER_SOURCE_FILES}
-    ${COMMON_SOURCE_FILES}
-    ${STD_SOURCE_FILES}
 )
 
 add_executable(gobtest
     test.cpp
-    ${COMPILER_SOURCE_FILES}
-    ${COMMON_SOURCE_FILES}
 )
 
-add_executable(gobjit
+add_executable(goblang-jit
     jit.cpp
-    ${COMPILER_SOURCE_FILES}
-    ${COMMON_SOURCE_FILES}
-    ${STD_SOURCE_FILES}
     ${JIT_SOURCE_FILES}
 )
+
+
+target_link_libraries(goblang PRIVATE goblang_common)
+target_link_libraries(indev PRIVATE goblang_common)
+target_link_libraries(gobtest PRIVATE goblang_common)
+target_link_libraries(goblang-jit PRIVATE goblang_common)
+
 
 if(${USE_STATIC_BUILD})
     message("Running a static build")
     target_link_options(goblang PRIVATE -static-libgcc -static-libstdc++)
     target_link_options(indev PRIVATE -static-libgcc -static-libstdc++)
+    target_link_options(goblang-jit PRIVATE -static-libgcc -static-libstdc++)
 endif()
