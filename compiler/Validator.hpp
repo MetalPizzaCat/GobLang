@@ -66,6 +66,7 @@ namespace GobLang::Compiler
         bool call(TokenIterator const &it, TokenIterator &endIt);
         bool callOp(TokenIterator const &it, TokenIterator &endIt);
         bool arrayIndex(TokenIterator const &it, TokenIterator &endIt);
+        bool arrayCreation(TokenIterator const &it, TokenIterator &endIt);
         bool assignment(TokenIterator const &it, TokenIterator &endIt);
         bool arrayAssignment(TokenIterator const &it, TokenIterator &endIt);
         bool localVarCreation(TokenIterator const &it, TokenIterator &endIt);

@@ -155,6 +155,26 @@ void testFunctionArgs2()
     Validator::TokenIterator endIt;
     assert(v.function(p.getTokens().begin(), endIt));
 }
+
+void testArrayCreation()
+{
+    Parser p("[1,2,3]");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    Validator::TokenIterator endIt;
+    assert(v.arrayCreation(p.getTokens().begin(), endIt));
+}
+
+void testArrayCreationNest()
+{
+    Parser p("[1,[2],[3,3]]");
+    p.parse();
+    p.printCode();
+    Validator v(p);
+    Validator::TokenIterator endIt;
+    assert(v.arrayCreation(p.getTokens().begin(), endIt));
+}
 int main(int, char **)
 {
     testArray();
@@ -171,5 +191,7 @@ int main(int, char **)
     testUnary();
     testFunction();
     testFunctionArgs2();
+    testArrayCreation();
+    testArrayCreationNest();
     return EXIT_SUCCESS;
 }
