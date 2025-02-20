@@ -79,6 +79,15 @@ namespace GobLang::Compiler
         void _popVariableBlock();
         void _appendVariable(size_t stringId);
         void _compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it);
+        
+        /**
+         * @brief Check if previous token is a valid array construct which could be addressed via an array access operation. This accounts for ], ) and ID
+         * 
+         * @param it 
+         * @return true 
+         * @return false 
+         */
+        bool _isPreviousTokenValidArrayParent(std::vector<Token *>::const_iterator const &it);
 
         void _compileKeywords(KeywordToken *keyToken, std::vector<Token *>::const_iterator const &it);
 
@@ -132,7 +141,11 @@ namespace GobLang::Compiler
          */
         std::vector<Token *> m_compilerTokens;
 
-        std::vector<FunctionCallToken *> m_functionCalls;
+        /**
+         * @brief Stack of tokens that require a comma separated sequence
+         * 
+         */
+        std::vector<MultiArgToken *> m_multiArgSequences;
 
         bool m_isInConditionHead = false;
         size_t m_markCounter = 0;

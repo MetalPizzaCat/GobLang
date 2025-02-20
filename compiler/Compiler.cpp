@@ -200,10 +200,10 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
                 m_byteCode.operations.push_back(0x0);
             }
         }
-        else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
+        else if (MultiArgToken *multiTok = dynamic_cast<MultiArgToken *>(*it); multiTok != nullptr)
         {
             std::deque<CompilerNode *> nodes;
-            for (int32_t i = 0; i < func->getArgCount(); i++)
+            for (int32_t i = 0; i < multiTok->getArgCount(); i++)
             {
                 nodes.push_front(*stack.rbegin());
                 stack.pop_back();
@@ -216,21 +216,29 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
                 // last time they are used, so we should delete them
                 delete (*it);
             }
-            if (func->usesLocalFunction())
-            {
-                bytes.push_back((uint8_t)Operation::CallLocal);
-                bytes.push_back((uint8_t)func->getFuncId());
-            }
-            else
-            {
-                CompilerNode *funcNode = *stack.rbegin();
-                stack.pop_back();
-                std::vector<uint8_t> fTemp = funcNode->getOperationGetBytes();
-                bytes.insert(bytes.end(), fTemp.begin(), fTemp.end());
-                delete funcNode;
-                bytes.push_back((uint8_t)Operation::Call);
-            }
 
+            if (ArrayCreationToken *array = dynamic_cast<ArrayCreationToken *>(*it); array != nullptr)
+            {
+                bytes.push_back((uint8_t)Operation::CreateArray);
+                bytes.push_back((uint8_t)array->getArgCount());
+            }
+            else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
+            {
+                if (func->usesLocalFunction())
+                {
+                    bytes.push_back((uint8_t)Operation::CallLocal);
+                    bytes.push_back((uint8_t)func->getFuncId());
+                }
+                else
+                {
+                    CompilerNode *funcNode = *stack.rbegin();
+                    stack.pop_back();
+                    std::vector<uint8_t> fTemp = funcNode->getOperationGetBytes();
+                    bytes.insert(bytes.end(), fTemp.begin(), fTemp.end());
+                    delete funcNode;
+                    bytes.push_back((uint8_t)Operation::Call);
+                }
+            }
             stack.push_back(new OperationCompilerNode(bytes, isDestination, destMark));
         }
         else if (ReturnToken *ret = dynamic_cast<ReturnToken *>(*it); ret != nullptr)

@@ -202,6 +202,8 @@ namespace GobLang
 
         void _shrink();
 
+        void _createArray();
+
         bool m_forcedEnd = false;
 
         MemoryNode *m_memoryRoot = new MemoryNode();

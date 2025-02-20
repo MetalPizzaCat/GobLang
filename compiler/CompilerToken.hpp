@@ -4,23 +4,53 @@
 #include <cstdint>
 namespace GobLang::Compiler
 {
-    class FunctionCallToken : public Token
+    /**
+     * @brief Base token for all tokens that need to count the amount of arguments separated by comma. Should not be used in final compilation
+     *
+     */
+    class MultiArgToken : public Token
     {
     public:
-        explicit FunctionCallToken(size_t row, size_t column) : Token(row, column) {}
-        explicit FunctionCallToken(size_t row, size_t column, size_t funcId) : Token(row, column), m_funcId(funcId), m_usesLocalFunc(true) {}
+        explicit MultiArgToken(size_t row, size_t column) : Token(row, column) {}
 
         std::string toString() override;
         void increaseArgCount();
         int32_t getArgCount() const { return m_argCount; }
 
+    private:
+        size_t m_argCount = 0;
+    };
+
+    /**
+     * @brief Class representing a function call with arguments separated by comma
+     *
+     */
+    class FunctionCallToken : public MultiArgToken
+    {
+    public:
+        explicit FunctionCallToken(size_t row, size_t column) : MultiArgToken(row, column) {}
+        explicit FunctionCallToken(size_t row, size_t column, size_t funcId) : MultiArgToken(row, column), m_funcId(funcId), m_usesLocalFunc(true) {}
+        std::string toString() override;
+
         size_t getFuncId() const { return m_funcId; }
         bool usesLocalFunction() const { return m_usesLocalFunc; }
 
     private:
-        int32_t m_argCount = 0;
         size_t m_funcId = 0;
         bool m_usesLocalFunc = false;
+    };
+
+    /**
+     * @brief Class representing an array literal. For example a = [1,2,3] will create an array that will be pushed onto the stack
+     *
+     */
+    class ArrayCreationToken : public MultiArgToken
+    {
+    public:
+        explicit ArrayCreationToken(size_t row, size_t column) : MultiArgToken(row, column) {}
+        
+        std::string toString() override;
+    private:
     };
 
     class ArrayIndexToken : public Token

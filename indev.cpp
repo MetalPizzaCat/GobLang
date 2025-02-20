@@ -81,7 +81,7 @@ int main()
     comp.parse();
     comp.printCode();
     GobLang::Compiler::Validator validator(comp);
-    validator.validate();
+    //validator.validate();
     GobLang::Compiler::ReversePolishGenerator rev(comp);
     rev.compile();
     rev.printCode();
