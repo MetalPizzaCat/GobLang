@@ -38,7 +38,8 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
                  dynamic_cast<FloatToken *>(*m_it) ||
                  dynamic_cast<CharToken *>(*m_it) ||
                  dynamic_cast<StringToken *>(*m_it) ||
-                 dynamic_cast<BoolConstToken *>(*m_it))
+                 dynamic_cast<BoolConstToken *>(*m_it) ||
+                 dynamic_cast<NullConstToken *>(*m_it))
         {
             addToken(*m_it);
             continue;
@@ -250,7 +251,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
 
             m_compilerTokens.push_back(token);
             m_stack.push_back(token);
-            m_functionCalls.push_back(token);
+            m_multiArgSequences.push_back(token);
         }
         else if (!_isBranchKeyword(it - 1))
         {
@@ -259,34 +260,56 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
 
         break;
     case Separator::Comma:
-        if (!m_functionCalls.empty())
+        if (!m_multiArgSequences.empty())
         {
-            dumpStackWhile([](Token *t)
-                           { return dynamic_cast<FunctionCallToken *>(t) == nullptr; });
-            (*m_functionCalls.rbegin())->increaseArgCount();
+            dumpStackWhile([this](Token *t)
+                           { return t != m_multiArgSequences.back(); });
+            m_multiArgSequences.back()->increaseArgCount();
         }
         break;
     case Separator::ArrayOpen:
     {
-        ArrayIndexToken *token = new ArrayIndexToken(sepToken->getRow(), sepToken->getColumn());
-        m_compilerTokens.push_back(token);
-        m_stack.push_back(token);
+        if (_isPreviousTokenValidArrayParent(it))
+        {
+            ArrayIndexToken *token = new ArrayIndexToken(sepToken->getRow(), sepToken->getColumn());
+            m_compilerTokens.push_back(token);
+            m_stack.push_back(token);
+        }
+        else
+        {
+            ArrayCreationToken *arrayCreation = new ArrayCreationToken(sepToken->getRow(), sepToken->getColumn());
+            m_compilerTokens.push_back(arrayCreation);
+            m_stack.push_back(arrayCreation);
+            m_multiArgSequences.push_back(arrayCreation);
+        }
     }
     break;
     case Separator::ArrayClose:
 
         if (m_stack.empty())
         {
-            throw ParsingError(sepToken->getRow(), sepToken->getColumn(), "Encountered ')' without previous '('");
+            throw ParsingError(sepToken->getRow(), sepToken->getColumn(), "Encountered ']' without previous '['");
         }
         else
         {
             Token *arrayPopToken = nullptr;
             do
             {
-                arrayPopToken = *(m_stack.rbegin());
-                addToken(arrayPopToken);
+                arrayPopToken = m_stack.back();
                 m_stack.pop_back();
+                if (ArrayCreationToken *arrayTok = dynamic_cast<ArrayCreationToken *>(arrayPopToken); arrayTok != nullptr)
+                {
+                    SeparatorToken *prev = dynamic_cast<SeparatorToken *>(*(it - 1));
+                    if (!(prev != nullptr && (prev->getSeparator() == Separator::ArrayOpen || prev->getSeparator() == Separator::Comma)))
+                    {
+                        m_multiArgSequences.back()->increaseArgCount();
+                    }
+                    addToken(m_multiArgSequences.back());
+                    m_multiArgSequences.pop_back();
+                    break;
+                }
+                addToken(arrayPopToken);
+
             } while (!m_stack.empty() && dynamic_cast<ArrayIndexToken *>(arrayPopToken) == nullptr);
         }
         break;
@@ -306,10 +329,10 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
                 SeparatorToken *prev = dynamic_cast<SeparatorToken *>(*(it - 1));
                 if (!(prev != nullptr && (prev->getSeparator() == Separator::BracketOpen || prev->getSeparator() == Separator::Comma)))
                 {
-                    (*m_functionCalls.rbegin())->increaseArgCount();
+                    m_multiArgSequences.back()->increaseArgCount();
                 }
-                addToken(*m_functionCalls.rbegin());
-                m_functionCalls.pop_back();
+                addToken(m_multiArgSequences.back());
+                m_multiArgSequences.pop_back();
                 break;
             }
             else if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
@@ -384,6 +407,25 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
         }
         break;
     }
+}
+
+bool GobLang::Compiler::ReversePolishGenerator::_isPreviousTokenValidArrayParent(std::vector<Token *>::const_iterator const &it)
+{
+    // to avoid dealing with reverse iterators just check if it's the first one
+    if (it == m_parser.getTokens().end())
+    {
+        return false;
+    }
+
+    if (SeparatorToken *sep = dynamic_cast<SeparatorToken *>(*(it - 1));
+        sep != nullptr &&
+        (sep->getSeparator() == Separator::ArrayClose || // function calls that return arrays
+         sep->getSeparator() == Separator::BracketClose  // chained array access operators
+         ))
+    {
+        return true;
+    }
+    return dynamic_cast<IdToken *>(*(it - 1)) != nullptr; // obvious ID[] usage
 }
 
 void GobLang::Compiler::ReversePolishGenerator::_compileKeywords(KeywordToken *keyToken, std::vector<Token *>::const_iterator const &it)
@@ -623,5 +665,6 @@ bool GobLang::Compiler::ReversePolishGenerator::_isValidBinaryOperation(std::vec
            dynamic_cast<FloatToken *>(*prevIt) ||
            dynamic_cast<CharToken *>(*prevIt) ||
            dynamic_cast<StringToken *>(*prevIt) ||
-           dynamic_cast<BoolConstToken *>(*prevIt);
+           dynamic_cast<BoolConstToken *>(*prevIt) ||
+           dynamic_cast<NullConstToken *>(*prevIt);
 }

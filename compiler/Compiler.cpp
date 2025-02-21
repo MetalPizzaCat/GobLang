@@ -31,12 +31,16 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
         out.push_back((uint8_t)Operation::PushConstInt);
         out.push_back((uint8_t)intToken->getId());
     }
-    if (FloatToken *floatToken = dynamic_cast<FloatToken *>(token); floatToken != nullptr)
+    else if (NullConstToken *nullToken = dynamic_cast<NullConstToken *>(token); nullToken != nullptr)
+    {
+        out.push_back((uint8_t)Operation::PushNull);
+    }
+    else if (FloatToken *floatToken = dynamic_cast<FloatToken *>(token); floatToken != nullptr)
     {
         out.push_back((uint8_t)Operation::PushConstFloat);
         out.push_back((uint8_t)floatToken->getId());
     }
-    if (StringToken *strToken = dynamic_cast<StringToken *>(token); strToken != nullptr)
+    else if (StringToken *strToken = dynamic_cast<StringToken *>(token); strToken != nullptr)
     {
         out.push_back((uint8_t)GobLang::Operation::PushConstString);
         out.push_back((uint8_t)strToken->getId());
@@ -145,7 +149,8 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
         else if (dynamic_cast<IntToken *>(*it) != nullptr ||
                  dynamic_cast<StringToken *>(*it) != nullptr ||
                  dynamic_cast<CharToken *>(*it) != nullptr ||
-                 dynamic_cast<FloatToken *>(*it) != nullptr)
+                 dynamic_cast<FloatToken *>(*it) != nullptr || 
+                 dynamic_cast<NullConstToken *>(*it) != nullptr)
         {
             stack.push_back(new OperationCompilerNode(generateGetByteCode(*it), isDestination, destMark));
         }
@@ -200,10 +205,10 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
                 m_byteCode.operations.push_back(0x0);
             }
         }
-        else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
+        else if (MultiArgToken *multiTok = dynamic_cast<MultiArgToken *>(*it); multiTok != nullptr)
         {
             std::deque<CompilerNode *> nodes;
-            for (int32_t i = 0; i < func->getArgCount(); i++)
+            for (int32_t i = 0; i < multiTok->getArgCount(); i++)
             {
                 nodes.push_front(*stack.rbegin());
                 stack.pop_back();
@@ -216,21 +221,29 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
                 // last time they are used, so we should delete them
                 delete (*it);
             }
-            if (func->usesLocalFunction())
-            {
-                bytes.push_back((uint8_t)Operation::CallLocal);
-                bytes.push_back((uint8_t)func->getFuncId());
-            }
-            else
-            {
-                CompilerNode *funcNode = *stack.rbegin();
-                stack.pop_back();
-                std::vector<uint8_t> fTemp = funcNode->getOperationGetBytes();
-                bytes.insert(bytes.end(), fTemp.begin(), fTemp.end());
-                delete funcNode;
-                bytes.push_back((uint8_t)Operation::Call);
-            }
 
+            if (ArrayCreationToken *array = dynamic_cast<ArrayCreationToken *>(*it); array != nullptr)
+            {
+                bytes.push_back((uint8_t)Operation::CreateArray);
+                bytes.push_back((uint8_t)array->getArgCount());
+            }
+            else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
+            {
+                if (func->usesLocalFunction())
+                {
+                    bytes.push_back((uint8_t)Operation::CallLocal);
+                    bytes.push_back((uint8_t)func->getFuncId());
+                }
+                else
+                {
+                    CompilerNode *funcNode = *stack.rbegin();
+                    stack.pop_back();
+                    std::vector<uint8_t> fTemp = funcNode->getOperationGetBytes();
+                    bytes.insert(bytes.end(), fTemp.begin(), fTemp.end());
+                    delete funcNode;
+                    bytes.push_back((uint8_t)Operation::Call);
+                }
+            }
             stack.push_back(new OperationCompilerNode(bytes, isDestination, destMark));
         }
         else if (ReturnToken *ret = dynamic_cast<ReturnToken *>(*it); ret != nullptr)

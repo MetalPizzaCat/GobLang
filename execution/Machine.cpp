@@ -85,6 +85,9 @@ void GobLang::Machine::step()
     case Operation::PushFalse:
         pushToStack(MemoryValue{.type = Type::Bool, .value = false});
         break;
+    case Operation::PushNull:
+        _pushConstNull();
+        break;
     case Operation::Equals:
         _eq();
         break;
@@ -125,6 +128,9 @@ void GobLang::Machine::step()
         break;
     case Operation::ReturnValue:
         _returnWithValue();
+        break;
+    case Operation::CreateArray:
+        _createArray();
         break;
     case Operation::End:
         m_forcedEnd = true;
@@ -626,6 +632,11 @@ void GobLang::Machine::_pushConstString()
     pushToStack(MemoryValue{.type = Type::MemoryObj, .value = node});
 }
 
+void GobLang::Machine::_pushConstNull()
+{
+    pushToStack(MemoryValue{.type = Type::Null, .value = 0});
+}
+
 void GobLang::Machine::_getArray()
 {
     MemoryValue array = _getFromTopAndPop();
@@ -855,4 +866,16 @@ void GobLang::Machine::_shrink()
     m_programCounter++;
     size_t amount = (size_t)m_operations[m_programCounter];
     shrinkLocalVariableStackBy(amount);
+}
+
+void GobLang::Machine::_createArray()
+{
+    m_programCounter++;
+    int32_t arraySize = m_operations[m_programCounter];
+    ArrayNode *array = createArrayOfSize(arraySize);
+    for (int32_t i = arraySize - 1; i >= 0; i--)
+    {
+        array->setItem(i, _getFromTopAndPop());
+    }
+    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = array});
 }

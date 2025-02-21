@@ -176,6 +176,8 @@ namespace GobLang
 
         void _pushConstString();
 
+        inline void _pushConstNull();
+
         void _getArray();
 
         void _setArray();
@@ -201,6 +203,8 @@ namespace GobLang
         void _not();
 
         void _shrink();
+
+        void _createArray();
 
         bool m_forcedEnd = false;
 

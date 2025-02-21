@@ -19,7 +19,8 @@ bool GobLang::Compiler::Validator::constant(TokenIterator const &it)
                               dynamic_cast<IntToken *>(*it) != nullptr ||
                               dynamic_cast<FloatToken *>(*it) != nullptr || 
                               dynamic_cast<CharToken *>(*it) != nullptr ||
-                              dynamic_cast<BoolConstToken *>(*it) != nullptr);
+                              dynamic_cast<BoolConstToken *>(*it) != nullptr ||
+                              dynamic_cast<NullConstToken*>(*it) != nullptr);
 }
 
 bool GobLang::Compiler::Validator::id(TokenIterator const &it)
@@ -152,6 +153,11 @@ bool GobLang::Compiler::Validator::unaryExpr(TokenIterator const &it, TokenItera
 bool GobLang::Compiler::Validator::mul(TokenIterator const &it, TokenIterator &endIt)
 {
     TokenIterator exprIt;
+    if(arrayCreation(it, exprIt))
+    {
+        endIt = exprIt;
+        return true;
+    }
     if (arrayAccess(it, exprIt))
     {
         endIt = exprIt;
@@ -263,6 +269,31 @@ bool GobLang::Compiler::Validator::arrayIndex(TokenIterator const &it, TokenIter
         endIt = exprIt + 1;
         return true;
     }
+    return false;
+}
+
+bool GobLang::Compiler::Validator::arrayCreation(TokenIterator const &it, TokenIterator &endIt)
+{
+    TokenIterator exprIt = it;
+    if(!separator(exprIt, Separator::ArrayOpen))
+    {
+        return false;
+    }
+    do
+    {
+        exprIt++;
+        if (separator(exprIt, Separator::ArrayClose))
+        {
+            endIt = exprIt;
+            // block ended after some about of operations
+            return true;
+        }
+        else if (separator(exprIt, Separator::Comma))
+        {
+            exprIt++;
+        }
+    } while (expr(exprIt, exprIt) && (separator(exprIt + 1, Separator::Comma) || separator(exprIt + 1, Separator::ArrayClose)));
+
     return false;
 }
 

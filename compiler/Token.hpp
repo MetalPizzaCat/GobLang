@@ -189,4 +189,15 @@ namespace GobLang::Compiler
     private:
         bool m_value;
     };
+
+    /**
+     * @brief Token representing a null constant     * 
+     */
+    class NullConstToken : public Token
+    {
+    public:
+        explicit NullConstToken(size_t row, size_t column) : Token(row, column) {}
+
+        std::string toString() override;
+    };
 }

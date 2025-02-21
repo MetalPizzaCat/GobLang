@@ -34,6 +34,7 @@ namespace GobLang
         PushConstString,
         PushTrue,
         PushFalse,
+        PushNull,
         Equals,
         Less,
         More,
@@ -65,6 +66,10 @@ namespace GobLang
          */
         ReturnValue,
         /**
+         * @brief Create an array of size n using values from stack. Exists to provide a native way to make arrays
+         */
+        CreateArray,
+        /**
          * @brief End program execution
          */
         End
@@ -85,6 +90,7 @@ namespace GobLang
         OperationData{.op = Operation::Div, .text = "div", .argCount = 0},
         OperationData{.op = Operation::Call, .text = "call", .argCount = 0},
         OperationData{.op = Operation::CallLocal, .text = "call_local", .argCount = 1},
+        OperationData{.op = Operation::CreateArray, .text = "create_array", .argCount = 1},
         OperationData{.op = Operation::Set, .text = "set_global", .argCount = 0},
         OperationData{.op = Operation::Get, .text = "get_global", .argCount = 0},
         OperationData{.op = Operation::SetLocal, .text = "set", .argCount = 1},
@@ -97,6 +103,7 @@ namespace GobLang
         OperationData{.op = Operation::PushConstString, .text = "push_str", .argCount = 1},
         OperationData{.op = Operation::PushTrue, .text = "push_true", .argCount = 0},
         OperationData{.op = Operation::PushFalse, .text = "push_false", .argCount = 0},
+        OperationData{.op = Operation::PushNull, .text = "push_null", .argCount = 0},
         OperationData{.op = Operation::Equals, .text = "eq", .argCount = 0},
         OperationData{.op = Operation::NotEq, .text = "neq", .argCount = 0},
         OperationData{.op = Operation::Not, .text = "not", .argCount = 0},
