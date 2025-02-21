@@ -32,6 +32,7 @@ void GobLang::Compiler::Parser::parse()
 {
     std::vector<std::function<Token *(void)>> parsers = {
         std::bind(&Parser::parseBool, this),
+        std::bind(&Parser::parseNullConst, this),
         std::bind(&Parser::parseKeywords, this),
         std::bind(&Parser::parseOperators, this),
         std::bind(&Parser::parseFloat, this),
@@ -52,7 +53,7 @@ void GobLang::Compiler::Parser::parse()
         }
 
         Token *token = nullptr;
-        for (std::function<Token *(void)> &f : parsers)
+        for (std::function<Token *(void)> const &f : parsers)
         {
             token = f();
             if (token != nullptr)
@@ -195,11 +196,11 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseInt()
             index = it - m_ints.begin();
         }
     }
-    catch (std::invalid_argument e)
+    catch (std::invalid_argument const &e)
     {
         return nullptr;
     }
-    catch (std::out_of_range e)
+    catch (std::out_of_range const &e)
     {
         throw ParsingError(
             m_rowIt - m_lineIt->begin(),
@@ -260,11 +261,11 @@ GobLang::Compiler::FloatToken *GobLang::Compiler::Parser::parseFloat()
             index = it - m_floats.begin();
         }
     }
-    catch (std::invalid_argument e)
+    catch (std::invalid_argument const &e)
     {
         return nullptr;
     }
-    catch (std::out_of_range e)
+    catch (std::out_of_range const &e)
     {
         throw ParsingError(
             m_rowIt - m_lineIt->begin(),
@@ -353,6 +354,28 @@ GobLang::Compiler::SpecialCharacter const *GobLang::Compiler::Parser::parseSpeci
             return true;
         });
     return charIt == SpecialCharacters.end() ? nullptr : &*charIt;
+}
+
+GobLang::Compiler::NullConstToken *GobLang::Compiler::Parser::parseNullConst()
+{
+    const char *nullKeyword = "null";
+    const size_t nullSize = strlen("null");
+    for (size_t i = 0; i < nullSize; i++)
+    {
+        if (*(m_rowIt + i) != nullKeyword[i])
+        {
+            return nullptr;
+        }
+    }
+    // there should be a non keyword character after the keyword for it to be valid
+    if (m_rowIt + nullSize != getEndOfTheLine() && std::isalnum(*(m_rowIt + nullSize)))
+    {
+        return nullptr;
+    }
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(nullSize);
+    return new NullConstToken(row, column);
 }
 
 GobLang::Compiler::BoolConstToken *GobLang::Compiler::Parser::parseBool()

@@ -75,6 +75,8 @@ namespace GobLang::Compiler
 
         CharToken *parseChar();
 
+        NullConstToken *parseNullConst();
+
         SpecialCharacter const *parseSpecialCharacter(std::string::iterator const &it);
 
         /**

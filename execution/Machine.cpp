@@ -85,6 +85,9 @@ void GobLang::Machine::step()
     case Operation::PushFalse:
         pushToStack(MemoryValue{.type = Type::Bool, .value = false});
         break;
+    case Operation::PushNull:
+        _pushConstNull();
+        break;
     case Operation::Equals:
         _eq();
         break;
@@ -627,6 +630,11 @@ void GobLang::Machine::_pushConstString()
 
     m_programCounter++;
     pushToStack(MemoryValue{.type = Type::MemoryObj, .value = node});
+}
+
+void GobLang::Machine::_pushConstNull()
+{
+    pushToStack(MemoryValue{.type = Type::Null, .value = 0});
 }
 
 void GobLang::Machine::_getArray()

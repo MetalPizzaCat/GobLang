@@ -38,7 +38,8 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
                  dynamic_cast<FloatToken *>(*m_it) ||
                  dynamic_cast<CharToken *>(*m_it) ||
                  dynamic_cast<StringToken *>(*m_it) ||
-                 dynamic_cast<BoolConstToken *>(*m_it))
+                 dynamic_cast<BoolConstToken *>(*m_it) ||
+                 dynamic_cast<NullConstToken *>(*m_it))
         {
             addToken(*m_it);
             continue;
@@ -664,5 +665,6 @@ bool GobLang::Compiler::ReversePolishGenerator::_isValidBinaryOperation(std::vec
            dynamic_cast<FloatToken *>(*prevIt) ||
            dynamic_cast<CharToken *>(*prevIt) ||
            dynamic_cast<StringToken *>(*prevIt) ||
-           dynamic_cast<BoolConstToken *>(*prevIt);
+           dynamic_cast<BoolConstToken *>(*prevIt) ||
+           dynamic_cast<NullConstToken *>(*prevIt);
 }

@@ -176,6 +176,8 @@ namespace GobLang
 
         void _pushConstString();
 
+        inline void _pushConstNull();
+
         void _getArray();
 
         void _setArray();

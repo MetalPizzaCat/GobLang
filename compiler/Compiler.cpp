@@ -31,12 +31,16 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
         out.push_back((uint8_t)Operation::PushConstInt);
         out.push_back((uint8_t)intToken->getId());
     }
-    if (FloatToken *floatToken = dynamic_cast<FloatToken *>(token); floatToken != nullptr)
+    else if (NullConstToken *nullToken = dynamic_cast<NullConstToken *>(token); nullToken != nullptr)
+    {
+        out.push_back((uint8_t)Operation::PushNull);
+    }
+    else if (FloatToken *floatToken = dynamic_cast<FloatToken *>(token); floatToken != nullptr)
     {
         out.push_back((uint8_t)Operation::PushConstFloat);
         out.push_back((uint8_t)floatToken->getId());
     }
-    if (StringToken *strToken = dynamic_cast<StringToken *>(token); strToken != nullptr)
+    else if (StringToken *strToken = dynamic_cast<StringToken *>(token); strToken != nullptr)
     {
         out.push_back((uint8_t)GobLang::Operation::PushConstString);
         out.push_back((uint8_t)strToken->getId());
@@ -145,7 +149,8 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
         else if (dynamic_cast<IntToken *>(*it) != nullptr ||
                  dynamic_cast<StringToken *>(*it) != nullptr ||
                  dynamic_cast<CharToken *>(*it) != nullptr ||
-                 dynamic_cast<FloatToken *>(*it) != nullptr)
+                 dynamic_cast<FloatToken *>(*it) != nullptr || 
+                 dynamic_cast<NullConstToken *>(*it) != nullptr)
         {
             stack.push_back(new OperationCompilerNode(generateGetByteCode(*it), isDestination, destMark));
         }

@@ -101,3 +101,8 @@ std::string GobLang::Compiler::FloatToken::toString()
 {
     return "FLOAT" + std::to_string(m_id);
 }
+
+std::string GobLang::Compiler::NullConstToken::toString()
+{
+    return "NULL";
+}

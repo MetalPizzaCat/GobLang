@@ -19,7 +19,8 @@ bool GobLang::Compiler::Validator::constant(TokenIterator const &it)
                               dynamic_cast<IntToken *>(*it) != nullptr ||
                               dynamic_cast<FloatToken *>(*it) != nullptr || 
                               dynamic_cast<CharToken *>(*it) != nullptr ||
-                              dynamic_cast<BoolConstToken *>(*it) != nullptr);
+                              dynamic_cast<BoolConstToken *>(*it) != nullptr ||
+                              dynamic_cast<NullConstToken*>(*it) != nullptr);
 }
 
 bool GobLang::Compiler::Validator::id(TokenIterator const &it)
