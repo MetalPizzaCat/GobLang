@@ -48,8 +48,9 @@ namespace GobLang::Compiler
     {
     public:
         explicit ArrayCreationToken(size_t row, size_t column) : MultiArgToken(row, column) {}
-        
+
         std::string toString() override;
+
     private:
     };
 
@@ -110,5 +111,16 @@ namespace GobLang::Compiler
 
     private:
         bool m_hasVal;
+    };
+
+    /**
+     * @brief Version of return token that can only be used in the "main" function which will end execution immediately
+     */
+    class HaltToken : public Token
+    {
+    public:
+        explicit HaltToken(size_t row, size_t column) : Token(row, column) {}
+
+        std::string toString() override { return "HALT"; }
     };
 }

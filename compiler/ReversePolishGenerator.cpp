@@ -519,9 +519,22 @@ void GobLang::Compiler::ReversePolishGenerator::_compileKeywords(KeywordToken *k
                 hasVal = false;
             }
         }
-        ReturnToken *ret = new ReturnToken((*it)->getRow(), (*it)->getColumn(), hasVal);
-        m_compilerTokens.push_back(ret);
-        m_stack.push_back(ret);
+        if (m_currentFunction != nullptr)
+        {
+            ReturnToken *ret = new ReturnToken((*it)->getRow(), (*it)->getColumn(), hasVal);
+            m_compilerTokens.push_back(ret);
+            m_stack.push_back(ret);
+        }
+        else if (hasVal)
+        {
+            throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Return in main block can not have a value");
+        }
+        else
+        {
+            HaltToken *hlt = new HaltToken((*it)->getRow(), (*it)->getColumn());
+            m_compilerTokens.push_back(hlt);
+            m_stack.push_back(hlt);
+        }
     }
     break;
     default:

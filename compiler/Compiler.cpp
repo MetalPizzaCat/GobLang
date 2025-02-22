@@ -149,7 +149,7 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
         else if (dynamic_cast<IntToken *>(*it) != nullptr ||
                  dynamic_cast<StringToken *>(*it) != nullptr ||
                  dynamic_cast<CharToken *>(*it) != nullptr ||
-                 dynamic_cast<FloatToken *>(*it) != nullptr || 
+                 dynamic_cast<FloatToken *>(*it) != nullptr ||
                  dynamic_cast<NullConstToken *>(*it) != nullptr)
         {
             stack.push_back(new OperationCompilerNode(generateGetByteCode(*it), isDestination, destMark));
@@ -260,6 +260,11 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
             {
                 m_byteCode.operations.push_back((uint8_t)Operation::Return);
             }
+        }
+
+        else if (dynamic_cast<HaltToken *>(*it) != nullptr)
+        {
+            m_byteCode.operations.push_back((uint8_t)Operation::End);
         }
         else if (OperatorToken *opToken = dynamic_cast<OperatorToken *>(*it); opToken != nullptr)
         {
