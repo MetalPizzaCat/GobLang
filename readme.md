@@ -110,7 +110,17 @@ Unlike all other types strings and arrays are not passed around by value and ins
     a[0] = 'j';
     # at this point both b and a will return "jello"
 ```
-## Functions(partially)
+
+### Array literals
+An alternative way to create an array without using `array` function would be to use array literals. By writing `[val1, val2,val3,..., valn]` user can create a "constant" array of size n. Both `array` function and array literal create same types of array object, however array literals can be used for quickly creating short arrays with known values. 
+Although they are somewhat constant they are not the same type of array as a c-array. Each time an array literal is referenced all the values are pushed onto the stack and then popped by the `create_array n` operation. This means that any value can be an array value, including function calls, which will execute their logic once pushed.
+For example 
+```
+let inputs = [input(), input(), input()];
+```
+Would be a valid way to create an array of size 3, where each element will be an input requested from the standard input. 
+
+## Functions
 As of right now only functions exposed to goblang using `addFunction` method can be called.
 
 Native c++ functions can be called from goblang language by simply using the call operation `func()`. All native functions must receive pointer to the interpreter as the only argument and use operation stack for managing arguments.
@@ -193,6 +203,7 @@ Options:
 * -i or --input      : Run code from file in a given location
 * -s or --showbytes  : Show bytecode before running code
 
+# Possible future features
 
 ## Custom types
 Custom types would be similar to `struct` in c and would just be plain data types, with possibly rust style syntax for adding methods

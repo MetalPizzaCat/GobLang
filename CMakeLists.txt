@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(USE_STATIC_BUILD ON CACHE BOOL "Build static executable")
 
 add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
-add_compile_definitions(GOB_LANG_VERSION_MINOR=4)
+add_compile_definitions(GOB_LANG_VERSION_MINOR=5)
 
 add_compile_definitions(LINES_BEFORE_ERROR=3)
 add_compile_definitions(LINES_AFTER_ERROR=3)
