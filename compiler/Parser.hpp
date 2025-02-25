@@ -10,6 +10,8 @@
 
 namespace GobLang::Compiler
 {
+    static const std::string HexDigits = "1234567890ABCDEFabcdef";
+    inline bool isValidHexDigit(char c) { return HexDigits.find(c) != std::string::npos; }
     class Parser
     {
     public:
@@ -64,6 +66,8 @@ namespace GobLang::Compiler
         IdToken *parseId();
 
         IntToken *parseInt();
+
+        IntToken *parseHexInt();
 
         FloatToken *parseFloat();
 

@@ -36,6 +36,7 @@ void GobLang::Compiler::Parser::parse()
         std::bind(&Parser::parseKeywords, this),
         std::bind(&Parser::parseOperators, this),
         std::bind(&Parser::parseFloat, this),
+        std::bind(&Parser::parseHexInt, this),
         std::bind(&Parser::parseInt, this),
         std::bind(&Parser::parseChar, this),
         std::bind(&Parser::parseString, this),
@@ -185,6 +186,60 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseInt()
     try
     {
         int32_t numVal = std::stoi(num);
+        std::vector<int32_t>::iterator it = std::find(m_ints.begin(), m_ints.end(), numVal);
+        if (it == m_ints.end())
+        {
+            m_ints.push_back(numVal);
+            index = m_ints.size() - 1;
+        }
+        else
+        {
+            index = it - m_ints.begin();
+        }
+    }
+    catch (std::invalid_argument const &e)
+    {
+        return nullptr;
+    }
+    catch (std::out_of_range const &e)
+    {
+        throw ParsingError(
+            m_rowIt - m_lineIt->begin(),
+            m_lineIt - m_code.begin(),
+            "Constant number is too large, valid range is " +
+                std::to_string(std::numeric_limits<int32_t>::min()) +
+                "< x < " +
+                std::to_string(std::numeric_limits<int32_t>::max()));
+    }
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(offset);
+    return new IntToken(row, column, index);
+}
+
+GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseHexInt()
+{
+    // hex numbers follow 0x1234abcd pattern
+    if (m_rowIt + 2 == getEndOfTheLine() || !((*m_rowIt == '0' && *(m_rowIt + 1) == 'x')))
+    {
+        return nullptr;
+    }
+
+    size_t offset = 2;
+    if (!isValidHexDigit(*(m_rowIt + offset)))
+    {
+        return nullptr;
+    }
+    std::string num;
+    while ((m_rowIt + offset) != getEndOfTheLine() && isValidHexDigit(*(m_rowIt + offset)))
+    {
+        num.push_back(*(m_rowIt + offset));
+        offset++;
+    }
+    size_t index = std::string::npos;
+    try
+    {
+        int32_t numVal = std::stoi(num, nullptr, 16);
         std::vector<int32_t>::iterator it = std::find(m_ints.begin(), m_ints.end(), numVal);
         if (it == m_ints.end())
         {

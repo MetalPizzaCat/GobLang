@@ -76,7 +76,7 @@ int main(int argc, char **argv)
     std::vector<std::string>::iterator verIt = std::find_first_of(args.begin(), args.end(), VersionArgs.begin(), VersionArgs.end());
     if (verIt != args.end())
     {
-        std::cout << "GobLang v" << GOB_LANG_VERSION_MAJOR << "." << GOB_LANG_VERSION_MINOR << std::endl;
+        std::cout << "GobLang v" << GOB_LANG_VERSION_MAJOR << "." << GOB_LANG_VERSION_MINOR << "." << GOB_LANG_VERSION_PATCH << std::endl;
         return EXIT_SUCCESS;
     }
     verIt = std::find_first_of(args.begin(), args.end(), HelpArgs.begin(), HelpArgs.end());
