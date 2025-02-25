@@ -687,7 +687,7 @@ void GobLang::Machine::_eq()
 {
     MemoryValue b = _getFromTopAndPop();
     MemoryValue a = _getFromTopAndPop();
-    if (a.type == b.type)
+    if (a.type == b.type || a.type == Type::Null || b.type == Type::Null)
     {
         pushToStack(MemoryValue{.type = Type::Bool, .value = areEqual(a, b)});
     }
@@ -701,7 +701,7 @@ void GobLang::Machine::_neq()
 {
     MemoryValue b = _getFromTopAndPop();
     MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type)
+    if (a.type != b.type && !(a.type == Type::Null || b.type == Type::Null))
     {
         throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
     }
@@ -755,7 +755,7 @@ void GobLang::Machine::_less()
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) < std::get<int32_t>(b.value)});
             break;
         case Type::Float:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) < std::get<int32_t>(b.value)});
+            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) < std::get<float>(b.value)});
             break;
         default:
             throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");
@@ -779,7 +779,7 @@ void GobLang::Machine::_more()
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) > std::get<int32_t>(b.value)});
             break;
         case Type::Float:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) > std::get<int32_t>(b.value)});
+            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) > std::get<float>(b.value)});
             break;
         default:
             throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");
@@ -803,7 +803,7 @@ void GobLang::Machine::_lessOrEq()
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) <= std::get<int32_t>(b.value)});
             break;
         case Type::Float:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) <= std::get<int32_t>(b.value)});
+            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) <= std::get<float>(b.value)});
             break;
         default:
             throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");
@@ -827,7 +827,7 @@ void GobLang::Machine::_moreOrEq()
             pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) >= std::get<int32_t>(b.value)});
             break;
         case Type::Float:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) >= std::get<int32_t>(b.value)});
+            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) >= std::get<float>(b.value)});
             break;
         default:
             throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");

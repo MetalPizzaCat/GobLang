@@ -79,6 +79,13 @@ add_executable(gobtest
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
 )
+
+add_library(goblanglib  SHARED GobLang.hpp ${COMPILER_SOURCE_FILES}
+${COMMON_SOURCE_FILES}
+${STD_SOURCE_FILES})
+
+target_include_directories(goblanglib PUBLIC .)
+
 if(${USE_STATIC_BUILD})
     message("Running a static build")
     target_link_options(goblang PRIVATE -static-libgcc -static-libstdc++)
