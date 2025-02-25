@@ -140,71 +140,83 @@ namespace GobLang
         }
         ProgramAddressType _getAddressFromByteCode(size_t start);
 
-        void _jump();
+        inline void _jump();
 
-        void _jumpIf();
+        inline void _jumpIf();
 
-        void _add();
+        inline void _add();
 
-        void _sub();
+        inline void _sub();
 
-        void _mul();
+        inline void _mul();
 
-        void _div();
+        inline void _div();
 
-        void _set();
+        inline void _set();
 
-        void _get();
+        inline void _get();
 
-        void _setLocal();
+        inline void _bitAnd();
+        
+        inline void _bitOr();
 
-        void _getLocal();
+        inline void _bitXor();
 
-        void _call();
+        inline void _bitNot();
 
-        void _callLocal();
+        inline void _shiftLeft();
 
-        void _return();
+        inline void _shiftRight();
 
-        void _returnWithValue();
+        inline void _setLocal();
 
-        void _pushConstInt();
+        inline void _getLocal();
 
-        void _pushConstFloat();
+        inline void _call();
 
-        void _pushConstChar();
+        inline void _callLocal();
 
-        void _pushConstString();
+        inline void _return();
+
+        inline void _returnWithValue();
+
+        inline void _pushConstInt();
+
+        inline void _pushConstFloat();
+
+        inline void _pushConstChar();
+
+        inline void _pushConstString();
 
         inline void _pushConstNull();
 
-        void _getArray();
+        inline void _getArray();
 
-        void _setArray();
+        inline void _setArray();
 
-        void _eq();
+        inline void _eq();
 
-        void _neq();
+        inline void _neq();
 
-        void _and();
+        inline void _and();
 
-        void _or();
+        inline void _or();
 
-        void _less();
+        inline void _less();
 
-        void _more();
+        inline void _more();
 
-        void _lessOrEq();
+        inline void _lessOrEq();
 
-        void _moreOrEq();
+        inline void _moreOrEq();
 
-        void _negate();
+        inline void _negate();
 
-        void _not();
+        inline void _not();
 
-        void _shrink();
+        inline void _shrink();
 
-        void _createArray();
+        inline void _createArray();
 
         bool m_forcedEnd = false;
 

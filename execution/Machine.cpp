@@ -50,6 +50,24 @@ void GobLang::Machine::step()
     case Operation::GetLocal:
         _getLocal();
         break;
+    case Operation::BitAnd:
+        _bitAnd();
+        break;
+    case Operation::BitOr:
+        _bitOr();
+        break;
+    case Operation::BitXor:
+        _bitXor();
+        break;
+    case Operation::BitNot:
+        _bitNot();
+        break;
+    case Operation::ShiftLeft:
+        _shiftLeft();
+        break;
+    case Operation::ShiftRight:
+        _shiftRight();
+        break;
     case Operation::SetLocal:
         _setLocal();
         collectGarbage();
@@ -525,6 +543,71 @@ void GobLang::Machine::_get()
         }
         pushToStack(m_globals[memStr->getString()]);
     }
+}
+
+inline void GobLang::Machine::_bitAnd()
+{
+    MemoryValue a = _getFromTopAndPop();
+    MemoryValue b = _getFromTopAndPop();
+    if (a.type != b.type || a.type != Type::Int)
+    {
+        throw RuntimeException(std::string("Attempted to bit AND values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+    }
+    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(a.value) & std::get<int32_t>(b.value)});
+}
+
+inline void GobLang::Machine::_bitOr()
+{
+    MemoryValue a = _getFromTopAndPop();
+    MemoryValue b = _getFromTopAndPop();
+    if (a.type != b.type || a.type != Type::Int)
+    {
+        throw RuntimeException(std::string("Attempted to bit OR values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+    }
+    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(a.value) | std::get<int32_t>(b.value)});
+}
+
+inline void GobLang::Machine::_bitXor()
+{
+    MemoryValue a = _getFromTopAndPop();
+    MemoryValue b = _getFromTopAndPop();
+    if (a.type != b.type || a.type != Type::Int)
+    {
+        throw RuntimeException(std::string("Attempted to bit XOR values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+    }
+    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(a.value) ^ std::get<int32_t>(b.value)});
+}
+
+inline void GobLang::Machine::_bitNot()
+{
+    MemoryValue a = _getFromTopAndPop();
+    if (a.type != Type::Int)
+    {
+        throw RuntimeException(std::string("Attempted to bit NOT value of  ") + typeToString(a.type) + ". Only int is allowed");
+    }
+    pushToStack(MemoryValue{.type = Type::Int, .value = ~std::get<int32_t>(a.value)});
+}
+
+inline void GobLang::Machine::_shiftLeft()
+{
+    MemoryValue a = _getFromTopAndPop();
+    MemoryValue b = _getFromTopAndPop();
+    if (a.type != b.type || a.type != Type::Int)
+    {
+        throw RuntimeException(std::string("Attempted to bit shift left values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+    }
+    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) << std::get<int32_t>(a.value)});
+}
+
+inline void GobLang::Machine::_shiftRight()
+{
+    MemoryValue a = _getFromTopAndPop();
+    MemoryValue b = _getFromTopAndPop();
+    if (a.type != b.type || a.type != Type::Int)
+    {
+        throw RuntimeException(std::string("Attempted to bit shift right values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+    }
+    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) >> std::get<int32_t>(a.value)});
 }
 
 void GobLang::Machine::_setLocal()

@@ -36,7 +36,7 @@ bool GobLang::Compiler::Validator::unaryOperator(TokenIterator const &it)
     }
     if (OperatorToken *op = dynamic_cast<OperatorToken *>(*it); op != nullptr)
     {
-        return op->getOperator() == Operator::Not || op->getOperator() == Operator::Sub;
+        return op->getOperator() == Operator::Not || op->getOperator() == Operator::Sub || op->getOperator() == Operator::BitNot;
     }
     return false;
 }

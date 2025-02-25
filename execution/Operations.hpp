@@ -44,6 +44,12 @@ namespace GobLang
         And,
         Or,
         Not,
+        BitAnd,
+        BitOr,
+        BitXor,
+        BitNot,
+        ShiftLeft,
+        ShiftRight,
         Negate,
         /**
          * @brief Unconditionally jump. Uses sizeof(size_t) bytes to get the address to jump to
@@ -84,6 +90,12 @@ namespace GobLang
 
     static const std::vector<OperationData> Operations = {
         OperationData{.op = Operation::None, .text = "noop", .argCount = 0},
+        OperationData{.op = Operation::BitAnd, .text = "bit_and", .argCount = 0},
+        OperationData{.op = Operation::BitOr, .text = "bit_or", .argCount = 0},
+        OperationData{.op = Operation::BitXor, .text = "bit_xor", .argCount = 0},
+        OperationData{.op = Operation::BitNot, .text = "bit_not", .argCount = 0},
+        OperationData{.op = Operation::ShiftLeft, .text = "shift_left", .argCount = 0},
+        OperationData{.op = Operation::ShiftRight, .text = "shift_right", .argCount = 0},
         OperationData{.op = Operation::Add, .text = "add", .argCount = 0},
         OperationData{.op = Operation::Sub, .text = "sub", .argCount = 0},
         OperationData{.op = Operation::Mul, .text = "mul", .argCount = 0},
