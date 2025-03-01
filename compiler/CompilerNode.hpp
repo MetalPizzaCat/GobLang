@@ -17,6 +17,8 @@ namespace GobLang::Compiler
         size_t getMark() const { return m_attachedMark; }
         bool hasMark() const { return m_hasMark; }
 
+        virtual ~CompilerNode() = default;
+
     private:
         bool m_hasMark;
         size_t m_attachedMark = 0;
@@ -30,6 +32,7 @@ namespace GobLang::Compiler
                                        size_t destinationId) : CompilerNode(isDestination, destinationId), m_bytes(vec) {}
 
         std::vector<uint8_t> getOperationGetBytes() override { return m_bytes; }
+        virtual ~OperationCompilerNode() = default;
 
     private:
         std::vector<uint8_t> m_bytes;
@@ -84,7 +87,7 @@ namespace GobLang::Compiler
             return out;
         }
 
-        ~ArrayCompilerNode()
+        virtual ~ArrayCompilerNode()
         {
             delete m_array;
             delete m_index;

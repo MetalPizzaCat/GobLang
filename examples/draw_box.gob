@@ -1,7 +1,7 @@
 print_line("Width: ");
-let width = to_int(input());
+let width = int(input());
 print_line("Height: ");
-let height = to_int(input());
+let height = int(input());
 
 let i = 0;
 while(i < height){

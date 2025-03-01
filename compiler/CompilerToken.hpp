@@ -17,6 +17,7 @@ namespace GobLang::Compiler
         void increaseArgCount();
         int32_t getArgCount() const { return m_argCount; }
 
+        virtual ~MultiArgToken() = default;
     private:
         size_t m_argCount = 0;
     };

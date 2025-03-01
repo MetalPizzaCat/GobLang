@@ -406,6 +406,9 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
             m_currentFunction = nullptr;
         }
         break;
+
+    default:
+        throw ParsingError(sepToken->getRow(), sepToken->getColumn(), "Unexpected separator encountered");
     }
 }
 
@@ -608,6 +611,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileFunction(
         }
         currIt++;
     }
+    throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Expected ')'");
 }
 
 bool GobLang::Compiler::ReversePolishGenerator::_isElseChainToken(std::vector<Token *>::const_iterator const &it)

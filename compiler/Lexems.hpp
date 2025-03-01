@@ -35,6 +35,7 @@ namespace GobLang::Compiler
         Sub,
         Mul,
         Div,
+        Modulo,
         And,
         Or,
         Not,
@@ -122,10 +123,12 @@ namespace GobLang::Compiler
         OperatorData{.symbol = "and", .op = Operator::And, .priority = 4, .operation = Operation::And},
         OperatorData{.symbol = "&&", .op = Operator::And, .priority = 4, .operation = Operation::And},
         OperatorData{.symbol = "or", .op = Operator::Or, .priority = 3, .operation = Operation::Or},
+        OperatorData{.symbol = "||", .op = Operator::Or, .priority = 3, .operation = Operation::Or},
         OperatorData{.symbol = "|", .op = Operator::BitOr, .priority = 2, .operation = Operation::BitOr},
         OperatorData{.symbol = "&", .op = Operator::BitAnd, .priority = 2, .operation = Operation::BitAnd},
         OperatorData{.symbol = "~", .op = Operator::BitNot, .priority = 2, .operation = Operation::BitNot},
         OperatorData{.symbol = "^", .op = Operator::BitXor, .priority = 2, .operation = Operation::BitXor},
+        OperatorData{.symbol = "%", .op = Operator::Modulo, .priority = 6, .operation = Operation::Modulo},
     };
 
     /**

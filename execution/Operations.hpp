@@ -11,6 +11,7 @@ namespace GobLang
         Sub,
         Mul,
         Div,
+        Modulo,
         Call,
         /**
          * @brief Call a function defined by the user
@@ -100,6 +101,7 @@ namespace GobLang
         OperationData{.op = Operation::Sub, .text = "sub", .argCount = 0},
         OperationData{.op = Operation::Mul, .text = "mul", .argCount = 0},
         OperationData{.op = Operation::Div, .text = "div", .argCount = 0},
+        OperationData{.op = Operation::Modulo, .text = "mod", .argCount = 0},
         OperationData{.op = Operation::Call, .text = "call", .argCount = 0},
         OperationData{.op = Operation::CallLocal, .text = "call_local", .argCount = 1},
         OperationData{.op = Operation::CreateArray, .text = "create_array", .argCount = 1},

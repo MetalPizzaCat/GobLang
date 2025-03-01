@@ -34,6 +34,9 @@ void GobLang::Machine::step()
     case Operation::Div:
         _div();
         break;
+    case Operation::Modulo:
+        _mod();
+        break;
     case Operation::Call:
         _call();
         break;
@@ -223,13 +226,13 @@ GobLang::MemoryValue *GobLang::Machine::getStackTopAndPop()
 GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
 {
     ArrayNode *node = new ArrayNode(size);
-    m_memoryRoot->pushBack(node);
+    m_memoryRoot.pushBack(node);
     return node;
 }
 
 GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool alwaysNew)
 {
-    MemoryNode *root = m_memoryRoot;
+    MemoryNode *root = &m_memoryRoot;
     StringNode *node = nullptr;
     // avoid making instance for each call, check if there is anything that uses this already
     while (root != nullptr && !alwaysNew)
@@ -244,14 +247,14 @@ GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool
     if (node == nullptr)
     {
         node = new StringNode(str);
-        m_memoryRoot->pushBack(node);
+        m_memoryRoot.pushBack(node);
     }
     return node;
 }
 
 void GobLang::Machine::addObject(MemoryNode *obj)
 {
-    m_memoryRoot->pushBack(obj);
+    m_memoryRoot.pushBack(obj);
 }
 
 void GobLang::Machine::popStack()
@@ -337,8 +340,8 @@ void GobLang::Machine::createVariable(std::string const &name, MemoryValue const
 
 void GobLang::Machine::collectGarbage()
 {
-    MemoryNode *prev = m_memoryRoot;
-    MemoryNode *curr = m_memoryRoot->getNext();
+    MemoryNode *prev = &m_memoryRoot;
+    MemoryNode *curr = m_memoryRoot.getNext();
     while (curr != nullptr)
     {
         if (!curr->isDead())
@@ -359,14 +362,13 @@ void GobLang::Machine::collectGarbage()
 
 GobLang::Machine::~Machine()
 {
-    MemoryNode *root = m_memoryRoot->getNext();
+    MemoryNode *root = m_memoryRoot.getNext();
     while (root != nullptr)
     {
         MemoryNode *del = root;
         root = root->getNext();
         delete del;
     }
-    delete m_memoryRoot;
 }
 
 GobLang::ProgramAddressType GobLang::Machine::_getAddressFromByteCode(size_t start)
@@ -508,6 +510,17 @@ void GobLang::Machine::_div()
         throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
     }
     pushToStack(MemoryValue{.type = a.type, .value = c});
+}
+
+inline void GobLang::Machine::_mod()
+{
+    MemoryValue a = _getFromTopAndPop();
+    MemoryValue b = _getFromTopAndPop();
+    if (a.type != b.type && a.type != Type::Int)
+    {
+        throw RuntimeException("Modulo can only be used on Ints");
+    }
+    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) % std::get<int32_t>(a.value)});
 }
 
 void GobLang::Machine::_set()
@@ -706,7 +719,6 @@ void GobLang::Machine::_pushConstChar()
 
 void GobLang::Machine::_pushConstString()
 {
-    MemoryNode *root = m_memoryRoot;
     std::string &str = m_constStrings[(size_t)m_operations[m_programCounter + 1]];
     // we always create a new string object because otherwise each variable will share same pointer to constant string which can be altered
     StringNode *node = createString(str, true);

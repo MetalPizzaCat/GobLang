@@ -152,6 +152,8 @@ namespace GobLang
 
         inline void _div();
 
+        inline void _mod();
+
         inline void _set();
 
         inline void _get();
@@ -220,7 +222,7 @@ namespace GobLang
 
         bool m_forcedEnd = false;
 
-        MemoryNode *m_memoryRoot = new MemoryNode();
+        MemoryNode m_memoryRoot;
         size_t m_programCounter = 0;
         std::vector<uint8_t> m_operations;
         std::vector<std::vector<MemoryValue>> m_operationStack = {{}};

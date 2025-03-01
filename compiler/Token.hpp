@@ -20,6 +20,8 @@ namespace GobLang::Compiler
         size_t getRow() const { return m_row; }
         size_t getColumn() const { return m_column; }
 
+        virtual ~Token() = default;
+
     private:
         size_t m_row;
         size_t m_column;
@@ -31,7 +33,6 @@ namespace GobLang::Compiler
         explicit KeywordToken(size_t row, size_t column, Keyword keyword) : Token(row, column), m_keyword(keyword) {}
         Keyword getKeyword() const { return m_keyword; }
         std::string toString() override;
-
     private:
         Keyword m_keyword;
     };
@@ -47,7 +48,6 @@ namespace GobLang::Compiler
 
         bool isUnary() const { return m_unary; }
         void setIsUnary(bool unary) { m_unary = unary; }
-
     private:
         OperatorData const *m_data;
         bool m_unary;
@@ -138,6 +138,7 @@ namespace GobLang::Compiler
         virtual size_t getMark() const { return m_mark; }
         void setMark(size_t mark) { m_mark = mark; }
 
+        virtual ~GotoToken() = default;
     private:
         size_t m_mark;
     };
@@ -191,7 +192,7 @@ namespace GobLang::Compiler
     };
 
     /**
-     * @brief Token representing a null constant     * 
+     * @brief Token representing a null constant     *
      */
     class NullConstToken : public Token
     {
