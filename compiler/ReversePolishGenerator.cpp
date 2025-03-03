@@ -246,7 +246,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
             }
             else
             {
-                token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn(), funcIt - m_funcs.begin());
+                token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn(), funcIt - m_funcs.begin(), (*funcIt)->getInfo()->arguments.size());
             }
 
             m_compilerTokens.push_back(token);
@@ -326,12 +326,20 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
             }
             else if (FunctionCallToken *funcTok = dynamic_cast<FunctionCallToken *>(t); funcTok != nullptr)
             {
+                MultiArgToken *mArg = m_multiArgSequences.back();
                 SeparatorToken *prev = dynamic_cast<SeparatorToken *>(*(it - 1));
                 if (!(prev != nullptr && (prev->getSeparator() == Separator::BracketOpen || prev->getSeparator() == Separator::Comma)))
                 {
-                    m_multiArgSequences.back()->increaseArgCount();
+                    mArg->increaseArgCount();
                 }
-                addToken(m_multiArgSequences.back());
+                if (!mArg->validateArgumentCount())
+                {
+                    throw ParsingError(
+                        m_multiArgSequences.back()->getRow(),
+                        m_multiArgSequences.back()->getColumn(),
+                        std::string("Invalid number of arguments. Expected ") + std::to_string(mArg->getExpectedArgumentCount()) + " Got " + std::to_string(mArg->getArgCount()));
+                }
+                addToken(mArg);
                 m_multiArgSequences.pop_back();
                 break;
             }

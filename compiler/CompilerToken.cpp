@@ -5,6 +5,11 @@ std::string GobLang::Compiler::FunctionCallToken::toString()
     return "CALL_" + std::to_string(getArgCount()) + (m_usesLocalFunc ? (std::string("_LOCAL") + std::to_string(m_funcId)) : "");
 }
 
+bool GobLang::Compiler::FunctionCallToken::validateArgumentCount()
+{
+    return m_expectedArgCount == -1 || m_expectedArgCount == getArgCount();
+}
+
 void GobLang::Compiler::MultiArgToken::increaseArgCount()
 {
     m_argCount++;

@@ -17,7 +17,12 @@ namespace GobLang::Compiler
         void increaseArgCount();
         int32_t getArgCount() const { return m_argCount; }
 
+        virtual bool validateArgumentCount() = 0;
+
+        virtual size_t getExpectedArgumentCount() = 0;
+
         virtual ~MultiArgToken() = default;
+
     private:
         size_t m_argCount = 0;
     };
@@ -29,15 +34,32 @@ namespace GobLang::Compiler
     class FunctionCallToken : public MultiArgToken
     {
     public:
-        explicit FunctionCallToken(size_t row, size_t column) : MultiArgToken(row, column) {}
-        explicit FunctionCallToken(size_t row, size_t column, size_t funcId) : MultiArgToken(row, column), m_funcId(funcId), m_usesLocalFunc(true) {}
+        /// @brief
+        /// @param row
+        /// @param column
+        /// @param expectedArgCount Amount of arguments this function is expected to receive or -1 if
+        explicit FunctionCallToken(size_t row,
+                                   size_t column,
+                                   size_t expectedArgCount = -1) : MultiArgToken(row, column), m_expectedArgCount(expectedArgCount) {}
+
+        explicit FunctionCallToken(size_t row,
+                                   size_t column,
+                                   size_t funcId,
+                                   size_t expectedArgCount) : MultiArgToken(row, column),
+                                                              m_funcId(funcId),
+                                                              m_usesLocalFunc(true),
+                                                              m_expectedArgCount(expectedArgCount) {}
         std::string toString() override;
 
+        bool validateArgumentCount() override;
+
         size_t getFuncId() const { return m_funcId; }
+        size_t getExpectedArgumentCount() override { return m_expectedArgCount; }
         bool usesLocalFunction() const { return m_usesLocalFunc; }
 
     private:
         size_t m_funcId = 0;
+        size_t m_expectedArgCount = -1;
         bool m_usesLocalFunc = false;
     };
 
@@ -50,6 +72,8 @@ namespace GobLang::Compiler
     public:
         explicit ArrayCreationToken(size_t row, size_t column) : MultiArgToken(row, column) {}
 
+        bool validateArgumentCount() override { return true; }
+        size_t getExpectedArgumentCount() override { return 0; }
         std::string toString() override;
 
     private:
