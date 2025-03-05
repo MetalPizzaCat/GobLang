@@ -137,8 +137,6 @@ namespace GobLang::Compiler
 
         std::vector<Token *> const &getTokens() const { return m_tokens; }
         std::vector<std::string> const &getIds() const { return m_ids; }
-        std::vector<int32_t> const &getInts() const { return m_ints; }
-        std::vector<float> const &getFloats() const { return m_floats; }
 
         size_t getTotalLineCount() const { return m_code.size(); }
         size_t getFinalLineRowCount() const { return m_code.rbegin()->size(); }
@@ -147,9 +145,6 @@ namespace GobLang::Compiler
     private:
         std::vector<Token *> m_tokens;
         std::vector<std::string> m_ids;
-        std::vector<std::string> m_strings;
-        std::vector<int32_t> m_ints;
-        std::vector<float> m_floats;
         std::vector<std::string> m_code;
         /**
          * @brief Pointer to the current character in the row

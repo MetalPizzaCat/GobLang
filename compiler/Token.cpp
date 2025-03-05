@@ -58,7 +58,7 @@ std::string GobLang::Compiler::IdToken::toString()
 
 std::string GobLang::Compiler::IntToken::toString()
 {
-    return "NUM" + std::to_string(m_id);
+    return "NUM_" + std::to_string(m_value);
 }
 
 GobLang::Compiler::SeparatorToken::SeparatorToken(size_t row, size_t column, Separator sep) : Token(row, column)
@@ -99,7 +99,7 @@ std::string GobLang::Compiler::WhileToken::toString()
 
 std::string GobLang::Compiler::FloatToken::toString()
 {
-    return "FLOAT" + std::to_string(m_id);
+    return "FLOAT_" + std::to_string(m_value);
 }
 
 std::string GobLang::Compiler::NullConstToken::toString()

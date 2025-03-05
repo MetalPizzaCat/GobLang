@@ -19,48 +19,7 @@
 #include "execution/Machine.hpp"
 #include "standard/MachineFunctions.hpp"
 
-void byteCodeToText(std::vector<uint8_t> const &bytecode)
-{
-    size_t address = 0;
-    for (std::vector<uint8_t>::const_iterator it = bytecode.begin(); it != bytecode.end(); it++)
-    {
-        std::vector<GobLang::OperationData>::const_iterator opIt = std::find_if(
-            GobLang::Operations.begin(),
-            GobLang::Operations.end(),
-            [it](GobLang::OperationData const &a)
-            {
-                return (uint8_t)a.op == *it;
-            });
-        if (opIt != GobLang::Operations.end())
-        {
-            std::cout << std::hex << address << std::dec << ": " << (opIt->text) << " ";
-            if (opIt->argCount == sizeof(GobLang::ProgramAddressType))
-            {
-                size_t reconAddr = 0x0;
-                for (int32_t i = 0; i < sizeof(GobLang::ProgramAddressType); i++)
-                {
-                    it++;
-                    size_t offset = ((sizeof(GobLang::ProgramAddressType) - i - 1)) * 8;
-                    reconAddr |= (size_t)(*it) << offset;
-                }
-                address += sizeof(GobLang::ProgramAddressType);
-                std::cout << std::hex << reconAddr << std::dec;
-                ;
-            }
-            else
-            {
-                for (int32_t i = 0; i < opIt->argCount; i++)
-                {
-                    it++;
-                    address += 1;
-                    std::cout << std::to_string(*it);
-                }
-            }
-            address++;
-            std::cout << std::endl;
-        }
-    }
-}
+#include "compiler/Disassembly.hpp"
 
 int main(int argc, char **argv)
 {
@@ -131,7 +90,7 @@ int main(int argc, char **argv)
         verIt = std::find_first_of(args.begin(), args.end(), DecompArgs.begin(), DecompArgs.end());
         if (verIt != args.end())
         {
-            byteCodeToText(compiler.getByteCode().operations);
+            GobLang::Compiler::byteCodeToText(compiler.getByteCode().operations);
         }
         GobLang::Machine machine(compiler.getByteCode());
         MachineFunctions::bind(&machine);

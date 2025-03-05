@@ -7,6 +7,22 @@
 #include "CompilerNode.hpp"
 namespace GobLang::Compiler
 {
+    template <typename T>
+    std::vector<uint8_t> parseToBytes(T val)
+    {
+        uint32_t *v = reinterpret_cast<uint32_t *>(&val);
+        std::vector<uint8_t> res;
+        for (int32_t i = sizeof(T) - 1; i >= 0; i--)
+        {
+            uint64_t offset = (sizeof(uint8_t) * i) * 8;
+            const size_t mask = 0xff;
+            uint64_t num = (*v) & (mask << offset);
+            uint64_t numFixed = num >> offset;
+            res.push_back((uint8_t)numFixed);
+        }
+        return res;
+    }
+    
     class Compiler
     {
     public:
@@ -38,15 +54,14 @@ namespace GobLang::Compiler
 
         void appendByteCode(std::vector<uint8_t> const &bytes);
 
-
         ByteCode getByteCode() const { return m_byteCode; }
 
         void printLocalFunctionInfo();
+
     private:
-       
-        void _generateBytecodeFor(std::vector<Token*> const& tokens, bool createHaltInstruction);
+        void _generateBytecodeFor(std::vector<Token *> const &tokens, bool createHaltInstruction);
         void _placeAddressForMark(size_t mark, size_t address, bool erase);
-      
+
         std::vector<uint8_t> m_bytes;
 
         /**
@@ -58,20 +73,19 @@ namespace GobLang::Compiler
 
         /**
          * @brief List of all addresses to replace with future marks. Key is where to write the address and value is what address to write
-         * 
+         *
          */
         std::map<size_t, size_t> m_jumpDestinations;
-        
+
         /**
          * @brief List of all addresses to replace with future function addresses. Key is where to write the address and value is what address to write
-         * 
+         *
          */
         std::map<size_t, std::vector<size_t>> m_functionCallDestinations;
-    
 
         ByteCode m_byteCode;
 
-        ReversePolishGenerator const & m_generator;
+        ReversePolishGenerator const &m_generator;
     };
 
 }

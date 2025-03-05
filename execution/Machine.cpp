@@ -3,10 +3,8 @@
 #include <vector>
 GobLang::Machine::Machine(Compiler::ByteCode const &code)
 {
-    m_constInts = code.ints;
     m_constStrings = code.ids;
     m_operations = code.operations;
-    m_constFloats = code.floats;
     m_functions = code.functions;
 }
 void GobLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
@@ -701,14 +699,16 @@ void GobLang::Machine::_returnWithValue()
 
 void GobLang::Machine::_pushConstInt()
 {
-    pushToStack(MemoryValue{.type = Type::Int, .value = m_constInts[(size_t)m_operations[m_programCounter + 1]]});
-    m_programCounter++;
+    int32_t val = _parseOperationConstant<int32_t>(m_programCounter + 1);
+    m_programCounter += sizeof(int32_t);
+    pushToStack(MemoryValue{.type = Type::Int, .value = val});
 }
 
 void GobLang::Machine::_pushConstFloat()
 {
-    pushToStack(MemoryValue{.type = Type::Float, .value = m_constFloats[(size_t)m_operations[m_programCounter + 1]]});
-    m_programCounter++;
+    float val = _parseOperationConstant<float>(m_programCounter + 1);
+    m_programCounter += sizeof(float);
+    pushToStack(MemoryValue{.type = Type::Float, .value = val});
 }
 
 void GobLang::Machine::_pushConstChar()

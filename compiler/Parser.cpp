@@ -182,20 +182,10 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseInt()
         num.push_back(*(m_rowIt + offset));
         offset++;
     }
-    size_t index = std::string::npos;
+    int32_t numVal;
     try
     {
-        int32_t numVal = std::stoi(num);
-        std::vector<int32_t>::iterator it = std::find(m_ints.begin(), m_ints.end(), numVal);
-        if (it == m_ints.end())
-        {
-            m_ints.push_back(numVal);
-            index = m_ints.size() - 1;
-        }
-        else
-        {
-            index = it - m_ints.begin();
-        }
+        numVal = std::stoi(num);
     }
     catch (std::invalid_argument const &e)
     {
@@ -214,7 +204,7 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseInt()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new IntToken(row, column, index);
+    return new IntToken(row, column, numVal);
 }
 
 GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseHexInt()
@@ -236,20 +226,10 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseHexInt()
         num.push_back(*(m_rowIt + offset));
         offset++;
     }
-    size_t index = std::string::npos;
+    int32_t numVal;
     try
     {
-        int32_t numVal = std::stoi(num, nullptr, 16);
-        std::vector<int32_t>::iterator it = std::find(m_ints.begin(), m_ints.end(), numVal);
-        if (it == m_ints.end())
-        {
-            m_ints.push_back(numVal);
-            index = m_ints.size() - 1;
-        }
-        else
-        {
-            index = it - m_ints.begin();
-        }
+         numVal = std::stoi(num, nullptr, 16);
     }
     catch (std::invalid_argument const &e)
     {
@@ -268,7 +248,7 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseHexInt()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new IntToken(row, column, index);
+    return new IntToken(row, column, numVal);
 }
 
 GobLang::Compiler::FloatToken *GobLang::Compiler::Parser::parseFloat()
@@ -301,20 +281,10 @@ GobLang::Compiler::FloatToken *GobLang::Compiler::Parser::parseFloat()
     {
         return nullptr;
     }
-    size_t index = std::string::npos;
+    float numVal;
     try
     {
-        float numVal = std::stof(num);
-        std::vector<float>::iterator it = std::find(m_floats.begin(), m_floats.end(), numVal);
-        if (it == m_floats.end())
-        {
-            m_floats.push_back(numVal);
-            index = m_floats.size() - 1;
-        }
-        else
-        {
-            index = it - m_floats.begin();
-        }
+        numVal = std::stof(num);
     }
     catch (std::invalid_argument const &e)
     {
@@ -333,7 +303,7 @@ GobLang::Compiler::FloatToken *GobLang::Compiler::Parser::parseFloat()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new FloatToken(row, column, index);
+    return new FloatToken(row, column, numVal);
 }
 
 GobLang::Compiler::SeparatorToken *GobLang::Compiler::Parser::parseSeparators()
@@ -535,11 +505,6 @@ void GobLang::Compiler::Parser::printInfoTable()
     for (size_t i = 0; i < m_ids.size(); i++)
     {
         std::cout << "W" << i << ": " << m_ids[i] << std::endl;
-    }
-
-    for (size_t i = 0; i < m_ints.size(); i++)
-    {
-        std::cout << "NUM" << i << ": " << m_ints[i] << std::endl;
     }
 }
 

@@ -45,11 +45,6 @@ namespace GobLang
             m_constStrings.push_back(str);
         }
 
-        void addIntConst(int32_t val)
-        {
-            m_constInts.push_back(val);
-        }
-
         size_t getProgramCounter() const
         {
             return m_programCounter;
@@ -85,11 +80,11 @@ namespace GobLang
         StringNode *createString(std::string const &str, bool alwaysNew = false);
 
         /**
-         * @brief Register object to be handled by the garbage collector. This object will be ref counted and deleted once it is no longer in use 
-         * 
+         * @brief Register object to be handled by the garbage collector. This object will be ref counted and deleted once it is no longer in use
+         *
          * @param obj Object to register
          */
-        void addObject(MemoryNode * obj);
+        void addObject(MemoryNode *obj);
 
         void popStack();
 
@@ -140,6 +135,23 @@ namespace GobLang
         }
         ProgramAddressType _getAddressFromByteCode(size_t start);
 
+        /// @brief Parse next `sizeof(T)` bytes into a T value using bitshifts and reinterpret cast
+        /// @tparam T Type of the value to convert into
+        /// @param start Where in the byte code to start from
+        /// @return Parsed value
+        template <typename T>
+        T _parseOperationConstant(size_t start)
+        {
+            uint64_t res = 0;
+            for (uint64_t i = 0; i < sizeof(T); i++)
+            {
+                uint64_t offset = (sizeof(T) - i - 1) * 8;
+                res |= (uint64_t)(m_operations[start + i]) << offset;
+            }
+            T *f = reinterpret_cast<T *>(&res);
+            return *f;
+        }
+
         inline void _jump();
 
         inline void _jumpIf();
@@ -159,7 +171,7 @@ namespace GobLang
         inline void _get();
 
         inline void _bitAnd();
-        
+
         inline void _bitOr();
 
         inline void _bitXor();
@@ -238,8 +250,6 @@ namespace GobLang
          *
          */
         std::vector<std::vector<MemoryValue>> m_variables = {{}};
-        std::vector<int32_t> m_constInts;
-        std::vector<float> m_constFloats;
         std::vector<std::string> m_constStrings;
         std::vector<Function> m_functions;
 

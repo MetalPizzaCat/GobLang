@@ -33,6 +33,7 @@ namespace GobLang::Compiler
         explicit KeywordToken(size_t row, size_t column, Keyword keyword) : Token(row, column), m_keyword(keyword) {}
         Keyword getKeyword() const { return m_keyword; }
         std::string toString() override;
+
     private:
         Keyword m_keyword;
     };
@@ -48,6 +49,7 @@ namespace GobLang::Compiler
 
         bool isUnary() const { return m_unary; }
         void setIsUnary(bool unary) { m_unary = unary; }
+
     private:
         OperatorData const *m_data;
         bool m_unary;
@@ -97,25 +99,25 @@ namespace GobLang::Compiler
     class IntToken : public Token
     {
     public:
-        explicit IntToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
+        explicit IntToken(size_t row, size_t column, int32_t value) : Token(row, column), m_value(value) {}
         std::string toString() override;
 
-        size_t getId() const { return m_id; }
+        int32_t getValue() const { return m_value; }
 
     private:
-        size_t m_id;
+        int32_t m_value;
     };
 
     class FloatToken : public Token
     {
     public:
-        explicit FloatToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
+        explicit FloatToken(size_t row, size_t column, float value) : Token(row, column), m_value(value) {}
         std::string toString() override;
 
-        size_t getId() const { return m_id; }
+        float getValue() const { return m_value; }
 
     private:
-        size_t m_id;
+        float m_value;
     };
 
     class SeparatorToken : public Token
@@ -139,6 +141,7 @@ namespace GobLang::Compiler
         void setMark(size_t mark) { m_mark = mark; }
 
         virtual ~GotoToken() = default;
+
     private:
         size_t m_mark;
     };

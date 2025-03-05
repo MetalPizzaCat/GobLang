@@ -12,8 +12,6 @@ void GobLang::Compiler::Compiler::generateByteCode()
         return;
     }
     m_byteCode.ids = m_generator.getIds();
-    m_byteCode.ints = m_generator.getInts();
-    m_byteCode.floats = m_generator.getFloats();
     _generateBytecodeFor(m_generator.getCode(), true);
     for (std::vector<FunctionTokenSequence *>::const_iterator it = m_generator.getFuncs().begin(); it != m_generator.getFuncs().end(); it++)
     {
@@ -29,7 +27,8 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
     if (IntToken *intToken = dynamic_cast<IntToken *>(token); intToken != nullptr)
     {
         out.push_back((uint8_t)Operation::PushConstInt);
-        out.push_back((uint8_t)intToken->getId());
+        std::vector<uint8_t> intBytes = parseToBytes(intToken->getValue());
+        out.insert(out.end(), intBytes.begin(), intBytes.end());
     }
     else if (NullConstToken *nullToken = dynamic_cast<NullConstToken *>(token); nullToken != nullptr)
     {
@@ -38,7 +37,8 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
     else if (FloatToken *floatToken = dynamic_cast<FloatToken *>(token); floatToken != nullptr)
     {
         out.push_back((uint8_t)Operation::PushConstFloat);
-        out.push_back((uint8_t)floatToken->getId());
+        std::vector<uint8_t> intBytes = parseToBytes(floatToken->getValue());
+        out.insert(out.end(), intBytes.begin(), intBytes.end());
     }
     else if (StringToken *strToken = dynamic_cast<StringToken *>(token); strToken != nullptr)
     {

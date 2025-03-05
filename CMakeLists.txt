@@ -59,6 +59,7 @@ list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
     compiler/ReversePolishGenerator.hpp
     compiler/ReversePolishGenerator.cpp
     compiler/FunctionTokenSequence.hpp
+    compiler/Disassembly.hpp
 )
 
 add_executable(goblang
