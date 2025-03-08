@@ -196,6 +196,8 @@ namespace GobLang
 
         inline void _pushConstInt();
 
+        inline void _pushConstUnsignedInt();
+
         inline void _pushConstFloat();
 
         inline void _pushConstChar();

@@ -35,6 +35,7 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
             }
         }
         else if (dynamic_cast<IntToken *>(*m_it) ||
+                 dynamic_cast<UnsignedIntToken *>(*m_it) ||
                  dynamic_cast<FloatToken *>(*m_it) ||
                  dynamic_cast<CharToken *>(*m_it) ||
                  dynamic_cast<StringToken *>(*m_it) ||
@@ -687,6 +688,7 @@ bool GobLang::Compiler::ReversePolishGenerator::_isValidBinaryOperation(std::vec
 
     return dynamic_cast<IdToken *>(*prevIt) ||
            dynamic_cast<IntToken *>(*prevIt) ||
+           dynamic_cast<UnsignedIntToken *>(*prevIt) ||
            dynamic_cast<FloatToken *>(*prevIt) ||
            dynamic_cast<CharToken *>(*prevIt) ||
            dynamic_cast<StringToken *>(*prevIt) ||

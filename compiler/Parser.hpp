@@ -69,6 +69,10 @@ namespace GobLang::Compiler
 
         IntToken *parseHexInt();
 
+        UnsignedIntToken * parseUnsignedInt();
+
+        UnsignedIntToken * parseHexUnsignedInt();
+
         FloatToken *parseFloat();
 
         SeparatorToken *parseSeparators();

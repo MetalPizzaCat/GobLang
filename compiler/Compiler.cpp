@@ -30,6 +30,12 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
         std::vector<uint8_t> intBytes = parseToBytes(intToken->getValue());
         out.insert(out.end(), intBytes.begin(), intBytes.end());
     }
+    if (UnsignedIntToken *uintToken = dynamic_cast<UnsignedIntToken *>(token); uintToken != nullptr)
+    {
+        out.push_back((uint8_t)Operation::PushConstUnsignedInt);
+        std::vector<uint8_t> intBytes = parseToBytes(uintToken->getValue());
+        out.insert(out.end(), intBytes.begin(), intBytes.end());
+    }
     else if (NullConstToken *nullToken = dynamic_cast<NullConstToken *>(token); nullToken != nullptr)
     {
         out.push_back((uint8_t)Operation::PushNull);
@@ -147,6 +153,7 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
                 {(uint8_t)(boolToken->getValue() ? Operation::PushTrue : Operation::PushFalse)}, isDestination, destMark));
         }
         else if (dynamic_cast<IntToken *>(*it) != nullptr ||
+                 dynamic_cast<UnsignedIntToken *>(*it) != nullptr ||
                  dynamic_cast<StringToken *>(*it) != nullptr ||
                  dynamic_cast<CharToken *>(*it) != nullptr ||
                  dynamic_cast<FloatToken *>(*it) != nullptr ||

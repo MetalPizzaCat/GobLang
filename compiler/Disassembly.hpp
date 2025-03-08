@@ -65,6 +65,13 @@ namespace GobLang::Compiler
                     address += sizeof(ProgramAddressType);
                     std::cout << std::hex << val << std::dec;
                 }
+                case OperatorArgType::UnsignedInt:
+                {
+                    uint32_t val = parseBytesIntoValue<uint32_t>(it + 1, bytecode.end());
+                    it += sizeof(uint32_t);
+                    address += sizeof(uint32_t);
+                    std::cout << val;
+                }
                 break;
                 default:
                     break;

@@ -30,6 +30,7 @@ namespace GobLang
          */
         SetArray,
         PushConstInt,
+        PushConstUnsignedInt,
         PushConstFloat,
         PushConstChar,
         PushConstString,
@@ -89,6 +90,7 @@ namespace GobLang
         Byte,
         Address,
         Int,
+        UnsignedInt,
         Float
     };
 
@@ -122,6 +124,7 @@ namespace GobLang
         OperationData{.op = Operation::SetArray, .text = "set_arr", .argType = OperatorArgType::None},
         OperationData{.op = Operation::GetArray, .text = "get_arr", .argType = OperatorArgType::None},
         OperationData{.op = Operation::PushConstInt, .text = "push_int", .argType = OperatorArgType::Int},
+        OperationData{.op = Operation::PushConstUnsignedInt, .text = "push_uint", .argType = OperatorArgType::UnsignedInt},
         OperationData{.op = Operation::PushConstFloat, .text = "push_float", .argType = OperatorArgType::Float},
         OperationData{.op = Operation::PushConstChar, .text = "push_char", .argType = OperatorArgType::Char},
         OperationData{.op = Operation::PushConstString, .text = "push_str", .argType = OperatorArgType::Byte},

@@ -38,6 +38,8 @@ void GobLang::Compiler::Parser::parse()
         std::bind(&Parser::parseFloat, this),
         std::bind(&Parser::parseHexInt, this),
         std::bind(&Parser::parseInt, this),
+        std::bind(&Parser::parseHexUnsignedInt, this),
+        std::bind(&Parser::parseUnsignedInt, this),
         std::bind(&Parser::parseChar, this),
         std::bind(&Parser::parseString, this),
         std::bind(&Parser::parseId, this),
@@ -249,6 +251,99 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseHexInt()
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
     return new IntToken(row, column, numVal);
+}
+
+GobLang::Compiler::UnsignedIntToken *GobLang::Compiler::Parser::parseUnsignedInt()
+{
+    if (*m_rowIt != 'u')
+    {
+        return nullptr;
+    }
+    std::string num;
+    size_t offset = 1;
+    while ((m_rowIt + offset) != getEndOfTheLine() && std::isdigit(*(m_rowIt + offset)))
+    {
+        num.push_back(*(m_rowIt + offset));
+        offset++;
+    }
+    uint64_t numVal;
+    try
+    {
+        // c++ doesn't have conversion from str to uint
+        // weird
+        // but just throw an error ourselves then
+        numVal = std::stoul(num);
+        if (numVal > (uint64_t)std::numeric_limits<uint32_t>::max() || numVal < (uint64_t)std::numeric_limits<uint32_t>::min())
+        {
+            throw std::out_of_range("Unsigned int constant out of range");
+        }
+    }
+    catch (std::invalid_argument const &e)
+    {
+        return nullptr;
+    }
+    catch (std::out_of_range const &e)
+    {
+        throw ParsingError(
+            m_rowIt - m_lineIt->begin(),
+            m_lineIt - m_code.begin(),
+            "Constant number is too large, valid range is " +
+                std::to_string(std::numeric_limits<uint32_t>::min()) +
+                "< x < " +
+                std::to_string(std::numeric_limits<uint32_t>::max()));
+    }
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(offset);
+    return new UnsignedIntToken(row, column, (uint32_t)numVal);
+}
+
+GobLang::Compiler::UnsignedIntToken *GobLang::Compiler::Parser::parseHexUnsignedInt()
+{
+    // unsigned hex numbers follow u0x1234abcd pattern
+    if (m_rowIt + 3 == getEndOfTheLine() || !(*m_rowIt == 'u' && (*(m_rowIt + 1) == '0' && *(m_rowIt + 2) == 'x')))
+    {
+        return nullptr;
+    }
+
+    size_t offset = 3;
+    if (!isValidHexDigit(*(m_rowIt + offset)))
+    {
+        return nullptr;
+    }
+    std::string num;
+    while ((m_rowIt + offset) != getEndOfTheLine() && isValidHexDigit(*(m_rowIt + offset)))
+    {
+        num.push_back(*(m_rowIt + offset));
+        offset++;
+    }
+    uint64_t numVal;
+    try
+    {
+        numVal = std::stoul(num, nullptr, 16);
+        if (numVal > (uint64_t)std::numeric_limits<uint32_t>::max() || numVal < (uint64_t)std::numeric_limits<uint32_t>::min())
+        {
+            throw std::out_of_range("Unsigned int constant out of range");
+        }
+    }
+    catch (std::invalid_argument const &e)
+    {
+        return nullptr;
+    }
+    catch (std::out_of_range const &e)
+    {
+        throw ParsingError(
+            m_rowIt - m_lineIt->begin(),
+            m_lineIt - m_code.begin(),
+            "Constant number is too large, valid range is " +
+                std::to_string(std::numeric_limits<uint32_t>::min()) +
+                "< x < " +
+                std::to_string(std::numeric_limits<uint32_t>::max()));
+    }
+    size_t row = getLineNumber();
+    size_t column = getColumnNumber();
+    advanceRowIterator(offset);
+    return new UnsignedIntToken(row, column, numVal);
 }
 
 GobLang::Compiler::FloatToken *GobLang::Compiler::Parser::parseFloat()

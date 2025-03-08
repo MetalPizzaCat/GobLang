@@ -109,6 +109,18 @@ namespace GobLang::Compiler
         int32_t m_value;
     };
 
+    class UnsignedIntToken : public Token
+    {
+    public:
+        explicit UnsignedIntToken(size_t row, size_t column, uint32_t value) : Token(row, column), m_value(value) {}
+        std::string toString() override;
+
+        uint32_t getValue() const { return m_value; }
+
+    private:
+        uint32_t m_value;
+    };
+
     class FloatToken : public Token
     {
     public:

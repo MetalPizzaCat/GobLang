@@ -76,6 +76,9 @@ void GobLang::Machine::step()
     case Operation::PushConstInt:
         _pushConstInt();
         break;
+    case Operation::PushConstUnsignedInt:
+        _pushConstUnsignedInt();
+        break;
     case Operation::PushConstFloat:
         _pushConstFloat();
         break;
@@ -422,6 +425,9 @@ void GobLang::Machine::_add()
     case Type::Int:
         c = std::get<int32_t>(a.value) + std::get<int32_t>(b.value);
         break;
+    case Type::UnsignedInt:
+        c = std::get<uint32_t>(a.value) + std::get<uint32_t>(b.value);
+        break;
     case Type::Float:
         c = std::get<float>(a.value) + std::get<float>(b.value);
         break;
@@ -455,6 +461,9 @@ void GobLang::Machine::_sub()
     case Type::Int:
         c = std::get<int32_t>(b.value) - std::get<int32_t>(a.value);
         break;
+    case Type::UnsignedInt:
+        c = std::get<uint32_t>(b.value) - std::get<uint32_t>(a.value);
+        break;
     case Type::Float:
         c = std::get<float>(b.value) - std::get<float>(a.value);
         break;
@@ -477,6 +486,9 @@ void GobLang::Machine::_mul()
     {
     case Type::Int:
         c = std::get<int32_t>(b.value) * std::get<int32_t>(a.value);
+        break;
+    case Type::UnsignedInt:
+        c = std::get<uint32_t>(b.value) * std::get<uint32_t>(a.value);
         break;
     case Type::Float:
         c = std::get<float>(b.value) * std::get<float>(a.value);
@@ -501,6 +513,9 @@ void GobLang::Machine::_div()
     case Type::Int:
         c = std::get<int32_t>(b.value) / std::get<int32_t>(a.value);
         break;
+    case Type::UnsignedInt:
+        c = std::get<uint32_t>(b.value) / std::get<uint32_t>(a.value);
+        break;
     case Type::Float:
         c = std::get<float>(b.value) / std::get<float>(a.value);
         break;
@@ -514,11 +529,25 @@ inline void GobLang::Machine::_mod()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
+    if (a.type != b.type)
+    {
+        throw RuntimeException("Type mismatch in modulo operation");
+    }
+    switch (a.type)
+    {
+    case Type::Int:
+        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) % std::get<int32_t>(a.value)});
+        break;
+    case Type::UnsignedInt:
+        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) % std::get<uint32_t>(a.value)});
+        break;
+    default:
+        throw RuntimeException("Modulo can only be used on int or unsigned int");
+    }
     if (a.type != b.type && a.type != Type::Int)
     {
         throw RuntimeException("Modulo can only be used on Ints");
     }
-    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) % std::get<int32_t>(a.value)});
 }
 
 void GobLang::Machine::_set()
@@ -560,65 +589,121 @@ inline void GobLang::Machine::_bitAnd()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || a.type != Type::Int)
+    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit AND values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+        throw RuntimeException(std::string("Attempted to bit AND values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
     }
-    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(a.value) & std::get<int32_t>(b.value)});
+    switch (a.type)
+    {
+    case Type::Int:
+        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) & std::get<int32_t>(a.value)});
+        break;
+    case Type::UnsignedInt:
+        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) & std::get<uint32_t>(a.value)});
+        break;
+    default:
+        throw RuntimeException("Modulo can only be used on int or unsigned int");
+    }
 }
 
 inline void GobLang::Machine::_bitOr()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || a.type != Type::Int)
+    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit OR values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+        throw RuntimeException(std::string("Attempted to bit OR values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
     }
-    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(a.value) | std::get<int32_t>(b.value)});
+    switch (a.type)
+    {
+    case Type::Int:
+        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) | std::get<int32_t>(a.value)});
+        break;
+    case Type::UnsignedInt:
+        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) | std::get<uint32_t>(a.value)});
+        break;
+    default:
+        throw RuntimeException("Modulo can only be used on int or unsigned int");
+    }
 }
 
 inline void GobLang::Machine::_bitXor()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || a.type != Type::Int)
+    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit XOR values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+        throw RuntimeException(std::string("Attempted to bit XOR values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
     }
-    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(a.value) ^ std::get<int32_t>(b.value)});
+    switch (a.type)
+    {
+    case Type::Int:
+        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) ^ std::get<int32_t>(a.value)});
+        break;
+    case Type::UnsignedInt:
+        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) ^ std::get<uint32_t>(a.value)});
+        break;
+    default:
+        throw RuntimeException("Modulo can only be used on int or unsigned int");
+    }
 }
 
 inline void GobLang::Machine::_bitNot()
 {
     MemoryValue a = _getFromTopAndPop();
-    if (a.type != Type::Int)
+    switch (a.type)
     {
-        throw RuntimeException(std::string("Attempted to bit NOT value of  ") + typeToString(a.type) + ". Only int is allowed");
+    case Type::Int:
+        pushToStack(MemoryValue{.type = Type::Int, .value = ~std::get<int32_t>(a.value)});
+        break;
+    case Type::UnsignedInt:
+        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = ~std::get<uint32_t>(a.value)});
+        break;
+    default:
+        throw RuntimeException(std::string("Attempted to bit NOT value of  ") + typeToString(a.type) + ". Only int or unsigned int is allowed");
     }
-    pushToStack(MemoryValue{.type = Type::Int, .value = ~std::get<int32_t>(a.value)});
 }
 
 inline void GobLang::Machine::_shiftLeft()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || a.type != Type::Int)
+    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit shift left values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+        throw RuntimeException(std::string("Attempted to bit  bit shift leftvalues of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
     }
-    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) << std::get<int32_t>(a.value)});
+    switch (a.type)
+    {
+    case Type::Int:
+        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) << std::get<int32_t>(a.value)});
+        break;
+    case Type::UnsignedInt:
+        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) << std::get<uint32_t>(a.value)});
+        break;
+    default:
+        throw RuntimeException("Modulo can only be used on int or unsigned int");
+    }
 }
 
 inline void GobLang::Machine::_shiftRight()
 {
     MemoryValue a = _getFromTopAndPop();
     MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || a.type != Type::Int)
+    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit shift right values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int is allowed");
+        throw RuntimeException(std::string("Attempted to bit  bit right leftvalues of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
     }
-    pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) >> std::get<int32_t>(a.value)});
+    switch (a.type)
+    {
+    case Type::Int:
+        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) >> std::get<int32_t>(a.value)});
+        break;
+    case Type::UnsignedInt:
+        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) >> std::get<uint32_t>(a.value)});
+        break;
+    default:
+        throw RuntimeException("Modulo can only be used on int or unsigned int");
+    }
 }
 
 void GobLang::Machine::_setLocal()
@@ -702,6 +787,13 @@ void GobLang::Machine::_pushConstInt()
     int32_t val = _parseOperationConstant<int32_t>(m_programCounter + 1);
     m_programCounter += sizeof(int32_t);
     pushToStack(MemoryValue{.type = Type::Int, .value = val});
+}
+
+inline void GobLang::Machine::_pushConstUnsignedInt()
+{
+    uint32_t val = _parseOperationConstant<uint32_t>(m_programCounter + 1);
+    m_programCounter += sizeof(uint32_t);
+    pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = val});
 }
 
 void GobLang::Machine::_pushConstFloat()

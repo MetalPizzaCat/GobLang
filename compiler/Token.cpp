@@ -110,3 +110,8 @@ std::string GobLang::Compiler::NullConstToken::toString()
 {
     return "NULL";
 }
+
+std::string GobLang::Compiler::UnsignedIntToken::toString()
+{
+    return "UINT_" + std::to_string(m_value);
+}

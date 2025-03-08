@@ -17,6 +17,8 @@ bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
         return std::get<float>(a.value) == std::get<float>(b.value);
     case Type::Int:
         return std::get<int32_t>(a.value) == std::get<int32_t>(b.value);
+    case Type::UnsignedInt:
+        return std::get<uint32_t>(a.value) == std::get<uint32_t>(b.value);
     case Type::Char:
         return std::get<char>(a.value) == std::get<char>(b.value);
     case Type::MemoryObj:
@@ -40,6 +42,8 @@ std::string GobLang::valueToString(MemoryValue const &val, bool pretty)
         return std::to_string(std::get<float>(val.value));
     case Type::Int:
         return std::to_string(std::get<int32_t>(val.value));
+    case Type::UnsignedInt:
+        return std::to_string(std::get<uint32_t>(val.value));
     case Type::MemoryObj:
         return std::get<MemoryNode *>(val.value)->toString(pretty);
     case Type::Char:
