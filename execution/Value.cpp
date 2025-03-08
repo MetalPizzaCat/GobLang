@@ -28,7 +28,7 @@ bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
     return false;
 }
 
-std::string GobLang::valueToString(MemoryValue const &val)
+std::string GobLang::valueToString(MemoryValue const &val, bool pretty)
 {
     switch (val.type)
     {
@@ -41,7 +41,7 @@ std::string GobLang::valueToString(MemoryValue const &val)
     case Type::Int:
         return std::to_string(std::get<int32_t>(val.value));
     case Type::MemoryObj:
-        return std::get<MemoryNode *>(val.value)->toString();
+        return std::get<MemoryNode *>(val.value)->toString(pretty);
     case Type::Char:
         return std::string{std::get<char>(val.value)};
     case Type::NativeFunction:

@@ -68,7 +68,13 @@ namespace GobLang
          */
         virtual bool equalsTo(MemoryNode *other);
 
-        virtual std::string toString() { return "Memory object"; }
+        /**
+         * @brief Convert given object into a string representation
+         * 
+         * @param pretty If true then this object should be printed with type decorations. Only is relevant for string types
+         * @return std::string String representation
+         */
+        virtual std::string toString(bool pretty = false) { return "Memory object"; }
 
         virtual ~MemoryNode() = default;
 
@@ -94,7 +100,7 @@ namespace GobLang
 
         std::string const &getString() { return m_str; }
 
-        std::string toString() override { return getString(); }
+        std::string toString(bool pretty) override;
 
         char getCharAt(size_t ind);
 

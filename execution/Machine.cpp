@@ -165,7 +165,7 @@ void GobLang::Machine::printGlobalsInfo()
 {
     for (std::map<std::string, MemoryValue>::iterator it = m_globals.begin(); it != m_globals.end(); it++)
     {
-        std::cout << it->first << "(" << typeToString(it->second.type) << ")" << " = " << valueToString(it->second) << std::endl;
+        std::cout << it->first << "(" << typeToString(it->second.type) << ")" << " = " << valueToString(it->second, true) << std::endl;
     }
 }
 
@@ -177,7 +177,7 @@ void GobLang::Machine::printVariablesInfo()
         std::cout << "Frame: " << layerIt - m_variables.begin() << std::endl;
         for (std::vector<MemoryValue>::iterator it = layerIt->begin(); it != layerIt->end(); it++)
         {
-            std::cout << it - layerIt->begin() << ": " << typeToString(it->type) << " = " << valueToString(*it) << std::endl;
+            std::cout << it - layerIt->begin() << ": " << typeToString(it->type) << " = " << valueToString(*it, true) << std::endl;
         }
     }
 }
@@ -190,7 +190,7 @@ void GobLang::Machine::printStack()
         std::cout << "Frame: " << layerIt - m_operationStack.begin() << std::endl;
         for (std::vector<MemoryValue>::reverse_iterator it = layerIt->rbegin(); it != layerIt->rend(); it++)
         {
-            std::cout << it - layerIt->rbegin() << ": " << typeToString(it->type) << " = " << valueToString(*it) << std::endl;
+            std::cout << it - layerIt->rbegin() << ": " << typeToString(it->type) << " = " << valueToString(*it, true) << std::endl;
         }
     }
 }

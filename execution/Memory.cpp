@@ -58,6 +58,15 @@ bool GobLang::MemoryNode::equalsTo(MemoryNode *other)
     return other == this;
 }
 
+std::string GobLang::StringNode::toString(bool pretty)
+{
+    if (pretty)
+    {
+        return "\"" + getString() + "\"";
+    }
+    return getString();
+}
+
 char GobLang::StringNode::getCharAt(size_t ind)
 {
     return m_str[ind];

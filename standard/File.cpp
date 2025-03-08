@@ -121,7 +121,7 @@ void MachineFunctions::File::writeToFile(GobLang::Machine *m)
     }
     if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
     {
-        fileNode->writeToFile(valueToString(*text));
+        fileNode->writeToFile(valueToString(*text, false));
         delete file;
         delete text;
     }

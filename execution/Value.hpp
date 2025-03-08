@@ -32,8 +32,9 @@ namespace GobLang
     /**
      * @brief Create a string representation of a given value
      *
-     * @param val
+     * @param val Value to convert to string
+     * @param pretty Whether to add decorators. Only is relevant for strings during printing
      * @return std::string
      */
-    std::string valueToString(MemoryValue const &val);
+    std::string valueToString(MemoryValue const &val, bool pretty);
 }
