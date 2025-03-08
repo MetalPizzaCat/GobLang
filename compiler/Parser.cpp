@@ -132,7 +132,7 @@ GobLang::Compiler::OperatorToken *GobLang::Compiler::Parser::parseOperators()
             advanceRowIterator(offset);
             return new OperatorToken(row,
                                      column,
-                                     it->op);
+                                     &(*it));
         }
     }
     return nullptr;
@@ -229,7 +229,7 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseHexInt()
     int32_t numVal;
     try
     {
-         numVal = std::stoi(num, nullptr, 16);
+        numVal = std::stoi(num, nullptr, 16);
     }
     catch (std::invalid_argument const &e)
     {

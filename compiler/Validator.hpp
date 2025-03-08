@@ -24,6 +24,7 @@ namespace GobLang::Compiler
         bool id(TokenIterator const &it);
         bool unaryOperator(TokenIterator const &it);
         bool mathOperator(TokenIterator const &it);
+        bool assignmentOperator(TokenIterator const &it);
         bool actionOperator(TokenIterator const &it, Operator op);
         bool separator(TokenIterator const &it, Separator sep);
         bool keyword(TokenIterator const &it, Keyword word);

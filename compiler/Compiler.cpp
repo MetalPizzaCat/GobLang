@@ -270,7 +270,7 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
         {
             if (opToken->isUnary())
             {
-                // not only uses one argument
+                // 'not' only uses one argument
                 CompilerNode *value = stack[stack.size() - 1];
                 stack.pop_back();
                 std::vector<uint8_t> opBytes = value->getOperationGetBytes();
@@ -294,6 +294,36 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
                 {
                     appendCompilerNode(setter, false);
                     appendCompilerNode(valueToSet, true);
+                    if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
+                    {
+                        m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
+                    }
+                    else
+                    {
+                        m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
+                    }
+                }
+            }
+            // handle '+=' and such
+            else if (opToken->isAssignment())
+            {
+                std::vector<uint8_t> opBytes;
+                std::vector<uint8_t> aBytes = setter->getOperationGetBytes();
+                std::vector<uint8_t> bBytes = valueToSet->getOperationGetBytes();
+
+                opBytes.insert(opBytes.end(), aBytes.begin(), aBytes.end());
+                opBytes.insert(opBytes.end(), bBytes.begin(), bBytes.end());
+                opBytes.push_back((uint8_t)opToken->getOperation());
+
+                if (LocalVarTokenCompilerNode *localNode = dynamic_cast<LocalVarTokenCompilerNode *>(setter); localNode != nullptr)
+                {
+                    appendByteCode(opBytes);
+                    appendCompilerNode(localNode, false);
+                }
+                else
+                {
+                    appendCompilerNode(setter, false);
+                    appendByteCode(opBytes);
                     if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
                     {
                         m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);

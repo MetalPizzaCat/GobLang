@@ -35,6 +35,11 @@ namespace GobLang::Compiler
         Sub,
         Mul,
         Div,
+        AddAssign,
+        SubAssign,
+        MulAssign,
+        DivAssign,
+        ModuloAssign,
         Modulo,
         And,
         Or,
@@ -45,6 +50,12 @@ namespace GobLang::Compiler
         BitNot,
         BitLeftShift,
         BitRightShift,
+        BitAndAssign,
+        BitOrAssign,
+        BitXorAssign,
+        BitNotAssign,
+        BitLeftShiftAssign,
+        BitRightShiftAssign,
     };
 
     enum class Separator
@@ -61,12 +72,28 @@ namespace GobLang::Compiler
         End,   // ;
     };
 
+    /**
+     * @brief Data for the operators that can be used in the language
+     * 
+     */
     struct OperatorData
     {
+        /// @brief Character sequence representing the operation
         const char *symbol;
+        /// @brief What operator it represents
         Operator op;
+        /**
+         * @brief Priority used for construction of reverse polish notation.
+         *  Lower priority operators will be processed later.
+         *  If '*' has priority of 2 and '+' has priority of '1', then without any brackets '*'
+         *  will be processed first 
+         * 
+         */
         int32_t priority;
+        /// @brief  What bytecode corresponds to this operation
         Operation operation;
+        /// @brief If true this operator will represent operations like '+=' where operation is performed on itself
+        bool isCombinedAssignment;
     };
 
     struct SeparatorData
@@ -106,29 +133,45 @@ namespace GobLang::Compiler
      *
      */
     static const std::vector<OperatorData> Operators = {
-        OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5, .operation = Operation::Equals},
-        OperatorData{.symbol = ">=", .op = Operator::LessEq, .priority = 5, .operation = Operation::MoreOrEq},
-        OperatorData{.symbol = "<=", .op = Operator::MoreEq, .priority = 5, .operation = Operation::LessOrEq},
-        OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 1, .operation = Operation::Set},
-        OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::NotEq},
-        OperatorData{.symbol = "!", .op = Operator::Not, .priority = 5, .operation = Operation::Not},
-        OperatorData{.symbol = ">>", .op = Operator::BitRightShift, .priority = 2, .operation = Operation::ShiftRight},
+        // logic operators
+        OperatorData{.symbol = "==", .op = Operator::Equals, .priority = 5, .operation = Operation::Equals,.isCombinedAssignment = false},
+        OperatorData{.symbol = ">=", .op = Operator::LessEq, .priority = 5, .operation = Operation::MoreOrEq,.isCombinedAssignment = false},
+        OperatorData{.symbol = "<=", .op = Operator::MoreEq, .priority = 5, .operation = Operation::LessOrEq,.isCombinedAssignment = false},
+        // assignment
+        OperatorData{.symbol = "=", .op = Operator::Assign, .priority = 1, .operation = Operation::Set,.isCombinedAssignment = false},
+        // bool operators
+        OperatorData{.symbol = "!=", .op = Operator::NotEqual, .priority = 5, .operation = Operation::NotEq,.isCombinedAssignment = false},
+        OperatorData{.symbol = "!", .op = Operator::Not, .priority = 5, .operation = Operation::Not,.isCombinedAssignment = false},
+        OperatorData{.symbol = ">>=", .op = Operator::BitRightShiftAssign, .priority = 1, .operation = Operation::ShiftRight,.isCombinedAssignment = true},
+        OperatorData{.symbol = "<<=", .op = Operator::BitLeftShiftAssign, .priority = 1, .operation = Operation::ShiftLeft,.isCombinedAssignment = true},
+        OperatorData{.symbol = ">>", .op = Operator::BitRightShift, .priority = 2, .operation = Operation::ShiftRight,.isCombinedAssignment = false},
         OperatorData{.symbol = "<<", .op = Operator::BitLeftShift, .priority = 2, .operation = Operation::ShiftLeft},
-        OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::Less},
-        OperatorData{.symbol = ">", .op = Operator::More, .priority = 5, .operation = Operation::More},
-        OperatorData{.symbol = "+", .op = Operator::Add, .priority = 6, .operation = Operation::Add},
-        OperatorData{.symbol = "-", .op = Operator::Sub, .priority = 6, .operation = Operation::Sub},
-        OperatorData{.symbol = "*", .op = Operator::Mul, .priority = 7, .operation = Operation::Mul},
-        OperatorData{.symbol = "/", .op = Operator::Div, .priority = 7, .operation = Operation::Div},
-        OperatorData{.symbol = "and", .op = Operator::And, .priority = 4, .operation = Operation::And},
-        OperatorData{.symbol = "&&", .op = Operator::And, .priority = 4, .operation = Operation::And},
-        OperatorData{.symbol = "or", .op = Operator::Or, .priority = 3, .operation = Operation::Or},
-        OperatorData{.symbol = "||", .op = Operator::Or, .priority = 3, .operation = Operation::Or},
-        OperatorData{.symbol = "|", .op = Operator::BitOr, .priority = 2, .operation = Operation::BitOr},
-        OperatorData{.symbol = "&", .op = Operator::BitAnd, .priority = 2, .operation = Operation::BitAnd},
-        OperatorData{.symbol = "~", .op = Operator::BitNot, .priority = 2, .operation = Operation::BitNot},
-        OperatorData{.symbol = "^", .op = Operator::BitXor, .priority = 2, .operation = Operation::BitXor},
-        OperatorData{.symbol = "%", .op = Operator::Modulo, .priority = 6, .operation = Operation::Modulo},
+        OperatorData{.symbol = "<", .op = Operator::Less, .priority = 5, .operation = Operation::Less,.isCombinedAssignment = false},
+        OperatorData{.symbol = ">", .op = Operator::More, .priority = 5, .operation = Operation::More,.isCombinedAssignment = false},
+        // math
+        OperatorData{.symbol = "+=", .op = Operator::AddAssign, .priority = 1, .operation = Operation::Add,.isCombinedAssignment = true},
+        OperatorData{.symbol = "-=", .op = Operator::SubAssign, .priority = 1, .operation = Operation::Sub,.isCombinedAssignment = true},
+        OperatorData{.symbol = "*=", .op = Operator::MulAssign, .priority = 1, .operation = Operation::Mul,.isCombinedAssignment = true},
+        OperatorData{.symbol = "/=", .op = Operator::DivAssign, .priority = 1, .operation = Operation::Div,.isCombinedAssignment = true},
+        OperatorData{.symbol = "+", .op = Operator::Add, .priority = 6, .operation = Operation::Add,.isCombinedAssignment = false},
+        OperatorData{.symbol = "-", .op = Operator::Sub, .priority = 6, .operation = Operation::Sub,.isCombinedAssignment = false},
+        OperatorData{.symbol = "*", .op = Operator::Mul, .priority = 7, .operation = Operation::Mul,.isCombinedAssignment = false},
+        OperatorData{.symbol = "/", .op = Operator::Div, .priority = 7, .operation = Operation::Div,.isCombinedAssignment = false},
+        // boolean operators
+        OperatorData{.symbol = "and", .op = Operator::And, .priority = 4, .operation = Operation::And,.isCombinedAssignment = false},
+        OperatorData{.symbol = "&&", .op = Operator::And, .priority = 4, .operation = Operation::And,.isCombinedAssignment = false},
+        OperatorData{.symbol = "or", .op = Operator::Or, .priority = 3, .operation = Operation::Or,.isCombinedAssignment = false},
+        OperatorData{.symbol = "||", .op = Operator::Or, .priority = 3, .operation = Operation::Or,.isCombinedAssignment = false},
+        // bit math
+        OperatorData{.symbol = "&=", .op = Operator::BitAndAssign, .priority = 1, .operation = Operation::BitAnd,.isCombinedAssignment = true},
+        OperatorData{.symbol = "~=", .op = Operator::BitNotAssign, .priority = 1, .operation = Operation::BitNot,.isCombinedAssignment = true},
+        OperatorData{.symbol = "^=", .op = Operator::BitXorAssign, .priority = 1, .operation = Operation::BitXor,.isCombinedAssignment = true},
+        OperatorData{.symbol = "%=", .op = Operator::ModuloAssign, .priority = 1, .operation = Operation::Modulo,.isCombinedAssignment = true},
+        OperatorData{.symbol = "|", .op = Operator::BitOr, .priority = 2, .operation = Operation::BitOr,.isCombinedAssignment = false},
+        OperatorData{.symbol = "&", .op = Operator::BitAnd, .priority = 2, .operation = Operation::BitAnd,.isCombinedAssignment = false},
+        OperatorData{.symbol = "~", .op = Operator::BitNot, .priority = 2, .operation = Operation::BitNot,.isCombinedAssignment = false},
+        OperatorData{.symbol = "^", .op = Operator::BitXor, .priority = 2, .operation = Operation::BitXor,.isCombinedAssignment = false},
+        OperatorData{.symbol = "%", .op = Operator::Modulo, .priority = 6, .operation = Operation::Modulo,.isCombinedAssignment = false},
     };
 
     /**

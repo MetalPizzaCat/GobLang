@@ -41,8 +41,9 @@ namespace GobLang::Compiler
     class OperatorToken : public Token
     {
     public:
-        explicit OperatorToken(size_t row, size_t column, Operator oper);
+        explicit OperatorToken(size_t row, size_t column, OperatorData const *data);
         Operator getOperator() const { return m_data->op; }
+        bool isAssignment() const;
         Operation getOperation() const;
         virtual int32_t getPriority() const override;
         std::string toString() override;

@@ -17,10 +17,10 @@ bool GobLang::Compiler::Validator::constant(TokenIterator const &it)
 {
     return it != getEnd() && (dynamic_cast<StringToken *>(*it) != nullptr ||
                               dynamic_cast<IntToken *>(*it) != nullptr ||
-                              dynamic_cast<FloatToken *>(*it) != nullptr || 
+                              dynamic_cast<FloatToken *>(*it) != nullptr ||
                               dynamic_cast<CharToken *>(*it) != nullptr ||
                               dynamic_cast<BoolConstToken *>(*it) != nullptr ||
-                              dynamic_cast<NullConstToken*>(*it) != nullptr);
+                              dynamic_cast<NullConstToken *>(*it) != nullptr);
 }
 
 bool GobLang::Compiler::Validator::id(TokenIterator const &it)
@@ -50,6 +50,19 @@ bool GobLang::Compiler::Validator::mathOperator(TokenIterator const &it)
     if (OperatorToken *op = dynamic_cast<OperatorToken *>(*it); op != nullptr && op->getOperator() != Operator::Assign)
     {
         return true;
+    }
+    return false;
+}
+
+bool GobLang::Compiler::Validator::assignmentOperator(TokenIterator const &it)
+{
+    if (it == getEnd())
+    {
+        return false;
+    }
+    else if (OperatorToken *t = dynamic_cast<OperatorToken *>(*it); t != nullptr)
+    {
+        return t->isAssignment();
     }
     return false;
 }
@@ -153,7 +166,7 @@ bool GobLang::Compiler::Validator::unaryExpr(TokenIterator const &it, TokenItera
 bool GobLang::Compiler::Validator::mul(TokenIterator const &it, TokenIterator &endIt)
 {
     TokenIterator exprIt;
-    if(arrayCreation(it, exprIt))
+    if (arrayCreation(it, exprIt))
     {
         endIt = exprIt;
         return true;
@@ -275,7 +288,7 @@ bool GobLang::Compiler::Validator::arrayIndex(TokenIterator const &it, TokenIter
 bool GobLang::Compiler::Validator::arrayCreation(TokenIterator const &it, TokenIterator &endIt)
 {
     TokenIterator exprIt = it;
-    if(!separator(exprIt, Separator::ArrayOpen))
+    if (!separator(exprIt, Separator::ArrayOpen))
     {
         return false;
     }
@@ -300,7 +313,7 @@ bool GobLang::Compiler::Validator::arrayCreation(TokenIterator const &it, TokenI
 bool GobLang::Compiler::Validator::assignment(TokenIterator const &it, TokenIterator &endIt)
 {
     TokenIterator exprIt = it;
-    if (!(id(it) && actionOperator(it + 1, Operator::Assign)))
+    if (!(id(it) && assignmentOperator(it + 1)))
     {
         return false;
     }
@@ -319,7 +332,7 @@ bool GobLang::Compiler::Validator::assignment(TokenIterator const &it, TokenIter
 bool GobLang::Compiler::Validator::arrayAssignment(TokenIterator const &it, TokenIterator &endIt)
 {
     TokenIterator exprIt = it;
-    bool valid = arrayAccess(it, exprIt) && actionOperator(exprIt + 1, Operator::Assign) && expr(exprIt + 2, exprIt) && end(exprIt + 1);
+    bool valid = arrayAccess(it, exprIt) && assignmentOperator(exprIt + 1) && expr(exprIt + 2, exprIt) && end(exprIt + 1);
     if (valid)
     {
         endIt = exprIt + 1;

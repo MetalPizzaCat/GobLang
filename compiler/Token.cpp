@@ -20,10 +20,14 @@ GobLang::Compiler::Token::Token(size_t row, size_t column) : m_row(row), m_colum
 {
 }
 
-GobLang::Compiler::OperatorToken::OperatorToken(size_t row, size_t column, Operator oper) : Token(row, column)
+
+GobLang::Compiler::OperatorToken::OperatorToken(size_t row, size_t column, OperatorData const *data) : Token(row, column), m_data(data)
 {
-    m_data = &(*std::find_if(Operators.begin(), Operators.end(), [oper](OperatorData const &op)
-                             { return op.op == oper; }));
+}
+
+bool GobLang::Compiler::OperatorToken::isAssignment() const
+{
+    return m_data->op == Operator::Assign || m_data->isCombinedAssignment;
 }
 
 GobLang::Operation GobLang::Compiler::OperatorToken::getOperation() const
