@@ -75,6 +75,11 @@ namespace GobLang::Compiler
             std::vector<CompilerNode *> &stack,
             std::vector<Token *>::const_iterator &it);
 
+        void _generateSeparator(
+            SeparatorToken const *opToken,
+            std::vector<CompilerNode *> &stack,
+            std::vector<Token *>::const_iterator &it);
+
         std::vector<uint8_t> m_bytes;
 
         /**

@@ -63,27 +63,24 @@ namespace GobLang::Compiler
         bool m_usesLocalFunc = false;
     };
 
-    class ConstructorCallToken : public MultiArgToken
+    class ConstructorCallToken : public FunctionCallToken
     {
     public:
         explicit ConstructorCallToken(
             size_t row,
             size_t column,
             size_t structId,
-            size_t expectedArgCount = 0) : MultiArgToken(row, column),
-                                           m_structId(structId),
-                                           m_expectedArgCount(expectedArgCount)
+            size_t expectedArgCount = 0) : FunctionCallToken(row, column, expectedArgCount),
+                                           m_structId(structId)
         {
         }
         std::string toString() override;
         bool validateArgumentCount() override;
 
         size_t getStructId() const { return m_structId; }
-        size_t getExpectedArgumentCount() override { return m_expectedArgCount; }
 
     private:
         size_t m_structId;
-        size_t m_expectedArgCount = 0;
     };
 
     /**
@@ -108,6 +105,13 @@ namespace GobLang::Compiler
         explicit ArrayIndexToken(size_t row, size_t column) : Token(row, column) {}
 
         std::string toString() override { return "AIO"; }
+    };
+
+    class FieldIndexToken : public Token
+    {
+    public:
+        explicit FieldIndexToken(size_t row, size_t column) : Token(row, column) {}
+        std::string toString() override { return "FAO"; }
     };
 
     class LoopControlToken : public GotoToken

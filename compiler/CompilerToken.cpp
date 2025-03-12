@@ -42,5 +42,5 @@ std::string GobLang::Compiler::ConstructorCallToken::toString()
 
 bool GobLang::Compiler::ConstructorCallToken::validateArgumentCount()
 {
-    return m_expectedArgCount == getArgCount();
+    return getExpectedArgumentCount() == getArgCount();
 }

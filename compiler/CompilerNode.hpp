@@ -50,6 +50,39 @@ namespace GobLang::Compiler
         explicit LocalVarTokenCompilerNode(Token *token) : TokenCompilerNode(token) {}
     };
 
+    class FieldAccessNode : public CompilerNode
+    {
+    public:
+        explicit FieldAccessNode(CompilerNode *object, CompilerNode *field) : m_object(object), m_field(field) {}
+
+        std::vector<uint8_t> getOperationGetBytes() override
+        {
+            std::vector<uint8_t> out = m_field->getOperationGetBytes();
+            std::vector<uint8_t> arrayGetBytes = m_object->getOperationGetBytes();
+            out.insert(out.end(), arrayGetBytes.begin(), arrayGetBytes.end());
+            out.push_back((uint8_t)Operation::GetField);
+            return out;
+        }
+
+        std::vector<uint8_t> getOperationSetBytes() override
+        {
+            std::vector<uint8_t> out = m_field->getOperationGetBytes();
+            std::vector<uint8_t> arrayGetBytes = m_object->getOperationGetBytes();
+            out.insert(out.end(), arrayGetBytes.begin(), arrayGetBytes.end());
+            return out;
+        }
+
+        ~FieldAccessNode()
+        {
+            delete m_object;
+            delete m_field;
+        }
+
+    private:
+        CompilerNode *m_object;
+        CompilerNode *m_field;
+    };
+
     class ArrayCompilerNode : public CompilerNode
     {
     public:

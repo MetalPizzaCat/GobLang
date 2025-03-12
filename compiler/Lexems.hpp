@@ -187,7 +187,7 @@ namespace GobLang::Compiler
         SeparatorData{.symbol = '}', .separator = Separator::BlockClose, .priority = 2},
         SeparatorData{.symbol = '[', .separator = Separator::ArrayOpen, .priority = 1},
         SeparatorData{.symbol = ']', .separator = Separator::ArrayClose, .priority = 2},
-        SeparatorData{.symbol = '.', .separator = Separator::Dot, .priority = -1},
+        SeparatorData{.symbol = '.', .separator = Separator::Dot, .priority = 2},
         SeparatorData{.symbol = ',', .separator = Separator::Comma, .priority = -1},
         SeparatorData{.symbol = ';', .separator = Separator::End, .priority = -1},
         SeparatorData{.symbol = ':', .separator = Separator::Colon, .priority = -1}

@@ -101,6 +101,13 @@ void GobLang::Machine::step()
         _setArray();
         collectGarbage();
         break;
+    case Operation::GetField:
+        _getField();
+        break;
+    case Operation::SetField:
+        _setField();
+        collectGarbage();
+        break;
     case Operation::Jump:
         _jump();
         return; // this uses return because we want to avoid advancing the counter after jup
@@ -876,6 +883,49 @@ void GobLang::Machine::_setArray()
     else if (StringNode *strNode = dynamic_cast<StringNode *>(m); strNode != nullptr && value.type == Type::Char)
     {
         strNode->setCharAt(std::get<char>(value.value), std::get<int32_t>(index.value));
+    }
+}
+
+inline void GobLang::Machine::_getField()
+{
+    MemoryValue object = _getFromTopAndPop();
+    MemoryValue field = _getFromTopAndPop();
+    if (!std::holds_alternative<MemoryNode *>(object.value))
+    {
+        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
+    }
+    if (!std::holds_alternative<MemoryNode *>(field.value))
+    {
+        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(field.type));
+    }
+    if (StructureObjectNode *arrNode = dynamic_cast<StructureObjectNode *>(std::get<MemoryNode *>(object.value)); arrNode != nullptr)
+    {
+        if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
+        {
+            pushToStack(arrNode->getField(strNode->getString()));
+        }
+    }
+}
+
+inline void GobLang::Machine::_setField()
+{
+    MemoryValue value = _getFromTopAndPop();
+    MemoryValue object = _getFromTopAndPop();
+    MemoryValue field = _getFromTopAndPop();
+    if (!std::holds_alternative<MemoryNode *>(object.value))
+    {
+        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
+    }
+    if (!std::holds_alternative<MemoryNode *>(field.value))
+    {
+        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(field.type));
+    }
+    if (StructureObjectNode *arrNode = dynamic_cast<StructureObjectNode *>(std::get<MemoryNode *>(object.value)); arrNode != nullptr)
+    {
+        if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
+        {
+            arrNode->setField(strNode->getString(), value);
+        }
     }
 }
 

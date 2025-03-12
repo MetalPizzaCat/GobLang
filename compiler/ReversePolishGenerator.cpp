@@ -6,32 +6,7 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
     {
         if (IdToken *id = dynamic_cast<IdToken *>(*m_it); id != nullptr)
         {
-            if (m_isVariableDeclaration)
-            {
-                _appendVariable(id->getId());
-                LocalVarToken *local = new LocalVarToken(id->getRow(), id->getColumn(), _getLocalVariableAccessId(id->getId()));
-                addToken(local);
-                m_compilerTokens.push_back(local);
-                m_isVariableDeclaration = false;
-            }
-            else if ((m_it + 1) != m_parser.getTokens().end() && _isIdUsedForFunctionCall(id->getId()))
-            {
-                // if we found that this id is used by a function we skip it and let function assign the local call
-                if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(m_it + 1)); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
-                {
-                    continue;
-                }
-            }
-            else if (int32_t varId = _getLocalVariableAccessId(id->getId()); varId != -1)
-            {
-                LocalVarToken *local = new LocalVarToken(id->getRow(), id->getColumn(), varId);
-                addToken(local);
-                m_compilerTokens.push_back(local);
-            }
-            else
-            {
-                addToken(*m_it);
-            }
+            _compileIdToken(id, m_it);
         }
         else if (dynamic_cast<IntToken *>(*m_it) ||
                  dynamic_cast<UnsignedIntToken *>(*m_it) ||
@@ -313,105 +288,26 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
 
     case Separator::BracketClose:
         //_printTokenStack();
-        while (!m_stack.empty())
-        {
-            Token *t = *(m_stack.rbegin());
-            m_stack.pop_back();
-            if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(t); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
-            {
-                break;
-            }
-            else if (FunctionCallToken *funcTok = dynamic_cast<FunctionCallToken *>(t); funcTok != nullptr)
-            {
-                MultiArgToken *mArg = m_multiArgSequences.back();
-                SeparatorToken *prev = dynamic_cast<SeparatorToken *>(*(it - 1));
-                if (!(prev != nullptr && (prev->getSeparator() == Separator::BracketOpen || prev->getSeparator() == Separator::Comma)))
-                {
-                    mArg->increaseArgCount();
-                }
-                if (!mArg->validateArgumentCount())
-                {
-                    throw ParsingError(
-                        m_multiArgSequences.back()->getRow(),
-                        m_multiArgSequences.back()->getColumn(),
-                        std::string("Invalid number of arguments. Expected ") + std::to_string(mArg->getExpectedArgumentCount()) + " Got " + std::to_string(mArg->getArgCount()));
-                }
-                addToken(mArg);
-                m_multiArgSequences.pop_back();
-                break;
-            }
-            else if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
-            {
-                addToken(t);
-                break;
-            }
-            else
-            {
-                addToken(t);
-            }
-        }
+        _handleBracketClose(sepToken, it);
         break;
     case Separator::BlockOpen:
         _appendVariableBlock();
         break;
     case Separator::BlockClose:
-        dumpStack();
-        if (m_blockVariables.rbegin()->size() > 0)
-        {
-            addToken(new LocalVarShrinkToken(sepToken->getRow(), sepToken->getColumn(), m_blockVariables.rbegin()->size()));
-        }
-        _popVariableBlock();
-        if (!m_jumps.empty())
-        {
-            GotoToken *jump = *m_jumps.rbegin();
-            m_jumps.pop_back();
-            if (IfToken *ifToken = dynamic_cast<IfToken *>(jump); ifToken != nullptr && ifToken->isElif())
-            {
-                if (m_jumps.empty())
-                {
-                    throw ParsingError(ifToken->getRow(), ifToken->getColumn(), "Invalid elif configuration, jump token was not generated");
-                }
-                GotoToken *elifPair = *m_jumps.rbegin();
-                elifPair->setMark(getMarkCounterAndAdvance());
-                JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), elifPair->getMark());
-                m_jumps.pop_back();
-                m_compilerTokens.push_back(dest);
-                addToken(dest);
-            }
-
-            else if (WhileToken *whileToken = dynamic_cast<WhileToken *>(jump); whileToken != nullptr)
-            {
-                whileToken->setReturnMark(getMarkCounterAndAdvance());
-                GotoToken *loopJump = new GotoToken(sepToken->getRow(), sepToken->getColumn(), whileToken->getReturnMark());
-                m_compilerTokens.push_back(loopJump);
-                addToken(loopJump);
-            }
-            jump->setMark(getMarkCounterAndAdvance());
-            JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), jump->getMark());
-            if (_isElseChainToken(it + 1) || _isElifChainToken(it + 1))
-            {
-                GotoToken *elseJump = new GotoToken(sepToken->getRow(), sepToken->getColumn());
-                m_jumps.push_back(elseJump);
-                m_compilerTokens.push_back(elseJump);
-                addToken(elseJump);
-            }
-
-            m_compilerTokens.push_back(dest);
-            addToken(dest);
-        }
-        else if (m_currentFunction != nullptr)
-        {
-            if (dynamic_cast<ReturnToken *>(*(it - 1)) == nullptr)
-            {
-                ReturnToken *ret = new ReturnToken((*it)->getRow(), (*it)->getColumn(), false);
-                m_compilerTokens.push_back(ret);
-                addToken(ret);
-            }
-            _popVariableBlock();
-            m_currentFunction = nullptr;
-        }
+        _handleBlockClose(sepToken, it);
         break;
-
+    case Separator::Dot:
+    {
+        if (_isPreviousTokenValidArrayParent(it))
+        {
+            m_stack.push_back(sepToken);
+        }
+        else
+        {
+            throw ParsingError(sepToken->getRow(), sepToken->getColumn(), "Invalid field access operator");
+        }
+    }
+    break;
     default:
         throw ParsingError(sepToken->getRow(), sepToken->getColumn(), "Unexpected separator encountered");
     }
@@ -457,6 +353,19 @@ bool GobLang::Compiler::ReversePolishGenerator::_isIdUsedForFunctionCall(size_t 
                         { return f->getInfo()->nameId == id; }) != m_funcs.end() ||
            std::find_if(m_structs.begin(), m_structs.end(), [id, this](std::unique_ptr<Struct::Structure> const &s)
                         { return s->name == m_parser.getIds()[id]; }) != m_structs.end();
+}
+
+bool GobLang::Compiler::ReversePolishGenerator::_isFieldName(std::vector<Token *>::const_iterator const &it)
+{
+    if (it == m_parser.getTokens().begin())
+    {
+        return false;
+    }
+    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(it - 1)); sepTok != nullptr)
+    {
+        return sepTok->getSeparator() == Separator::Dot;
+    }
+    return false;
 }
 
 bool GobLang::Compiler::ReversePolishGenerator::_isPreviousTokenValidArrayParent(std::vector<Token *>::const_iterator const &it)
@@ -777,6 +686,152 @@ void GobLang::Compiler::ReversePolishGenerator::_addOperator(std::vector<Token *
     OperatorToken *tok = dynamic_cast<OperatorToken *>(*it);
     tok->setIsUnary(!_isValidBinaryOperation(it));
     m_stack.push_back(*it);
+}
+
+void GobLang::Compiler::ReversePolishGenerator::_handleBlockClose(SeparatorToken const *sepToken, std::vector<Token *>::const_iterator const &it)
+{
+    dumpStack();
+    if (m_blockVariables.rbegin()->size() > 0)
+    {
+        addToken(new LocalVarShrinkToken(sepToken->getRow(), sepToken->getColumn(), m_blockVariables.rbegin()->size()));
+    }
+    _popVariableBlock();
+    if (!m_jumps.empty())
+    {
+        GotoToken *jump = *m_jumps.rbegin();
+        m_jumps.pop_back();
+        if (IfToken *ifToken = dynamic_cast<IfToken *>(jump); ifToken != nullptr && ifToken->isElif())
+        {
+            if (m_jumps.empty())
+            {
+                throw ParsingError(ifToken->getRow(), ifToken->getColumn(), "Invalid elif configuration, jump token was not generated");
+            }
+            GotoToken *elifPair = *m_jumps.rbegin();
+            elifPair->setMark(getMarkCounterAndAdvance());
+            JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), elifPair->getMark());
+            m_jumps.pop_back();
+            m_compilerTokens.push_back(dest);
+            addToken(dest);
+        }
+
+        else if (WhileToken *whileToken = dynamic_cast<WhileToken *>(jump); whileToken != nullptr)
+        {
+            whileToken->setReturnMark(getMarkCounterAndAdvance());
+            GotoToken *loopJump = new GotoToken(sepToken->getRow(), sepToken->getColumn(), whileToken->getReturnMark());
+            m_compilerTokens.push_back(loopJump);
+            addToken(loopJump);
+        }
+        jump->setMark(getMarkCounterAndAdvance());
+        JumpDestinationToken *dest = new JumpDestinationToken(sepToken->getRow(), sepToken->getColumn(), jump->getMark());
+        if (_isElseChainToken(it + 1) || _isElifChainToken(it + 1))
+        {
+            GotoToken *elseJump = new GotoToken(sepToken->getRow(), sepToken->getColumn());
+            m_jumps.push_back(elseJump);
+            m_compilerTokens.push_back(elseJump);
+            addToken(elseJump);
+        }
+
+        m_compilerTokens.push_back(dest);
+        addToken(dest);
+    }
+    else if (m_currentFunction != nullptr)
+    {
+        if (dynamic_cast<ReturnToken *>(*(it - 1)) == nullptr)
+        {
+            ReturnToken *ret = new ReturnToken((*it)->getRow(), (*it)->getColumn(), false);
+            m_compilerTokens.push_back(ret);
+            addToken(ret);
+        }
+        _popVariableBlock();
+        m_currentFunction = nullptr;
+    }
+}
+
+void GobLang::Compiler::ReversePolishGenerator::_handleBracketClose(SeparatorToken const *sepTok, std::vector<Token *>::const_iterator const &it)
+{
+    while (!m_stack.empty())
+    {
+        Token *t = *(m_stack.rbegin());
+        m_stack.pop_back();
+        if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(t); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
+        {
+            break;
+        }
+        else if (FunctionCallToken *funcTok = dynamic_cast<FunctionCallToken *>(t); funcTok != nullptr)
+        {
+            MultiArgToken *mArg = m_multiArgSequences.back();
+            SeparatorToken *prev = dynamic_cast<SeparatorToken *>(*(it - 1));
+            if (!(prev != nullptr && (prev->getSeparator() == Separator::BracketOpen || prev->getSeparator() == Separator::Comma)))
+            {
+                mArg->increaseArgCount();
+            }
+            if (!mArg->validateArgumentCount())
+            {
+                throw ParsingError(
+                    m_multiArgSequences.back()->getRow(),
+                    m_multiArgSequences.back()->getColumn(),
+                    std::string("Invalid number of arguments. Expected ") + std::to_string(mArg->getExpectedArgumentCount()) + " Got " + std::to_string(mArg->getArgCount()));
+            }
+            addToken(mArg);
+            m_multiArgSequences.pop_back();
+            break;
+        }
+        else if (dynamic_cast<IfToken *>(t) != nullptr || dynamic_cast<WhileToken *>(t) != nullptr)
+        {
+            addToken(t);
+            break;
+        }
+        else
+        {
+            addToken(t);
+        }
+    }
+}
+
+void GobLang::Compiler::ReversePolishGenerator::_compileIdToken(IdToken const *id, std::vector<Token *>::const_iterator const &it)
+{
+    bool isFieldName = false;
+    if (m_isVariableDeclaration)
+    {
+        _appendVariable(id->getId());
+        LocalVarToken *local = new LocalVarToken(id->getRow(), id->getColumn(), _getLocalVariableAccessId(id->getId()));
+        addToken(local);
+        m_compilerTokens.push_back(local);
+        m_isVariableDeclaration = false;
+    }
+    else if (_isFieldName(m_it))
+    {
+        StringToken *strTok = new StringToken(id->getRow(), id->getColumn(), id->getId());
+        m_compilerTokens.push_back(strTok);
+        addToken(strTok);
+
+        if (m_stack.empty())
+        {
+            return;
+        }
+        if (SeparatorToken *sep = dynamic_cast<SeparatorToken *>(m_stack.back()); sep != nullptr && sep->getSeparator() == Separator::Dot)
+        {
+            addToken(popStack());
+        }
+    }
+    else if ((m_it + 1) != m_parser.getTokens().end() && _isIdUsedForFunctionCall(id->getId()))
+    {
+        // if we found that this id is used by a function we skip it and let function assign the local call
+        if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(m_it + 1)); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
+        {
+            return;
+        }
+    }
+    else if (int32_t varId = _getLocalVariableAccessId(id->getId()); varId != -1)
+    {
+        LocalVarToken *local = new LocalVarToken(id->getRow(), id->getColumn(), varId);
+        addToken(local);
+        m_compilerTokens.push_back(local);
+    }
+    else
+    {
+        addToken(*m_it);
+    }
 }
 
 bool GobLang::Compiler::ReversePolishGenerator::_isValidBinaryOperation(std::vector<Token *>::const_iterator const &it)

@@ -29,6 +29,8 @@ namespace GobLang
          * @brief Set value of the nth element of an array
          */
         SetArray,
+        GetField,
+        SetField,
         PushConstInt,
         PushConstUnsignedInt,
         PushConstFloat,
@@ -127,6 +129,8 @@ namespace GobLang
         OperationData{.op = Operation::GetLocal, .text = "get", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::SetArray, .text = "set_arr", .argType = OperatorArgType::None},
         OperationData{.op = Operation::GetArray, .text = "get_arr", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::SetField, .text = "set_field", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::GetField, .text = "get_field", .argType = OperatorArgType::None},
         OperationData{.op = Operation::PushConstInt, .text = "push_int", .argType = OperatorArgType::Int},
         OperationData{.op = Operation::PushConstUnsignedInt, .text = "push_uint", .argType = OperatorArgType::UnsignedInt},
         OperationData{.op = Operation::PushConstFloat, .text = "push_float", .argType = OperatorArgType::Float},

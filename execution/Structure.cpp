@@ -32,6 +32,34 @@ GobLang::Struct::StructureObjectNode::StructureObjectNode(Structure const *base)
     }
 }
 
+void GobLang::Struct::StructureObjectNode::setField(std::string const &field, MemoryValue const &value)
+{
+    if (m_fieldNames.count(field) == 0)
+    {
+        throw RuntimeException(std::string("Invalid field name ") + field);
+    }
+    size_t id = m_fieldNames[field];
+    // check if object that we are setting is itself to avoid creating a ref cycle
+    if (value.type == Type::MemoryObj && std::get<MemoryNode *>(value.value) != this)
+    {
+        std::get<MemoryNode *>(value.value)->increaseRefCount();
+    }
+    if (m_fields[id].type == Type::MemoryObj && std::get<MemoryNode *>(m_fields[id].value) != this)
+    {
+        std::get<MemoryNode *>(m_fields[id].value)->decreaseRefCount();
+    }
+    m_fields[id] = value;
+}
+
+GobLang::MemoryValue GobLang::Struct::StructureObjectNode::getField(std::string const &field)
+{
+    if (m_fieldNames.count(field) == 0)
+    {
+        throw RuntimeException(std::string("Invalid field name ") + field);
+    }
+    return m_fields[m_fieldNames[field]];
+}
+
 std::string GobLang::Struct::StructureObjectNode::toString(bool pretty)
 {
     std::string start = "{";

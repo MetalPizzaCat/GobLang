@@ -12,7 +12,7 @@ void GobLang::Compiler::Compiler::generateByteCode()
         return;
     }
     m_byteCode.ids = m_generator.getIds();
-    for(std::unique_ptr<Struct::Structure> const& str : m_generator.getStructs())
+    for (std::unique_ptr<Struct::Structure> const &str : m_generator.getStructs())
     {
         m_byteCode.structures.push_back(*str.get());
     }
@@ -130,14 +130,9 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
     std::vector<CompilerNode *> stack;
     for (std::vector<Token *>::const_iterator it = tokens.begin(); it != tokens.end(); it++)
     {
-        if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*it); sepTok != nullptr && sepTok->getSeparator() == Separator::End)
+        if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*it); sepTok != nullptr)
         {
-            if (!stack.empty())
-            {
-                appendCompilerNode(*stack.rbegin(), true);
-                delete *stack.rbegin();
-                stack.pop_back();
-            }
+            _generateSeparator(sepTok, stack, it);
         }
 
         else if (BoolConstToken *boolToken = dynamic_cast<BoolConstToken *>(*it); boolToken != nullptr)
@@ -321,6 +316,11 @@ void GobLang::Compiler::Compiler::_generateMultiArg(MultiArgToken const *multiTo
         bytes.push_back((uint8_t)Operation::CreateArray);
         bytes.push_back((uint8_t)array->getArgCount());
     }
+    else if (ConstructorCallToken *contr = dynamic_cast<ConstructorCallToken *>(*it); contr != nullptr)
+    {
+        bytes.push_back((uint8_t)Operation::New);
+        bytes.push_back((uint8_t)contr->getStructId());
+    }
     else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
     {
         if (func->usesLocalFunction())
@@ -337,11 +337,6 @@ void GobLang::Compiler::Compiler::_generateMultiArg(MultiArgToken const *multiTo
             delete funcNode;
             bytes.push_back((uint8_t)Operation::Call);
         }
-    }
-    else if (ConstructorCallToken *contr = dynamic_cast<ConstructorCallToken *>(*it); contr != nullptr)
-    {
-        bytes.push_back((uint8_t)Operation::New);
-        bytes.push_back((uint8_t)contr->getStructId());
     }
     stack.push_back(new OperationCompilerNode(bytes));
 }
@@ -378,6 +373,10 @@ void GobLang::Compiler::Compiler::_generateOperator(OperatorToken const *opToken
             {
                 m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
             }
+            else if (FieldAccessNode *fieldNode = dynamic_cast<FieldAccessNode *>(setter); fieldNode != nullptr)
+            {
+                m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetField);
+            }
             else
             {
                 m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
@@ -408,6 +407,10 @@ void GobLang::Compiler::Compiler::_generateOperator(OperatorToken const *opToken
             {
                 m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
             }
+            else if (FieldAccessNode *fieldNode = dynamic_cast<FieldAccessNode *>(setter); fieldNode != nullptr)
+            {
+                m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetField);
+            }
             else
             {
                 m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
@@ -429,4 +432,26 @@ void GobLang::Compiler::Compiler::_generateOperator(OperatorToken const *opToken
     // leaving them undeleted will make them a memory leak
     delete setter;
     delete valueToSet;
+}
+
+void GobLang::Compiler::Compiler::_generateSeparator(SeparatorToken const *sepTok, std::vector<CompilerNode *> &stack, std::vector<Token *>::const_iterator &it)
+{
+    if (sepTok->getSeparator() == Separator::End)
+    {
+        if (!stack.empty())
+        {
+            appendCompilerNode(*stack.rbegin(), true);
+            delete *stack.rbegin();
+            stack.pop_back();
+        }
+    }
+    else if (sepTok->getSeparator() == Separator::Dot)
+    {
+        CompilerNode *object = stack[stack.size() - 2];
+        CompilerNode *field = stack[stack.size() - 1];
+        stack.pop_back();
+        stack.pop_back();
+
+        stack.push_back(new FieldAccessNode(object, field));
+    }
 }

@@ -212,6 +212,10 @@ namespace GobLang
 
         inline void _setArray();
 
+        inline void _getField();
+
+        inline void _setField();
+
         inline void _eq();
 
         inline void _neq();
