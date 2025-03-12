@@ -14,8 +14,7 @@ void GobLang::Compiler::ReversePolishGenerator::compile()
                 m_compilerTokens.push_back(local);
                 m_isVariableDeclaration = false;
             }
-            else if ((m_it + 1) != m_parser.getTokens().end() && std::find_if(m_funcs.begin(), m_funcs.end(), [id](FunctionTokenSequence *f)
-                                                                              { return f->getInfo()->nameId == id->getId(); }) != m_funcs.end())
+            else if ((m_it + 1) != m_parser.getTokens().end() && _isIdUsedForFunctionCall(id->getId()))
             {
                 // if we found that this id is used by a function we skip it and let function assign the local call
                 if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(m_it + 1)); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
@@ -136,6 +135,19 @@ void GobLang::Compiler::ReversePolishGenerator::printFunctions()
     }
 }
 
+void GobLang::Compiler::ReversePolishGenerator::printStructs()
+{
+    for (std::unique_ptr<Struct::Structure> const &str : m_structs)
+    {
+        std::cout << "Struct(" << str->name << "):" << std::endl;
+        for (Field const &f : str->fields)
+        {
+            std::cout << f.name << std::endl;
+        }
+    }
+    std::cout << "end_struct" << std::endl;
+}
+
 void GobLang::Compiler::ReversePolishGenerator::addToken(Token *token)
 {
     if (m_currentFunction == nullptr)
@@ -236,23 +248,7 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
     case Separator::BracketOpen:
         if (IdToken *funcNameToken = dynamic_cast<IdToken *>(*(it - 1)); funcNameToken != nullptr)
         {
-            std::vector<FunctionTokenSequence *>::iterator funcIt = std::find_if(m_funcs.begin(),
-                                                                                 m_funcs.end(),
-                                                                                 [funcNameToken](FunctionTokenSequence *f)
-                                                                                 { return f->getInfo()->nameId == funcNameToken->getId(); });
-            FunctionCallToken *token;
-            if (funcIt == m_funcs.end())
-            {
-                token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn());
-            }
-            else
-            {
-                token = new FunctionCallToken(sepToken->getRow(), sepToken->getColumn(), funcIt - m_funcs.begin(), (*funcIt)->getInfo()->arguments.size());
-            }
-
-            m_compilerTokens.push_back(token);
-            m_stack.push_back(token);
-            m_multiArgSequences.push_back(token);
+            _compileFunctionCall(funcNameToken, sepToken);
         }
         else if (!_isBranchKeyword(it - 1))
         {
@@ -421,6 +417,48 @@ void GobLang::Compiler::ReversePolishGenerator::_compileSeparators(SeparatorToke
     }
 }
 
+void GobLang::Compiler::ReversePolishGenerator::_compileFunctionCall(IdToken const *name, SeparatorToken const *sep)
+{
+
+    std::vector<std::unique_ptr<Structure>>::iterator constructorIt = std::find_if(m_structs.begin(), m_structs.end(),
+                                                                                   [name, this](std::unique_ptr<Structure> const &s)
+                                                                                   { return s->name == m_parser.getIds()[name->getId()]; });
+
+    MultiArgToken *token;
+    if (constructorIt != m_structs.end())
+    {
+        token = new ConstructorCallToken(sep->getRow(), sep->getColumn(), constructorIt - m_structs.begin(), 0);
+    }
+    else
+    {
+        std::vector<FunctionTokenSequence *>::iterator funcIt = std::find_if(m_funcs.begin(),
+                                                                             m_funcs.end(),
+                                                                             [name](FunctionTokenSequence *f)
+                                                                             { return f->getInfo()->nameId == name->getId(); });
+
+        if (funcIt != m_funcs.end())
+        {
+            token = new FunctionCallToken(sep->getRow(), sep->getColumn(), funcIt - m_funcs.begin(), (*funcIt)->getInfo()->arguments.size());
+        }
+        else
+        {
+            token = new FunctionCallToken(sep->getRow(), sep->getColumn());
+        }
+    }
+
+    m_compilerTokens.push_back(token);
+    m_stack.push_back(token);
+    m_multiArgSequences.push_back(token);
+}
+
+bool GobLang::Compiler::ReversePolishGenerator::_isIdUsedForFunctionCall(size_t id)
+{
+    return std::find_if(m_funcs.begin(), m_funcs.end(), [id](FunctionTokenSequence *f)
+                        { return f->getInfo()->nameId == id; }) != m_funcs.end() ||
+           std::find_if(m_structs.begin(), m_structs.end(), [id, this](std::unique_ptr<Struct::Structure> const &s)
+                        { return s->name == m_parser.getIds()[id]; }) != m_structs.end();
+}
+
 bool GobLang::Compiler::ReversePolishGenerator::_isPreviousTokenValidArrayParent(std::vector<Token *>::const_iterator const &it)
 {
     // to avoid dealing with reverse iterators just check if it's the first one
@@ -549,6 +587,10 @@ void GobLang::Compiler::ReversePolishGenerator::_compileKeywords(KeywordToken *k
         }
     }
     break;
+    case Keyword::Struct:
+        // benefit of jumping elsewhere for this is that we can be sure that struct inside a struct is not possible
+        _compileStructure(it, m_it);
+        break;
     default:
         throw ParsingError(keyToken->getRow(), keyToken->getColumn(), "Invalid keyword encountered");
         break;
@@ -621,6 +663,75 @@ void GobLang::Compiler::ReversePolishGenerator::_compileFunction(
         currIt++;
     }
     throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Expected ')'");
+}
+
+void GobLang::Compiler::ReversePolishGenerator::_compileStructure(
+    std::vector<Token *>::const_iterator const &start,
+    std::vector<Token *>::const_iterator &end)
+{
+    using namespace Struct;
+
+    Structure *structure = new Structure();
+    std::vector<Token *>::const_iterator currIt = start + 1;
+    if (IdToken *funcNameTok = dynamic_cast<IdToken *>(*currIt); funcNameTok != nullptr)
+    {
+        // because structs are objects and might require access to its name
+        // we store it as a string not id
+        // TODO: Make sure that if string stripping gets added strings used as names don't get removed
+        structure->name = m_parser.getIds()[funcNameTok->getId()];
+    }
+    else
+    {
+        throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Missing structure name");
+    }
+    currIt++;
+    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*currIt); currIt == m_parser.getTokens().end() || sepTok == nullptr || sepTok->getSeparator() != Separator::BlockOpen)
+    {
+        throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Expected '{'");
+    }
+    currIt++;
+    if (SeparatorToken *earlyEndTok = dynamic_cast<SeparatorToken *>(*currIt); earlyEndTok != nullptr && earlyEndTok->getSeparator() == Separator::BlockClose)
+    {
+        end = currIt;
+        m_structs.push_back(std::unique_ptr<Structure>(structure));
+        return;
+    }
+
+    while (currIt != m_parser.getTokens().end())
+    {
+        Field field;
+        if (IdToken *fieldNameTok = dynamic_cast<IdToken *>(*currIt); fieldNameTok != nullptr)
+        {
+            field.name = m_parser.getIds()[fieldNameTok->getId()];
+            structure->fields.push_back(field);
+        }
+        else
+        {
+            throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Expected field name");
+        }
+        currIt++;
+        if (currIt == m_parser.getTokens().end())
+        {
+            throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Missing '}'");
+        }
+        if (SeparatorToken *argSepTok = dynamic_cast<SeparatorToken *>(*currIt); argSepTok != nullptr)
+        {
+            if (argSepTok->getSeparator() == Separator::BlockClose)
+            {
+                end = currIt;
+                // store them as unique_ptr to make it easier to manage
+                // but that does mean that it will be necessary to copy this data into the machine
+                m_structs.push_back(std::unique_ptr<Structure>(structure));
+                return;
+            }
+        }
+        else
+        {
+            throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Expected ',' or '}'");
+        }
+        currIt++;
+    }
+    throw ParsingError((*start)->getRow(), (*start)->getColumn(), "Expected '}'");
 }
 
 bool GobLang::Compiler::ReversePolishGenerator::_isElseChainToken(std::vector<Token *>::const_iterator const &it)

@@ -19,6 +19,7 @@ namespace GobLang::Compiler
         While,
         Continue,
         Break,
+        Struct,
         FunctionReturnType
     };
 
@@ -120,7 +121,8 @@ namespace GobLang::Compiler
         {"else", Keyword::Else},
         // this is kinda cheating but it's also less clunky than whole special parser
         {"->", Keyword::FunctionReturnType},
-        {"let", Keyword::Let}};
+        {"let", Keyword::Let},
+        {"struct", Keyword::Struct}};
 
     static const std::map<std::string, bool> Booleans = {
         {"true", true},

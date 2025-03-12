@@ -34,3 +34,13 @@ std::string GobLang::Compiler::ArrayCreationToken::toString()
 {
     return "ARRAY_SIZE_" + std::to_string(getArgCount());
 }
+
+std::string GobLang::Compiler::ConstructorCallToken::toString()
+{
+    return "NEW_" + std::to_string(m_structId) + "_" + std::to_string(getArgCount());
+}
+
+bool GobLang::Compiler::ConstructorCallToken::validateArgumentCount()
+{
+    return m_expectedArgCount == getArgCount();
+}

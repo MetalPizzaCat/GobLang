@@ -30,11 +30,12 @@ int main()
     comp.parse();
     comp.printCode();
     GobLang::Compiler::Validator validator(comp);
-    validator.validate();
+    //validator.validate();
     GobLang::Compiler::ReversePolishGenerator rev(comp);
     rev.compile();
     rev.printCode();
     rev.printFunctions();
+    rev.printStructs();
     GobLang::Compiler::Compiler compiler(rev);
     compiler.generateByteCode();
     // compiler.printLocalFunctionInfo();

@@ -5,15 +5,17 @@
 #include <string>
 #include <cassert>
 #include <exception>
-
+#include <memory>
 #include "Type.hpp"
 #include "Memory.hpp"
 #include "Operations.hpp"
 #include "Value.hpp"
 #include "Array.hpp"
 #include "Exception.hpp"
+#include "Structure.hpp"
 #include "../compiler/ByteCode.hpp"
 
+using namespace GobLang::Struct;
 namespace GobLang
 {
     /**
@@ -234,6 +236,8 @@ namespace GobLang
 
         inline void _createArray();
 
+        inline void _new();
+
         bool m_forcedEnd = false;
 
         MemoryNode m_memoryRoot;
@@ -254,6 +258,7 @@ namespace GobLang
         std::vector<std::vector<MemoryValue>> m_variables = {{}};
         std::vector<std::string> m_constStrings;
         std::vector<Function> m_functions;
+        std::vector<std::unique_ptr<Struct::Structure>> m_structures;
 
         /**
          * @brief Return locations for all of the call operations. This points to where the jump happened from

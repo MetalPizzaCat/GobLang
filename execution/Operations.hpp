@@ -78,6 +78,10 @@ namespace GobLang
          */
         CreateArray,
         /**
+         * @brief Create a new object from a structure. Uses 
+         */
+        New,
+        /**
          * @brief End program execution
          */
         End
@@ -144,6 +148,7 @@ namespace GobLang
         OperationData{.op = Operation::ShrinkLocal, .text = "local_free", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::Return, .text = "ret", .argType = OperatorArgType::None},
         OperationData{.op = Operation::ReturnValue, .text = "ret_val", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::New, .text = "new", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::End, .text = "hlt", .argType = OperatorArgType::None},
     };
 } // namespace SimpleLang

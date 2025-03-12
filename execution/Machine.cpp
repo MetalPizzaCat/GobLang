@@ -6,6 +6,12 @@ GobLang::Machine::Machine(Compiler::ByteCode const &code)
     m_constStrings = code.ids;
     m_operations = code.operations;
     m_functions = code.functions;
+    for (Struct::Structure const &structure : code.structures)
+    {
+        Structure *str = new Structure();
+        *str = structure;
+        m_structures.push_back(std::unique_ptr<Structure>(str));
+    }
 }
 void GobLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
 
@@ -153,6 +159,9 @@ void GobLang::Machine::step()
         break;
     case Operation::CreateArray:
         _createArray();
+        break;
+    case Operation::New:
+        _new();
         break;
     case Operation::End:
         m_forcedEnd = true;
@@ -1065,4 +1074,14 @@ void GobLang::Machine::_createArray()
         array->setItem(i, _getFromTopAndPop());
     }
     pushToStack(MemoryValue{.type = Type::MemoryObj, .value = array});
+}
+
+inline void GobLang::Machine::_new()
+{
+    m_programCounter++;
+    size_t structId = m_operations[m_programCounter];
+
+    StructureObjectNode *obj = new StructureObjectNode(m_structures[structId].get());
+    addObject(obj);
+    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = obj});
 }

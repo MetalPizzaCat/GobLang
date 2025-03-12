@@ -1,5 +1,5 @@
 #pragma once
-
+#include <memory>
 #include "Parser.hpp"
 #include "../execution/Function.hpp"
 #include "CompilerToken.hpp"
@@ -51,6 +51,9 @@ namespace GobLang::Compiler
          */
         void printFunctions();
 
+        /// @brief Prints available struct info
+        void printStructs();
+
         void addToken(Token *token);
 
         /**
@@ -66,6 +69,8 @@ namespace GobLang::Compiler
 
         std::vector<std::string> const &getIds() const { return m_parser.getIds(); }
 
+        std::vector<std::unique_ptr<Struct::Structure>> const &getStructs() const { return m_structs; }
+
         std::vector<FunctionTokenSequence *> const &getFuncs() const { return m_funcs; }
 
         ~ReversePolishGenerator();
@@ -77,13 +82,16 @@ namespace GobLang::Compiler
         void _popVariableBlock();
         void _appendVariable(size_t stringId);
         void _compileSeparators(SeparatorToken *sepToken, std::vector<Token *>::const_iterator const &it);
-        
+        void _compileFunctionCall(IdToken const *name, SeparatorToken const *sep);
+
+        bool _isIdUsedForFunctionCall(size_t id);
+
         /**
          * @brief Check if previous token is a valid array construct which could be addressed via an array access operation. This accounts for ], ) and ID
-         * 
-         * @param it 
-         * @return true 
-         * @return false 
+         *
+         * @param it
+         * @return true
+         * @return false
          */
         bool _isPreviousTokenValidArrayParent(std::vector<Token *>::const_iterator const &it);
 
@@ -94,9 +102,18 @@ namespace GobLang::Compiler
          *  Unlike other compiler functions this one has to operate outside of the usual parsing process to generate function info
          *
          * @param start
-         * @param end
+         * @param end End of the function declaration
          */
         void _compileFunction(std::vector<Token *>::const_iterator const &start, std::vector<Token *>::const_iterator &end);
+
+        /**
+         * @brief Parse structure declaration and store its data. Like function header parsing this is handled in one big swoop.
+         * This is done to avoid polluting main code handler
+         *
+         * @param start
+         * @param end End of the structure declaration
+         */
+        void _compileStructure(std::vector<Token *>::const_iterator const &start, std::vector<Token *>::const_iterator &end);
 
         bool _isElseChainToken(std::vector<Token *>::const_iterator const &it);
 
@@ -129,6 +146,7 @@ namespace GobLang::Compiler
         std::vector<GotoToken *> m_jumps;
 
         std::vector<FunctionTokenSequence *> m_funcs;
+        std::vector<std::unique_ptr<Struct::Structure>> m_structs;
         FunctionTokenSequence *m_currentFunction = nullptr;
 
         std::vector<Token *>::const_iterator m_it;
@@ -141,7 +159,7 @@ namespace GobLang::Compiler
 
         /**
          * @brief Stack of tokens that require a comma separated sequence
-         * 
+         *
          */
         std::vector<MultiArgToken *> m_multiArgSequences;
 

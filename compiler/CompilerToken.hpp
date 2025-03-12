@@ -63,6 +63,29 @@ namespace GobLang::Compiler
         bool m_usesLocalFunc = false;
     };
 
+    class ConstructorCallToken : public MultiArgToken
+    {
+    public:
+        explicit ConstructorCallToken(
+            size_t row,
+            size_t column,
+            size_t structId,
+            size_t expectedArgCount = 0) : MultiArgToken(row, column),
+                                           m_structId(structId),
+                                           m_expectedArgCount(expectedArgCount)
+        {
+        }
+        std::string toString() override;
+        bool validateArgumentCount() override;
+
+        size_t getStructId() const { return m_structId; }
+        size_t getExpectedArgumentCount() override { return m_expectedArgCount; }
+
+    private:
+        size_t m_structId;
+        size_t m_expectedArgCount = 0;
+    };
+
     /**
      * @brief Class representing an array literal. For example a = [1,2,3] will create an array that will be pushed onto the stack
      *
