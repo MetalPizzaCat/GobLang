@@ -12,7 +12,7 @@ namespace GobLang
         void setItem(size_t i, MemoryValue const &item);
         MemoryValue *getItem(size_t i);
 
-        std::string toString(bool pretty) override;
+        std::string toString(bool pretty, size_t depth) override;
 
         size_t getSize() const { return m_data.size(); }
 

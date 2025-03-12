@@ -9,6 +9,8 @@ add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
 add_compile_definitions(GOB_LANG_VERSION_MINOR=6)
 add_compile_definitions(GOB_LANG_VERSION_PATCH=0)
 
+add_compile_definitions(MAX_PRINT_DEPTH=1000)
+
 add_compile_definitions(LINES_BEFORE_ERROR=3)
 add_compile_definitions(LINES_AFTER_ERROR=3)
 

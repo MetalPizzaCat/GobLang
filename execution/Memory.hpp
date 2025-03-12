@@ -74,7 +74,7 @@ namespace GobLang
          * @param pretty If true then this object should be printed with type decorations. Only is relevant for string types
          * @return std::string String representation
          */
-        virtual std::string toString(bool pretty = false) { return "Memory object"; }
+        virtual std::string toString(bool pretty = false, size_t depth = 0) { return "Memory object"; }
 
         virtual ~MemoryNode() = default;
 
@@ -100,7 +100,7 @@ namespace GobLang
 
         std::string const &getString() { return m_str; }
 
-        std::string toString(bool pretty) override;
+        std::string toString(bool pretty, size_t depth) override;
 
         char getCharAt(size_t ind);
 

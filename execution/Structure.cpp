@@ -60,12 +60,12 @@ GobLang::MemoryValue GobLang::Struct::StructureObjectNode::getField(std::string 
     return m_fields[m_fieldNames[field]];
 }
 
-std::string GobLang::Struct::StructureObjectNode::toString(bool pretty)
+std::string GobLang::Struct::StructureObjectNode::toString(bool pretty, size_t depth)
 {
     std::string start = "{";
     for (std::vector<MemoryValue>::const_iterator it = m_fields.begin(); it != m_fields.end(); it++)
     {
-        start += m_struct->fields[it - m_fields.begin()].name + "=" + valueToString(*it, pretty);
+        start += m_struct->fields[it - m_fields.begin()].name + "=" + valueToString(*it, pretty, depth);
 
         start += (it + 1 == m_fields.end()) ? "}" : ",";
     }

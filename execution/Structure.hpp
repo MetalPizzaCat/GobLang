@@ -43,7 +43,7 @@ namespace GobLang::Struct
         void setField(std::string const &field, MemoryValue const &value);
         MemoryValue getField(std::string const &field);
 
-        virtual std::string toString(bool pretty = false);
+        virtual std::string toString(bool pretty = false, size_t depth = 0);
 
     private:
         Structure const* m_struct;

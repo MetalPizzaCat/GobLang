@@ -8,6 +8,7 @@
 
 namespace GobLang
 {
+    static size_t MAX_PRINT_RECURSION_DEPTH = MAX_PRINT_DEPTH;
     class Machine;
     class MemoryNode;
     using FunctionValue = std::function<void(Machine *)>;
@@ -36,5 +37,5 @@ namespace GobLang
      * @param pretty Whether to add decorators. Only is relevant for strings during printing
      * @return std::string
      */
-    std::string valueToString(MemoryValue const &val, bool pretty);
+    std::string valueToString(MemoryValue const &val, bool pretty, size_t depth);
 }

@@ -32,7 +32,7 @@ void MachineFunctions::printLine(GobLang::Machine *machine)
         std::cerr << "Invalid value to print" << std::endl;
         return;
     }
-    std::cout << GobLang::valueToString(*v, true) << std::endl;
+    std::cout << GobLang::valueToString(*v, false, 0) << std::endl;
     delete v;
 }
 
@@ -44,7 +44,7 @@ void MachineFunctions::print(GobLang::Machine *machine)
         std::cerr << "Invalid value to print" << std::endl;
         return;
     }
-    std::cout << GobLang::valueToString(*v, true);
+    std::cout << GobLang::valueToString(*v, false, 0);
     delete v;
 }
 
@@ -102,7 +102,7 @@ void MachineFunctions::toString(GobLang::Machine *machine)
     GobLang::MemoryValue *val = machine->getStackTopAndPop();
     machine->pushToStack(GobLang::MemoryValue{
         .type = GobLang::Type::MemoryObj,
-        .value = machine->createString(GobLang::valueToString(*val, false))});
+        .value = machine->createString(GobLang::valueToString(*val, false, 0))});
     delete val;
 }
 
