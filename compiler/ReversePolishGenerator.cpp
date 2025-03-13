@@ -119,8 +119,8 @@ void GobLang::Compiler::ReversePolishGenerator::printStructs()
         {
             std::cout << f.name << std::endl;
         }
+        std::cout << "end_struct" << std::endl;
     }
-    std::cout << "end_struct" << std::endl;
 }
 
 void GobLang::Compiler::ReversePolishGenerator::addToken(Token *token)
@@ -665,7 +665,7 @@ bool GobLang::Compiler::ReversePolishGenerator::_isElifChainToken(std::vector<To
 
 void GobLang::Compiler::ReversePolishGenerator::_printTokenStack()
 {
-    std::cout << "STack: " << std::endl;
+    std::cout << "Stack: " << std::endl;
     for (std::vector<Token *>::iterator it = m_stack.begin(); it != m_stack.end(); it++)
     {
         std::cout << (*it)->toString() << std::endl;

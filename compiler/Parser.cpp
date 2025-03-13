@@ -30,6 +30,11 @@ bool GobLang::Compiler::Parser::skipComments()
 
 void GobLang::Compiler::Parser::parse()
 {
+
+    if (m_code.empty())
+    {
+        return;
+    }
     std::vector<std::function<Token *(void)>> parsers = {
         std::bind(&Parser::parseBool, this),
         std::bind(&Parser::parseNullConst, this),
@@ -46,9 +51,9 @@ void GobLang::Compiler::Parser::parse()
 
         std::bind(&Parser::parseSeparators, this),
     };
-
-    while (m_rowIt != getEndOfTheLine() && m_lineIt != m_code.end())
+    do
     {
+
         skipWhitespace();
         if (skipComments())
         {
@@ -71,7 +76,7 @@ void GobLang::Compiler::Parser::parse()
         }
         skipWhitespace();
         skipComments();
-    }
+    } while (m_rowIt != getEndOfTheLine() && m_lineIt != m_code.end());
 }
 
 bool GobLang::Compiler::Parser::tryKeyword(std::string const &keyword)
@@ -613,8 +618,11 @@ void GobLang::Compiler::Parser::printCode()
 }
 GobLang::Compiler::Parser::Parser(std::vector<std::string> const &code) : m_code(code)
 {
-    m_lineIt = m_code.begin();
-    m_rowIt = m_lineIt->begin();
+    if (!code.empty())
+    {
+        m_lineIt = m_code.begin();
+        m_rowIt = m_lineIt->begin();
+    }
 }
 
 GobLang::Compiler::Parser::Parser(std::string const &code)

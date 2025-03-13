@@ -321,7 +321,7 @@ void GobLang::Machine::shrinkLocalVariableStackBy(size_t size)
             std::get<MemoryNode *>(it->value)->decreaseRefCount();
         }
     }
-    m_variables.back().resize(m_variables.size() - size);
+    m_variables.back().resize(m_variables.back().size() - size);
 }
 
 void GobLang::Machine::removeFunctionFrame()

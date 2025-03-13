@@ -1,0 +1,84 @@
+type LinkedList{
+    next,
+    data
+}
+
+func push_back(root, data){
+    let curr = root;
+    while(curr.next != null){
+        curr = curr.next;
+    }
+    curr.next = LinkedList();
+    curr.next.data = data;
+}
+
+func erase(root){
+    if(root.next != null){
+        root.next = root.next.next;
+    }
+}
+
+func length(root){
+    let size = 0;
+    let curr = root;
+    while(curr.next != null)
+    {
+        curr = curr.next;
+        size += 1;
+    }
+    return size;
+}
+func at(root, i){
+    let curr = 0;
+    let node = root;
+    while(curr < i){
+        if(node == null){
+            return null;
+        }
+        curr += 1;
+        node = node.next;
+    }
+    return node;
+}
+
+func remove(root, val){
+    let prev = root;
+    let curr = root.next;
+    while(curr.data != val){
+        prev = curr;
+        curr = curr.next;
+        if(curr == null){
+            return;
+        }
+    }
+    erase(prev);
+}
+
+func print_seq(root){
+    let curr = root;
+    while(curr != null){
+        print(curr.data);
+        if(curr.next != null){
+            print(", ");
+        }
+        curr = curr.next;
+    }
+    print_line("");
+}
+let root = LinkedList();
+
+print_line(root);
+push_back(root, u3);
+print_line(root);
+push_back(root, u4);
+push_back(root, u1);
+push_back(root, u2);
+push_back(root, u6);
+push_back(root, "chop choo");
+print_line(root);
+print_seq(root);
+print_line(at(root, 4));
+print_line(length(root));
+remove(root, u6);
+print_seq(root);
+print_line("experiment over");
