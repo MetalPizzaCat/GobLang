@@ -71,3 +71,14 @@ std::string GobLang::Struct::StructureObjectNode::toString(bool pretty, size_t d
     }
     return start;
 }
+
+GobLang::Struct::StructureObjectNode::~StructureObjectNode()
+{
+    for (std::vector<MemoryValue>::iterator it = m_fields.begin(); it != m_fields.end(); it++)
+    {
+        if (it->type == Type::MemoryObj)
+        {
+            std::get<MemoryNode *>(it->value)->decreaseRefCount();
+        }
+    }
+}

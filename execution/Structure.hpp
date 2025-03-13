@@ -45,6 +45,7 @@ namespace GobLang::Struct
 
         virtual std::string toString(bool pretty = false, size_t depth = 0);
 
+        virtual ~StructureObjectNode();
     private:
         Structure const* m_struct;
         std::vector<MemoryValue> m_fields;

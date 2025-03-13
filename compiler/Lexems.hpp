@@ -122,7 +122,7 @@ namespace GobLang::Compiler
         // this is kinda cheating but it's also less clunky than whole special parser
         {"->", Keyword::FunctionReturnType},
         {"let", Keyword::Let},
-        {"struct", Keyword::Struct}};
+        {"type", Keyword::Struct}};
 
     static const std::map<std::string, bool> Booleans = {
         {"true", true},
