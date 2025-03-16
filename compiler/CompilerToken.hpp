@@ -83,6 +83,18 @@ namespace GobLang::Compiler
         size_t m_structId;
     };
 
+    class MethodCallToken : public FunctionCallToken
+    {
+    public:
+        explicit MethodCallToken(size_t row, size_t column, size_t methodName) : FunctionCallToken(row, column, -1), m_methodNameId(methodName) {}
+        std::string toString() override;
+
+        size_t getMethodNameId() const { return m_methodNameId; }
+
+    private:
+        size_t m_methodNameId;
+    };
+
     /**
      * @brief Class representing an array literal. For example a = [1,2,3] will create an array that will be pushed onto the stack
      *

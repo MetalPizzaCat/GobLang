@@ -321,6 +321,17 @@ void GobLang::Compiler::Compiler::_generateMultiArg(MultiArgToken const *multiTo
         bytes.push_back((uint8_t)Operation::New);
         bytes.push_back((uint8_t)contr->getStructId());
     }
+    else if (MethodCallToken *method = dynamic_cast<MethodCallToken *>(*it); method != nullptr)
+    {
+        // method call also has to grab the caller which will be the secret first argument   
+        std::vector<uint8_t> temp = (*stack.rbegin())->getOperationGetBytes();
+        bytes.insert(bytes.end(), temp.begin(), temp.end());
+        stack.pop_back();
+
+        bytes.push_back((uint8_t)Operation::PushConstString);
+        bytes.push_back((uint8_t)method->getMethodNameId());
+        bytes.push_back((uint8_t)Operation::CallMethod);
+    }
     else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
     {
         if (func->usesLocalFunction())

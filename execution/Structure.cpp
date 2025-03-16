@@ -4,7 +4,10 @@
 
 GobLang::Struct::StructureObjectNode::StructureObjectNode(Structure const *base) : m_struct(base)
 {
-
+    if (base == nullptr)
+    {
+        return;
+    }
     for (Field const &field : base->fields)
     {
         m_fieldNames[field.name] = m_fields.size();

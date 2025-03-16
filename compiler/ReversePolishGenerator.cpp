@@ -368,6 +368,23 @@ bool GobLang::Compiler::ReversePolishGenerator::_isFieldName(std::vector<Token *
     return false;
 }
 
+bool GobLang::Compiler::ReversePolishGenerator::_isMethodName(std::vector<Token *>::const_iterator const &it)
+{
+    if (it == m_parser.getTokens().begin() || (it + 1) == m_parser.getTokens().end())
+    {
+        return false;
+    }
+    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(it - 1)); sepTok == nullptr || sepTok->getSeparator() != Separator::Dot)
+    {
+        return false;
+    }
+    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(it + 1)); sepTok != nullptr)
+    {
+        return sepTok->getSeparator() == Separator::BracketOpen;
+    }
+    return false;
+}
+
 bool GobLang::Compiler::ReversePolishGenerator::_isPreviousTokenValidArrayParent(std::vector<Token *>::const_iterator const &it)
 {
     // to avoid dealing with reverse iterators just check if it's the first one
@@ -788,7 +805,7 @@ void GobLang::Compiler::ReversePolishGenerator::_handleBracketClose(SeparatorTok
     }
 }
 
-void GobLang::Compiler::ReversePolishGenerator::_compileIdToken(IdToken const *id, std::vector<Token *>::const_iterator const &it)
+void GobLang::Compiler::ReversePolishGenerator::_compileIdToken(IdToken const *id, std::vector<Token *>::const_iterator &it)
 {
     bool isFieldName = false;
     if (m_isVariableDeclaration)
@@ -798,6 +815,16 @@ void GobLang::Compiler::ReversePolishGenerator::_compileIdToken(IdToken const *i
         addToken(local);
         m_compilerTokens.push_back(local);
         m_isVariableDeclaration = false;
+    }
+    else if (_isMethodName(it))
+    {
+        popStack();
+        MethodCallToken *token = new MethodCallToken(id->getRow(), id->getColumn(), id->getId());
+        // we have to advance it once to avoid it starting another function parsing
+        it++;
+        m_compilerTokens.push_back(token);
+        m_stack.push_back(token);
+        m_multiArgSequences.push_back(token);
     }
     else if (_isFieldName(m_it))
     {

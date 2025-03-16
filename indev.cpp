@@ -5,10 +5,68 @@
 #include "compiler/ReversePolishGenerator.hpp"
 #include "compiler/Compiler.hpp"
 #include "execution/Machine.hpp"
+#include "execution/NativeStructure.hpp"
 #include "compiler/Validator.hpp"
 
 #include "standard/MachineFunctions.hpp"
 #include "compiler/Disassembly.hpp"
+
+using namespace GobLang;
+class NativeNode : public GobLang::Struct::NativeStructureObjectNode
+{
+public:
+    inline static const std::string ClassName = "NativeObject";
+    explicit NativeNode(std::string const &path, NativeStructureInfo const *info) : NativeStructureObjectNode(info), m_path(path) {}
+
+    void doAThing(int32_t a, int32_t b, int32_t c)
+    {
+        std::cout << "Bazinga: " << this << " -> " << a << ',' << b << ',' << c << ',' << std::endl;
+    }
+
+    static void nativeDoAThing(GobLang::Machine *m)
+    {
+        std::unique_ptr<MemoryValue> selfObj = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+        std::unique_ptr<MemoryValue> p3 = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+        std::unique_ptr<MemoryValue> p2 = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+        std::unique_ptr<MemoryValue> p1 = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+
+        if (selfObj->type == Type::MemoryObj)
+        {
+            if (NativeNode *self = dynamic_cast<NativeNode *>(std::get<MemoryNode *>(selfObj->value)); self != nullptr)
+            {
+                self->doAThing(std::get<int32_t>(p1->value), std::get<int32_t>(p2->value), std::get<int32_t>(p3->value));
+                return;
+            }
+        }
+        throw RuntimeException("Invalid parameter");
+    }
+
+    static void constructor(GobLang::Machine *m)
+    {
+        using namespace GobLang;
+        std::unique_ptr<MemoryValue> strParam = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+
+        if (strParam->type == Type::MemoryObj)
+        {
+            if (StringNode *str = dynamic_cast<StringNode *>(std::get<MemoryNode *>(strParam->value)); str != nullptr)
+            {
+                NativeNode *native = new NativeNode(str->getString(), m->getNativeStructure(NativeNode::ClassName));
+                m->addObject(native);
+                m->pushObjectToStack(native);
+                return;
+            }
+        }
+        throw RuntimeException("Invalid parameter");
+    }
+
+    std::string toString(bool pretty = false, size_t depth = 0) override { return NativeNode::ClassName + "(" + m_path + ")"; }
+    virtual ~NativeNode() {}
+
+private:
+    std::string m_path;
+    void _secret() {}
+};
+
 int main()
 {
     std::string file = "./code.gob";
@@ -30,7 +88,7 @@ int main()
     comp.parse();
     comp.printCode();
     GobLang::Compiler::Validator validator(comp);
-    //validator.validate();
+    // validator.validate();
     GobLang::Compiler::ReversePolishGenerator rev(comp);
     rev.compile();
     rev.printCode();
@@ -43,6 +101,7 @@ int main()
 
     GobLang::Machine machine(compiler.getByteCode());
     MachineFunctions::bind(&machine);
+    machine.createType("NativeObject", NativeNode::constructor, {{"do_a_thing", NativeNode::nativeDoAThing}});
     std::vector<size_t> debugPoints = {};
     while (!machine.isAtTheEnd())
     {

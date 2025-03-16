@@ -86,6 +86,7 @@ namespace GobLang::Compiler
 
         bool _isIdUsedForFunctionCall(size_t id);
         bool _isFieldName(std::vector<Token *>::const_iterator const &it);
+        bool _isMethodName(std::vector<Token *>::const_iterator const &it);
 
         /**
          * @brief Check if previous token is a valid array construct which could be addressed via an array access operation. This accounts for ], ) and ID
@@ -129,7 +130,7 @@ namespace GobLang::Compiler
 
         void _handleBracketClose(SeparatorToken const *sepTok, std::vector<Token *>::const_iterator const &it);
 
-        void _compileIdToken(IdToken const *idToken, std::vector<Token *>::const_iterator const &it);
+        void _compileIdToken(IdToken const *idToken, std::vector<Token *>::const_iterator &it);
 
         /**
          * @brief Check if this is valid binary operation
