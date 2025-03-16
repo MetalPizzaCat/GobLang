@@ -16,12 +16,14 @@ void MachineFunctions::bind(GobLang::Machine *machine)
     machine->addFunction(MachineFunctions::Math::toFloat, "float");
     machine->addFunction(MachineFunctions::Math::randomIntInRange, "rand_range");
     machine->addFunction(MachineFunctions::Math::randomInt, "rand");
-    machine->addFunction(MachineFunctions::File::openFile, "file_open");
-    machine->addFunction(MachineFunctions::File::closeFile, "file_close");
-    machine->addFunction(MachineFunctions::File::writeToFile, "file_write");
-    machine->addFunction(MachineFunctions::File::isFileOpen, "file_is_open");
-    machine->addFunction(MachineFunctions::File::readLineFromFile, "file_read_line");
-    machine->addFunction(MachineFunctions::File::isFileEnded, "file_is_eof");
+
+    machine->createType("File", File::FileNode::constructor, {
+        {"close", File::FileNode::nativeCloseFile},
+        {"write", File::FileNode::nativeWriteToFile},
+        {"is_eof", File::FileNode::nativeIsFileEnded},
+        {"read_line", File::FileNode::nativeReadLineFromFile},
+        {"is_open", File::FileNode::nativeIsFileOpen}
+    });
 }
 void MachineFunctions::printLine(GobLang::Machine *machine)
 

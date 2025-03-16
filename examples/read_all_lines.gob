@@ -1,16 +1,16 @@
 func read_all_lines(file)
 {
     let result = array(0);
-    while(!file_is_eof(file))
+    while(!file.is_eof())
     {
-        append(result, file_read_line(file));
+        append(result, file.read_line());
     }
     return result;
 }
 
 
-file = file_open("./text.txt", true);
-if(!file_is_open(file)){
+file = File("./text.txt", true);
+if(!file.is_open()){
     print_line("Unable to open file");
 }
 else{
@@ -18,5 +18,5 @@ else{
     let lines = read_all_lines(file);
     print_line("File lines: " + str(sizeof(lines)));
     print_line(lines);
-    file_close(file);
+    file.close();
 }

@@ -1,20 +1,21 @@
-let file = file_open("./text.txt", false);
-if(!file_is_open(file)){
+let file = File("./text.txt", false);
+if(!file.is_open()){
     print_line("Unable to open file");
 }
 else{
-    file_write(file, "hello dingus");
-    file_close(file);
+    file.write("hello dingus\n");
+    file.write("new way!");
+    file.close();
 }
-file = file_open("./text.txt", true);
-if(!file_is_open(file)){
+file = File("./text.txt", true);
+if(!file.is_open()){
     print_line("Unable to open file");
 }
 else{
     print_line("File contents:" );
-    while(!file_is_eof(file))
+    while(!file.is_eof())
     {
-        print_line(file_read_line(file));
+        print_line(file.read_line());
     }
-    file_close(file);
+    file.close()
 }

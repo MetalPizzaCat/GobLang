@@ -1,6 +1,9 @@
 #include "File.hpp"
+#include <memory>
 
-MachineFunctions::File::FileNode::FileNode(std::string const &path, bool read)
+using namespace GobLang;
+
+MachineFunctions::File::FileNode::FileNode(std::string const &path, bool read, NativeStructureInfo const *info) : NativeStructureObjectNode(info)
 {
     if (read)
     {
@@ -29,19 +32,10 @@ std::string MachineFunctions::File::FileNode::readLine()
     return out;
 }
 
-MachineFunctions::File::FileNode::~FileNode()
+void MachineFunctions::File::FileNode::constructor(GobLang::Machine *m)
 {
-    if (m_file.is_open())
-    {
-        m_file.close();
-    }
-}
-
-void MachineFunctions::File::openFile(GobLang::Machine *m)
-{
-    using namespace GobLang;
-    MemoryValue *read = m->getStackTopAndPop();
-    MemoryValue *path = m->getStackTopAndPop();
+    std::unique_ptr<MemoryValue> read = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+    std::unique_ptr<MemoryValue> path = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
     if (path == nullptr)
     {
         throw RuntimeException("Missing file name for file open operation");
@@ -52,7 +46,7 @@ void MachineFunctions::File::openFile(GobLang::Machine *m)
     }
     if (StringNode *str = dynamic_cast<StringNode *>(std::get<MemoryNode *>(path->value)); str != nullptr)
     {
-        FileNode *f = new FileNode(str->getString(), std::get<bool>(read->value));
+        FileNode *f = new FileNode(str->getString(), std::get<bool>(read->value), m->getNativeStructure("File"));
         m->addObject(f);
         m->pushToStack(MemoryValue{.type = Type::MemoryObj, .value = f});
     }
@@ -60,14 +54,18 @@ void MachineFunctions::File::openFile(GobLang::Machine *m)
     {
         throw RuntimeException("File open argument is not a string");
     }
-
-    delete path;
 }
 
-void MachineFunctions::File::closeFile(GobLang::Machine *m)
+MachineFunctions::File::FileNode::~FileNode()
 {
-    using namespace GobLang;
-    MemoryValue *file = m->getStackTopAndPop();
+    if (m_file.is_open())
+    {
+        m_file.close();
+    }
+}
+void MachineFunctions::File::FileNode::nativeCloseFile(GobLang::Machine *m)
+{
+    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
     if (file->type != Type::MemoryObj)
     {
         throw RuntimeException("Expected file handle object");
@@ -75,7 +73,6 @@ void MachineFunctions::File::closeFile(GobLang::Machine *m)
     if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
     {
         fileNode->close();
-        delete file;
     }
     else
     {
@@ -83,10 +80,9 @@ void MachineFunctions::File::closeFile(GobLang::Machine *m)
     }
 }
 
-void MachineFunctions::File::isFileOpen(GobLang::Machine *m)
+void MachineFunctions::File::FileNode::nativeIsFileOpen(GobLang::Machine *m)
 {
-    using namespace GobLang;
-    MemoryValue *file = m->getStackTopAndPop();
+    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
     if (file->type != Type::MemoryObj)
     {
         throw RuntimeException("Expected file handle object");
@@ -94,7 +90,6 @@ void MachineFunctions::File::isFileOpen(GobLang::Machine *m)
     if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
     {
         m->pushToStack(MemoryValue{.type = Type::Bool, .value = fileNode->isOpen()});
-        delete file;
     }
     else
     {
@@ -102,16 +97,16 @@ void MachineFunctions::File::isFileOpen(GobLang::Machine *m)
     }
 }
 
-void MachineFunctions::File::writeToFile(GobLang::Machine *m)
+void MachineFunctions::File::FileNode::nativeWriteToFile(GobLang::Machine *m)
 {
     using namespace GobLang;
-    MemoryValue *text = m->getStackTopAndPop();
-    MemoryValue *file = m->getStackTopAndPop();
+    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+    std::unique_ptr<MemoryValue> text = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
     if (file == nullptr)
     {
         throw RuntimeException("Expected file handle object");
     }
-    if (text == nullptr)
+    if (text.get() == nullptr)
     {
         throw RuntimeException("Expected string argument");
     }
@@ -122,8 +117,6 @@ void MachineFunctions::File::writeToFile(GobLang::Machine *m)
     if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
     {
         fileNode->writeToFile(valueToString(*text, false, 0));
-        delete file;
-        delete text;
     }
     else
     {
@@ -131,10 +124,10 @@ void MachineFunctions::File::writeToFile(GobLang::Machine *m)
     }
 }
 
-void MachineFunctions::File::readLineFromFile(GobLang::Machine *m)
+void MachineFunctions::File::FileNode::nativeReadLineFromFile(GobLang::Machine *m)
 {
     using namespace GobLang;
-    MemoryValue *file = m->getStackTopAndPop();
+    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
     if (file->type != Type::MemoryObj)
     {
         throw RuntimeException("Expected file handle object");
@@ -151,8 +144,6 @@ void MachineFunctions::File::readLineFromFile(GobLang::Machine *m)
         {
             m->pushToStack(MemoryValue{.type = Type::Null, .value = 0});
         }
-
-        delete file;
     }
     else
     {
@@ -160,10 +151,9 @@ void MachineFunctions::File::readLineFromFile(GobLang::Machine *m)
     }
 }
 
-void MachineFunctions::File::isFileEnded(GobLang::Machine *m)
+void MachineFunctions::File::FileNode::nativeIsFileEnded(GobLang::Machine *m)
 {
-    using namespace GobLang;
-    MemoryValue *file = m->getStackTopAndPop();
+    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
     if (file->type != Type::MemoryObj)
     {
         throw RuntimeException("Expected file handle object");
@@ -171,7 +161,6 @@ void MachineFunctions::File::isFileEnded(GobLang::Machine *m)
     if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
     {
         m->pushToStack(MemoryValue{.type = Type::Bool, .value = fileNode->isEof()});
-        delete file;
     }
     else
     {

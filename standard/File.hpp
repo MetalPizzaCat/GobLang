@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 #include "../execution/Machine.hpp"
+#include "../execution/NativeStructure.hpp"
 
 namespace MachineFunctions::File
 {
@@ -10,10 +11,10 @@ namespace MachineFunctions::File
      * Primary purpose is to test out a different object binding system and is subject to change
      *
      */
-    class FileNode : public GobLang::MemoryNode
+    class FileNode : public GobLang::Struct::NativeStructureObjectNode
     {
     public:
-        explicit FileNode(std::string const &path, bool read);
+        explicit FileNode(std::string const &path, bool read, NativeStructureInfo const* info);
 
         void writeToFile(std::string const &str);
 
@@ -27,26 +28,26 @@ namespace MachineFunctions::File
 
         std::fstream &getFile() { return m_file; }
 
+        /**
+         * @brief Opens a file and pushes the pointer to the stack
+         *
+         * @param m
+         */
+        static void constructor(GobLang::Machine *m);
+
+        static void nativeCloseFile(GobLang::Machine *m);
+
+        static void nativeIsFileOpen(GobLang::Machine *m);
+
+        static void nativeWriteToFile(GobLang::Machine *m);
+
+        static void nativeReadLineFromFile(GobLang::Machine *m);
+
+        static void nativeIsFileEnded(GobLang::Machine *m);
+
         virtual ~FileNode();
 
     private:
         std::fstream m_file;
     };
-
-    /**
-     * @brief Opens a file and pushes the pointer to the stack
-     *
-     * @param m
-     */
-    void openFile(GobLang::Machine *m);
-
-    void closeFile(GobLang::Machine *m);
-
-    void isFileOpen(GobLang::Machine *m);
-
-    void writeToFile(GobLang::Machine *m);
-
-    void readLineFromFile(GobLang::Machine *m);
-
-    void isFileEnded(GobLang::Machine *m);
 }
