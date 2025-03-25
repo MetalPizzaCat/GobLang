@@ -70,6 +70,11 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
         out.push_back((uint8_t)GobLang::Operation::GetLocal);
         out.push_back((uint8_t)localVarToken->getId());
     }
+    else if (LocalFunctionAccessToken *localFuncToken = dynamic_cast<LocalFunctionAccessToken *>(token); localFuncToken != nullptr)
+    {
+        out.push_back((uint8_t)GobLang::Operation::GetLocalFunction);
+        out.push_back((uint8_t)localFuncToken->getId());
+    }
     else if (CharToken *chTok = dynamic_cast<CharToken *>(token); chTok != nullptr)
     {
         out.push_back((uint8_t)Operation::PushConstChar);
@@ -156,6 +161,10 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
         else if (dynamic_cast<LocalVarToken *>(*it) != nullptr)
         {
             stack.push_back(new LocalVarTokenCompilerNode(*it));
+        }
+        else if (dynamic_cast<LocalFunctionAccessToken *>(*it) != nullptr)
+        {
+            stack.push_back(new OperationCompilerNode(generateGetByteCode(*it)));
         }
         else if (JumpDestinationToken *destToken = dynamic_cast<JumpDestinationToken *>(*it); destToken != nullptr)
         {
@@ -325,7 +334,7 @@ void GobLang::Compiler::Compiler::_generateMultiArg(MultiArgToken const *multiTo
     {
         bytes.push_back((uint8_t)Operation::PushConstString);
         bytes.push_back((uint8_t)method->getMethodNameId());
-        
+
         // method call also has to grab the caller which will be the secret first argument
         std::vector<uint8_t> temp = (*stack.rbegin())->getOperationGetBytes();
         bytes.insert(bytes.end(), temp.begin(), temp.end());
@@ -338,8 +347,9 @@ void GobLang::Compiler::Compiler::_generateMultiArg(MultiArgToken const *multiTo
     {
         if (func->usesLocalFunction())
         {
-            bytes.push_back((uint8_t)Operation::CallLocal);
+            bytes.push_back((uint8_t)Operation::GetLocalFunction);
             bytes.push_back((uint8_t)func->getFuncId());
+            bytes.push_back((uint8_t)Operation::Call);
         }
         else
         {

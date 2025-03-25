@@ -78,6 +78,7 @@ namespace GobLang::Compiler
     private:
         bool _doesVariableExist(size_t stringId);
         int32_t _getLocalVariableAccessId(size_t id);
+        size_t _getFunctionAccessId(size_t nameId);
         void _appendVariableBlock();
         void _popVariableBlock();
         void _appendVariable(size_t stringId);

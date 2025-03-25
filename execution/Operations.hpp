@@ -16,7 +16,7 @@ namespace GobLang
         /**
          * @brief Call a function defined by the user
          */
-        CallLocal,
+        GetLocalFunction,
         Set,
         Get,
         GetLocal,
@@ -122,7 +122,7 @@ namespace GobLang
         OperationData{.op = Operation::Div, .text = "div", .argType = OperatorArgType::None},
         OperationData{.op = Operation::Modulo, .text = "mod", .argType = OperatorArgType::None},
         OperationData{.op = Operation::Call, .text = "call", .argType = OperatorArgType::None},
-        OperationData{.op = Operation::CallLocal, .text = "call_local", .argType = OperatorArgType::Byte},
+        OperationData{.op = Operation::GetLocalFunction, .text = "get_local_func", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::CreateArray, .text = "create_array", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::Set, .text = "set_global", .argType = OperatorArgType::None},
         OperationData{.op = Operation::Get, .text = "get_global", .argType = OperatorArgType::None},

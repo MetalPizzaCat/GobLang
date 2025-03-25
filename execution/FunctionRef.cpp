@@ -4,3 +4,7 @@ GobLang::FunctionRef::FunctionRef(FunctionValue const * func, MemoryNode *owner)
 {
 
 }
+
+GobLang::FunctionRef::FunctionRef(size_t localFuncId) : m_localFuncId(localFuncId)
+{
+}

@@ -152,6 +152,19 @@ namespace GobLang::Compiler
         size_t m_varId;
     };
 
+    class LocalFunctionAccessToken : public Token
+    {
+    public:
+        explicit LocalFunctionAccessToken(size_t row, size_t column, size_t id) : Token(row, column), m_funcId(id) {}
+
+        size_t getId() const { return m_funcId; }
+
+        std::string toString() override { return "FUNC_" + std::to_string(m_funcId); }
+
+    private:
+        size_t m_funcId;
+    };
+
     class LocalVarShrinkToken : public Token
     {
     public:
