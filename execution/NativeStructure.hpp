@@ -21,6 +21,7 @@ namespace GobLang::Struct
             Structure const *baseInfo = nullptr) : StructureObjectNode(baseInfo), m_nativeStruct(info) {}
 
         bool hasNativeMethod(std::string const &name) override;
+        MemoryValue getField(std::string const &field) override;
 
         FunctionValue const *getNativeMethod(std::string const &name) const override;
 

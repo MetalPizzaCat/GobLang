@@ -34,6 +34,8 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Structure.cpp
     execution/NativeStructure.hpp
     execution/NativeStructure.cpp
+    execution/FunctionRef.hpp
+    execution/FunctionRef.cpp
 )
 
 

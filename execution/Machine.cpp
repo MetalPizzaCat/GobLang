@@ -1,4 +1,5 @@
 #include "Machine.hpp"
+#include "FunctionRef.hpp"
 #include <iostream>
 #include <vector>
 GobLang::Machine::Machine(Compiler::ByteCode const &code)
@@ -780,13 +781,31 @@ void GobLang::Machine::_getLocal()
 void GobLang::Machine::_call()
 {
     MemoryValue func = _getFromTopAndPop();
-    if (std::holds_alternative<FunctionValue>(func.value))
+    switch (func.type)
     {
+    case Type::NativeFunction:
         std::get<FunctionValue>(func.value)(this);
-    }
-    else
-    {
-        throw RuntimeException("Attempted to call a function, but top of the stack doesn't contain a function");
+        break;
+    case Type::MemoryObj:
+        if (FunctionRef *f = dynamic_cast<FunctionRef *>(std::get<MemoryNode *>(func.value)); f != nullptr)
+        {
+            if (f->hasOwner())
+            {
+                pushToStack(MemoryValue{.type = Type::MemoryObj, .value = f->getOwner()});
+                f->getFunction()->operator()(this);
+            }
+            else
+            {
+                f->getFunction()->operator()(this);
+            }
+        }
+        else
+        {
+            throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString(func.type));
+        }
+        break;
+    default:
+        throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString(func.type));
     }
 }
 
@@ -937,6 +956,14 @@ inline void GobLang::Machine::_getField()
         {
             pushToStack(arrNode->getField(strNode->getString()));
         }
+        else
+        {
+            throw RuntimeException("Attempted to get field on a but field name is not a string");
+        }
+    }
+    else
+    {
+        throw RuntimeException("Attempted to get field on a non-struct object");
     }
 }
 
