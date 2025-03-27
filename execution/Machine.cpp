@@ -272,7 +272,11 @@ GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool
 
 void GobLang::Machine::addObject(MemoryNode *obj)
 {
-    m_memoryRoot.pushBack(obj);
+    if (!obj->isRegistered())
+    {
+        obj->registerGC();
+        m_memoryRoot.pushBack(obj);
+    }
 }
 
 void GobLang::Machine::popStack()
@@ -974,7 +978,12 @@ inline void GobLang::Machine::_getField()
     {
         if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
         {
-            pushToStack(arrNode->getField(strNode->getString()));
+            MemoryValue v = arrNode->getField(strNode->getString());
+            if(std::holds_alternative<MemoryNode*>(v.value))
+            {
+                addObject(std::get<MemoryNode*>(v.value));
+            }
+            pushToStack(v);
         }
         else
         {
