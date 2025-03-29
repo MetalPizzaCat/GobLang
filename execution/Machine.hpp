@@ -5,15 +5,18 @@
 #include <string>
 #include <cassert>
 #include <exception>
-
+#include <memory>
 #include "Type.hpp"
 #include "Memory.hpp"
 #include "Operations.hpp"
 #include "Value.hpp"
 #include "Array.hpp"
 #include "Exception.hpp"
+#include "Structure.hpp"
 #include "../compiler/ByteCode.hpp"
+#include "NativeStructure.hpp"
 
+using namespace GobLang::Struct;
 namespace GobLang
 {
     /**
@@ -90,6 +93,10 @@ namespace GobLang
 
         void pushToStack(MemoryValue const &val);
 
+        void pushIntToStack(int32_t val);
+        void pushFloatToStack(float val);
+        void pushObjectToStack(MemoryNode *obj);
+
         MemoryValue getVariableValue(std::string const &name) { return m_globals[name]; }
 
         /**
@@ -112,6 +119,10 @@ namespace GobLang
 
         void removeFunctionFrame();
 
+        /// @brief Call local function that is stored under id funcId
+        /// @param funcId Id of the function
+        void callLocalFunction(size_t funcId);
+
         /**
          * @brief Create a custom variable that will be accessible in code. Useful for binding with c code
          *
@@ -120,6 +131,10 @@ namespace GobLang
          */
         void createVariable(std::string const &name, MemoryValue const &value);
 
+        void createType(std::string const &name, FunctionValue const &constructor, std::map<std::string, FunctionValue> const &methods = {});
+
+        NativeStructureInfo const *getNativeStructure(std::string const &name);
+
         void collectGarbage();
 
         ~Machine();
@@ -127,8 +142,12 @@ namespace GobLang
     private:
         inline MemoryValue _operationTop() { return m_operationStack.back().back(); }
 
-        inline MemoryValue _getFromTopAndPop()
+        MemoryValue _getFromTopAndPop()
         {
+            if (m_operationStack.back().empty())
+            {
+                throw RuntimeException("Can not pop from stack because stack is empty");
+            }
             MemoryValue v = _operationTop();
             popStack();
             return v;
@@ -188,7 +207,7 @@ namespace GobLang
 
         inline void _call();
 
-        inline void _callLocal();
+        inline void _getLocalFunc();
 
         inline void _return();
 
@@ -209,6 +228,12 @@ namespace GobLang
         inline void _getArray();
 
         inline void _setArray();
+
+        inline void _getField();
+
+        inline void _setField();
+
+        inline void _callMethod();
 
         inline void _eq();
 
@@ -234,6 +259,8 @@ namespace GobLang
 
         inline void _createArray();
 
+        inline void _new();
+
         bool m_forcedEnd = false;
 
         MemoryNode m_memoryRoot;
@@ -254,6 +281,9 @@ namespace GobLang
         std::vector<std::vector<MemoryValue>> m_variables = {{}};
         std::vector<std::string> m_constStrings;
         std::vector<Function> m_functions;
+        std::vector<std::unique_ptr<Struct::Structure>> m_structures;
+
+        std::map<std::string, std::unique_ptr<Struct::NativeStructureInfo>> m_nativeStructures;
 
         /**
          * @brief Return locations for all of the call operations. This points to where the jump happened from

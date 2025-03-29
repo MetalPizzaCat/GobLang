@@ -8,28 +8,20 @@ namespace GobLang::Compiler
     class CompilerNode
     {
     public:
-        explicit CompilerNode(bool isDestination, size_t destinationId) : m_hasMark(isDestination), m_attachedMark(destinationId) {}
+        explicit CompilerNode() {}
         virtual std::vector<uint8_t> getOperationGetBytes() = 0;
 
         virtual std::vector<uint8_t> getOperationSetBytes() { return {}; }
 
-        void setMark(size_t mark);
-        size_t getMark() const { return m_attachedMark; }
-        bool hasMark() const { return m_hasMark; }
-
         virtual ~CompilerNode() = default;
 
     private:
-        bool m_hasMark;
-        size_t m_attachedMark = 0;
     };
 
     class OperationCompilerNode : public CompilerNode
     {
     public:
-        explicit OperationCompilerNode(std::vector<uint8_t> const &vec,
-                                       bool isDestination,
-                                       size_t destinationId) : CompilerNode(isDestination, destinationId), m_bytes(vec) {}
+        explicit OperationCompilerNode(std::vector<uint8_t> const &vec) : CompilerNode(), m_bytes(vec) {}
 
         std::vector<uint8_t> getOperationGetBytes() override { return m_bytes; }
         virtual ~OperationCompilerNode() = default;
@@ -41,9 +33,7 @@ namespace GobLang::Compiler
     class TokenCompilerNode : public CompilerNode
     {
     public:
-        explicit TokenCompilerNode(Token *token,
-                                   bool isDestination,
-                                   size_t destinationId) : CompilerNode(isDestination, destinationId), m_token(token) {}
+        explicit TokenCompilerNode(Token *token) : CompilerNode(), m_token(token) {}
         std::vector<uint8_t> getOperationGetBytes() override;
 
         std::vector<uint8_t> getOperationSetBytes() override;
@@ -57,18 +47,47 @@ namespace GobLang::Compiler
     class LocalVarTokenCompilerNode : public TokenCompilerNode
     {
     public:
-        explicit LocalVarTokenCompilerNode(Token *token,
-                                           bool isDestination,
-                                           size_t destinationId) : TokenCompilerNode(token, isDestination, destinationId) {}
+        explicit LocalVarTokenCompilerNode(Token *token) : TokenCompilerNode(token) {}
+    };
+
+    class FieldAccessNode : public CompilerNode
+    {
+    public:
+        explicit FieldAccessNode(CompilerNode *object, CompilerNode *field) : m_object(object), m_field(field) {}
+
+        std::vector<uint8_t> getOperationGetBytes() override
+        {
+            std::vector<uint8_t> out = m_field->getOperationGetBytes();
+            std::vector<uint8_t> arrayGetBytes = m_object->getOperationGetBytes();
+            out.insert(out.end(), arrayGetBytes.begin(), arrayGetBytes.end());
+            out.push_back((uint8_t)Operation::GetField);
+            return out;
+        }
+
+        std::vector<uint8_t> getOperationSetBytes() override
+        {
+            std::vector<uint8_t> out = m_field->getOperationGetBytes();
+            std::vector<uint8_t> arrayGetBytes = m_object->getOperationGetBytes();
+            out.insert(out.end(), arrayGetBytes.begin(), arrayGetBytes.end());
+            return out;
+        }
+
+        ~FieldAccessNode()
+        {
+            delete m_object;
+            delete m_field;
+        }
+
+    private:
+        CompilerNode *m_object;
+        CompilerNode *m_field;
     };
 
     class ArrayCompilerNode : public CompilerNode
     {
     public:
         explicit ArrayCompilerNode(CompilerNode *array,
-                                   CompilerNode *index,
-                                   bool isDestination,
-                                   size_t destinationId) : CompilerNode(isDestination, destinationId), m_array(array), m_index(index) {}
+                                   CompilerNode *index) : CompilerNode(), m_array(array), m_index(index) {}
 
         std::vector<uint8_t> getOperationGetBytes() override
         {
@@ -102,10 +121,7 @@ namespace GobLang::Compiler
     class BoolConstCompilerNode : public CompilerNode
     {
     public:
-        explicit BoolConstCompilerNode(
-            bool isDestination,
-            size_t destinationId,
-            bool value) : CompilerNode(isDestination, destinationId), m_value(value) {}
+        explicit BoolConstCompilerNode(bool value) : CompilerNode(), m_value(value) {}
 
         std::vector<uint8_t> getOperationGetBytes() override
         {

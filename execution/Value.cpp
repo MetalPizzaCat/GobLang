@@ -30,8 +30,12 @@ bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
     return false;
 }
 
-std::string GobLang::valueToString(MemoryValue const &val, bool pretty)
-{
+std::string GobLang::valueToString(MemoryValue const &val, bool pretty, size_t depth)
+{   
+    if(depth > MAX_PRINT_RECURSION_DEPTH)
+    {
+        return "...";
+    }
     switch (val.type)
     {
     case Type::Null:
@@ -45,7 +49,7 @@ std::string GobLang::valueToString(MemoryValue const &val, bool pretty)
     case Type::UnsignedInt:
         return std::to_string(std::get<uint32_t>(val.value));
     case Type::MemoryObj:
-        return std::get<MemoryNode *>(val.value)->toString(pretty);
+        return std::get<MemoryNode *>(val.value)->toString(pretty, depth + 1);
     case Type::Char:
         return std::string{std::get<char>(val.value)};
     case Type::NativeFunction:

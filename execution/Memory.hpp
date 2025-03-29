@@ -52,6 +52,12 @@ namespace GobLang
 
         int32_t getRefCount() const { return m_refCount; }
 
+        /// @brief Whether this object has been added to garbage collector
+        /// @return true if  this object is being tracked by the garbage collector
+        bool isRegistered() const { return m_registered; }
+
+        void registerGC() { m_registered = true; }
+
         /**
          * @brief Size of the memory chain
          *
@@ -70,11 +76,11 @@ namespace GobLang
 
         /**
          * @brief Convert given object into a string representation
-         * 
+         *
          * @param pretty If true then this object should be printed with type decorations. Only is relevant for string types
          * @return std::string String representation
          */
-        virtual std::string toString(bool pretty = false) { return "Memory object"; }
+        virtual std::string toString(bool pretty = false, size_t depth = 0) { return "Memory object"; }
 
         virtual ~MemoryNode() = default;
 
@@ -91,6 +97,8 @@ namespace GobLang
         bool m_dead = false;
 
         int32_t m_refCount = 0;
+
+        bool m_registered = false;
     };
 
     class StringNode : public MemoryNode
@@ -100,7 +108,7 @@ namespace GobLang
 
         std::string const &getString() { return m_str; }
 
-        std::string toString(bool pretty) override;
+        std::string toString(bool pretty, size_t depth) override;
 
         char getCharAt(size_t ind);
 

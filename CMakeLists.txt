@@ -6,8 +6,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(USE_STATIC_BUILD ON CACHE BOOL "Build static executable")
 
 add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
-add_compile_definitions(GOB_LANG_VERSION_MINOR=6)
+add_compile_definitions(GOB_LANG_VERSION_MINOR=7)
 add_compile_definitions(GOB_LANG_VERSION_PATCH=0)
+
+add_compile_definitions(MAX_PRINT_DEPTH=1000)
 
 add_compile_definitions(LINES_BEFORE_ERROR=3)
 add_compile_definitions(LINES_AFTER_ERROR=3)
@@ -28,6 +30,12 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Exception.hpp
     execution/Exception.cpp
     execution/Function.hpp
+    execution/Structure.hpp
+    execution/Structure.cpp
+    execution/NativeStructure.hpp
+    execution/NativeStructure.cpp
+    execution/FunctionRef.hpp
+    execution/FunctionRef.cpp
 )
 
 

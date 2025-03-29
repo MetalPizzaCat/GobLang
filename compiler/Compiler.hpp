@@ -22,7 +22,7 @@ namespace GobLang::Compiler
         }
         return res;
     }
-    
+
     class Compiler
     {
     public:
@@ -61,6 +61,24 @@ namespace GobLang::Compiler
     private:
         void _generateBytecodeFor(std::vector<Token *> const &tokens, bool createHaltInstruction);
         void _placeAddressForMark(size_t mark, size_t address, bool erase);
+
+        void _generateGoto(
+            GotoToken const *jmpToken,
+            std::vector<CompilerNode *> &stack,
+            std::vector<Token *>::const_iterator &it);
+        void _generateMultiArg(
+            MultiArgToken const *multiTok,
+            std::vector<CompilerNode *> &stack,
+            std::vector<Token *>::const_iterator &it);
+        void _generateOperator(
+            OperatorToken const *opToken,
+            std::vector<CompilerNode *> &stack,
+            std::vector<Token *>::const_iterator &it);
+
+        void _generateSeparator(
+            SeparatorToken const *opToken,
+            std::vector<CompilerNode *> &stack,
+            std::vector<Token *>::const_iterator &it);
 
         std::vector<uint8_t> m_bytes;
 

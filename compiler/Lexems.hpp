@@ -19,6 +19,7 @@ namespace GobLang::Compiler
         While,
         Continue,
         Break,
+        Struct,
         FunctionReturnType
     };
 
@@ -120,7 +121,8 @@ namespace GobLang::Compiler
         {"else", Keyword::Else},
         // this is kinda cheating but it's also less clunky than whole special parser
         {"->", Keyword::FunctionReturnType},
-        {"let", Keyword::Let}};
+        {"let", Keyword::Let},
+        {"type", Keyword::Struct}};
 
     static const std::map<std::string, bool> Booleans = {
         {"true", true},
@@ -185,7 +187,7 @@ namespace GobLang::Compiler
         SeparatorData{.symbol = '}', .separator = Separator::BlockClose, .priority = 2},
         SeparatorData{.symbol = '[', .separator = Separator::ArrayOpen, .priority = 1},
         SeparatorData{.symbol = ']', .separator = Separator::ArrayClose, .priority = 2},
-        SeparatorData{.symbol = '.', .separator = Separator::Dot, .priority = -1},
+        SeparatorData{.symbol = '.', .separator = Separator::Dot, .priority = 2},
         SeparatorData{.symbol = ',', .separator = Separator::Comma, .priority = -1},
         SeparatorData{.symbol = ';', .separator = Separator::End, .priority = -1},
         SeparatorData{.symbol = ':', .separator = Separator::Colon, .priority = -1}

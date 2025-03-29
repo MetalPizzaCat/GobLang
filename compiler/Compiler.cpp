@@ -12,6 +12,10 @@ void GobLang::Compiler::Compiler::generateByteCode()
         return;
     }
     m_byteCode.ids = m_generator.getIds();
+    for (std::unique_ptr<Struct::Structure> const &str : m_generator.getStructs())
+    {
+        m_byteCode.structures.push_back(*str.get());
+    }
     _generateBytecodeFor(m_generator.getCode(), true);
     for (std::vector<FunctionTokenSequence *>::const_iterator it = m_generator.getFuncs().begin(); it != m_generator.getFuncs().end(); it++)
     {
@@ -65,6 +69,11 @@ std::vector<uint8_t> GobLang::Compiler::Compiler::generateGetByteCode(Token *tok
     {
         out.push_back((uint8_t)GobLang::Operation::GetLocal);
         out.push_back((uint8_t)localVarToken->getId());
+    }
+    else if (LocalFunctionAccessToken *localFuncToken = dynamic_cast<LocalFunctionAccessToken *>(token); localFuncToken != nullptr)
+    {
+        out.push_back((uint8_t)GobLang::Operation::GetLocalFunction);
+        out.push_back((uint8_t)localFuncToken->getId());
     }
     else if (CharToken *chTok = dynamic_cast<CharToken *>(token); chTok != nullptr)
     {
@@ -126,31 +135,15 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
     std::vector<CompilerNode *> stack;
     for (std::vector<Token *>::const_iterator it = tokens.begin(); it != tokens.end(); it++)
     {
-        // check if there any marks pointing to this node
-        bool isDestination = false;
-        size_t destMark = 0;
-        if (it != tokens.begin())
+        if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*it); sepTok != nullptr)
         {
-            if (JumpDestinationToken *dest = dynamic_cast<JumpDestinationToken *>(*(it - 1)); dest != nullptr)
-            {
-                destMark = dest->getId();
-                isDestination = true;
-            }
-        }
-        if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*it); sepTok != nullptr && sepTok->getSeparator() == Separator::End)
-        {
-            if (!stack.empty())
-            {
-                appendCompilerNode(*stack.rbegin(), true);
-                delete *stack.rbegin();
-                stack.pop_back();
-            }
+            _generateSeparator(sepTok, stack, it);
         }
 
         else if (BoolConstToken *boolToken = dynamic_cast<BoolConstToken *>(*it); boolToken != nullptr)
         {
             stack.push_back(new OperationCompilerNode(
-                {(uint8_t)(boolToken->getValue() ? Operation::PushTrue : Operation::PushFalse)}, isDestination, destMark));
+                {(uint8_t)(boolToken->getValue() ? Operation::PushTrue : Operation::PushFalse)}));
         }
         else if (dynamic_cast<IntToken *>(*it) != nullptr ||
                  dynamic_cast<UnsignedIntToken *>(*it) != nullptr ||
@@ -159,15 +152,19 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
                  dynamic_cast<FloatToken *>(*it) != nullptr ||
                  dynamic_cast<NullConstToken *>(*it) != nullptr)
         {
-            stack.push_back(new OperationCompilerNode(generateGetByteCode(*it), isDestination, destMark));
+            stack.push_back(new OperationCompilerNode(generateGetByteCode(*it)));
         }
         else if (dynamic_cast<IdToken *>(*it) != nullptr)
         {
-            stack.push_back(new TokenCompilerNode(*it, isDestination, destMark));
+            stack.push_back(new TokenCompilerNode(*it));
         }
         else if (dynamic_cast<LocalVarToken *>(*it) != nullptr)
         {
-            stack.push_back(new LocalVarTokenCompilerNode(*it, isDestination, destMark));
+            stack.push_back(new LocalVarTokenCompilerNode(*it));
+        }
+        else if (dynamic_cast<LocalFunctionAccessToken *>(*it) != nullptr)
+        {
+            stack.push_back(new OperationCompilerNode(generateGetByteCode(*it)));
         }
         else if (JumpDestinationToken *destToken = dynamic_cast<JumpDestinationToken *>(*it); destToken != nullptr)
         {
@@ -178,80 +175,11 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
         }
         else if (GotoToken *jmpToken = dynamic_cast<GotoToken *>(*it); jmpToken != nullptr)
         {
-            std::vector<uint8_t> bytes;
-            if (dynamic_cast<IfToken *>(jmpToken) != nullptr)
-            {
-                CompilerNode *cond = *stack.rbegin();
-                stack.pop_back();
-                // condition goes first and we don't care about anything else
-                bytes = cond->getOperationGetBytes();
-                bytes.push_back((uint8_t)Operation::JumpIfNot);
-                delete cond;
-            }
-            else if (WhileToken *whileTok = dynamic_cast<WhileToken *>(jmpToken); whileTok != nullptr)
-            {
-                if (it + 1 != m_generator.getCode().end())
-                {
-                    m_jumpDestinations[whileTok->getReturnMark()] = m_byteCode.operations.size();
-                }
-                CompilerNode *cond = *stack.rbegin();
-                stack.pop_back();
-                // condition goes first and we don't care about anything else
-                bytes = cond->getOperationGetBytes();
-                bytes.push_back((uint8_t)Operation::JumpIfNot);
-                delete cond;
-            }
-            else
-            {
-                bytes.push_back((uint8_t)Operation::Jump);
-            }
-            appendByteCode(bytes);
-            addNewMarkReplacement(jmpToken->getMark(), m_byteCode.operations.size());
-            for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
-            {
-                m_byteCode.operations.push_back(0x0);
-            }
+            _generateGoto(jmpToken, stack, it);
         }
         else if (MultiArgToken *multiTok = dynamic_cast<MultiArgToken *>(*it); multiTok != nullptr)
         {
-            std::deque<CompilerNode *> nodes;
-            for (int32_t i = 0; i < multiTok->getArgCount(); i++)
-            {
-                nodes.push_front(*stack.rbegin());
-                stack.pop_back();
-            }
-            std::vector<uint8_t> bytes;
-            for (std::deque<CompilerNode *>::iterator it = nodes.begin(); it != nodes.end(); it++)
-            {
-                std::vector<uint8_t> temp = (*it)->getOperationGetBytes();
-                bytes.insert(bytes.end(), temp.begin(), temp.end());
-                // last time they are used, so we should delete them
-                delete (*it);
-            }
-
-            if (ArrayCreationToken *array = dynamic_cast<ArrayCreationToken *>(*it); array != nullptr)
-            {
-                bytes.push_back((uint8_t)Operation::CreateArray);
-                bytes.push_back((uint8_t)array->getArgCount());
-            }
-            else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
-            {
-                if (func->usesLocalFunction())
-                {
-                    bytes.push_back((uint8_t)Operation::CallLocal);
-                    bytes.push_back((uint8_t)func->getFuncId());
-                }
-                else
-                {
-                    CompilerNode *funcNode = *stack.rbegin();
-                    stack.pop_back();
-                    std::vector<uint8_t> fTemp = funcNode->getOperationGetBytes();
-                    bytes.insert(bytes.end(), fTemp.begin(), fTemp.end());
-                    delete funcNode;
-                    bytes.push_back((uint8_t)Operation::Call);
-                }
-            }
-            stack.push_back(new OperationCompilerNode(bytes, isDestination, destMark));
+            _generateMultiArg(multiTok, stack, it);
         }
         else if (ReturnToken *ret = dynamic_cast<ReturnToken *>(*it); ret != nullptr)
         {
@@ -275,87 +203,7 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
         }
         else if (OperatorToken *opToken = dynamic_cast<OperatorToken *>(*it); opToken != nullptr)
         {
-            if (opToken->isUnary())
-            {
-                // 'not' only uses one argument
-                CompilerNode *value = stack[stack.size() - 1];
-                stack.pop_back();
-                std::vector<uint8_t> opBytes = value->getOperationGetBytes();
-                opBytes.push_back((uint8_t)opToken->getOperation());
-                stack.push_back(new OperationCompilerNode(opBytes, isDestination, destMark));
-                delete value;
-                continue;
-            }
-            CompilerNode *setter = stack[stack.size() - 2];
-            CompilerNode *valueToSet = stack[stack.size() - 1];
-            stack.pop_back();
-            stack.pop_back();
-            if (opToken->getOperator() == Operator::Assign)
-            {
-                if (LocalVarTokenCompilerNode *localNode = dynamic_cast<LocalVarTokenCompilerNode *>(setter); localNode != nullptr)
-                {
-                    appendCompilerNode(valueToSet, true);
-                    appendByteCode(localNode->getOperationSetBytes());
-                }
-                else
-                {
-                    appendCompilerNode(setter, false);
-                    appendCompilerNode(valueToSet, true);
-                    if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
-                    {
-                        m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
-                    }
-                    else
-                    {
-                        m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
-                    }
-                }
-            }
-            // handle '+=' and such
-            else if (opToken->isAssignment())
-            {
-                std::vector<uint8_t> opBytes;
-                std::vector<uint8_t> aBytes = setter->getOperationGetBytes();
-                std::vector<uint8_t> bBytes = valueToSet->getOperationGetBytes();
-
-                opBytes.insert(opBytes.end(), aBytes.begin(), aBytes.end());
-                opBytes.insert(opBytes.end(), bBytes.begin(), bBytes.end());
-                opBytes.push_back((uint8_t)opToken->getOperation());
-
-                if (LocalVarTokenCompilerNode *localNode = dynamic_cast<LocalVarTokenCompilerNode *>(setter); localNode != nullptr)
-                {
-                    appendByteCode(opBytes);
-                    appendCompilerNode(localNode, false);
-                }
-                else
-                {
-                    appendCompilerNode(setter, false);
-                    appendByteCode(opBytes);
-                    if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
-                    {
-                        m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
-                    }
-                    else
-                    {
-                        m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
-                    }
-                }
-            }
-            else
-            {
-                std::vector<uint8_t> opBytes;
-                std::vector<uint8_t> aBytes = setter->getOperationGetBytes();
-                std::vector<uint8_t> bBytes = valueToSet->getOperationGetBytes();
-
-                opBytes.insert(opBytes.end(), aBytes.begin(), aBytes.end());
-                opBytes.insert(opBytes.end(), bBytes.begin(), bBytes.end());
-                opBytes.push_back((uint8_t)opToken->getOperation());
-                stack.push_back(new OperationCompilerNode(opBytes, isDestination, destMark));
-            }
-            // since they are no longer on the stack they are not accessible outside of this block
-            // leaving them undeleted will make them a memory leak
-            delete setter;
-            delete valueToSet;
+            _generateOperator(opToken, stack, it);
         }
         else if (ArrayIndexToken *ait = dynamic_cast<ArrayIndexToken *>(*it); ait != nullptr)
         {
@@ -364,7 +212,7 @@ void GobLang::Compiler::Compiler::_generateBytecodeFor(std::vector<Token *> cons
             stack.pop_back();
             stack.pop_back();
 
-            stack.push_back(new ArrayCompilerNode(array, index, isDestination, destMark));
+            stack.push_back(new ArrayCompilerNode(array, index));
         }
         else if (LocalVarShrinkToken *shrinkTok = dynamic_cast<LocalVarShrinkToken *>(*it); shrinkTok != nullptr)
         {
@@ -415,5 +263,218 @@ void GobLang::Compiler::Compiler::_placeAddressForMark(size_t mark, size_t addre
     if (erase)
     {
         m_jumpMarks.erase(mark);
+    }
+}
+
+void GobLang::Compiler::Compiler::_generateGoto(GotoToken const *jmpToken, std::vector<CompilerNode *> &stack, std::vector<Token *>::const_iterator &it)
+{
+    std::vector<uint8_t> bytes;
+    if (dynamic_cast<IfToken const *>(jmpToken) != nullptr)
+    {
+        CompilerNode *cond = *stack.rbegin();
+        stack.pop_back();
+        // condition goes first and we don't care about anything else
+        bytes = cond->getOperationGetBytes();
+        bytes.push_back((uint8_t)Operation::JumpIfNot);
+        delete cond;
+    }
+    else if (WhileToken const *whileTok = dynamic_cast<WhileToken const *>(jmpToken); whileTok != nullptr)
+    {
+        if (it + 1 != m_generator.getCode().end())
+        {
+            m_jumpDestinations[whileTok->getReturnMark()] = m_byteCode.operations.size();
+        }
+        CompilerNode *cond = *stack.rbegin();
+        stack.pop_back();
+        // condition goes first and we don't care about anything else
+        bytes = cond->getOperationGetBytes();
+        bytes.push_back((uint8_t)Operation::JumpIfNot);
+        delete cond;
+    }
+    else
+    {
+        bytes.push_back((uint8_t)Operation::Jump);
+    }
+    appendByteCode(bytes);
+    addNewMarkReplacement(jmpToken->getMark(), m_byteCode.operations.size());
+    for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
+    {
+        m_byteCode.operations.push_back(0x0);
+    }
+}
+
+void GobLang::Compiler::Compiler::_generateMultiArg(MultiArgToken const *multiTok, std::vector<CompilerNode *> &stack, std::vector<Token *>::const_iterator &it)
+{
+    std::deque<CompilerNode *> nodes;
+    for (int32_t i = 0; i < multiTok->getArgCount(); i++)
+    {
+        nodes.push_front(*stack.rbegin());
+        stack.pop_back();
+    }
+    std::vector<uint8_t> bytes;
+    for (std::deque<CompilerNode *>::iterator it = nodes.begin(); it != nodes.end(); it++)
+    {
+        std::vector<uint8_t> temp = (*it)->getOperationGetBytes();
+        bytes.insert(bytes.end(), temp.begin(), temp.end());
+        // last time they are used, so we should delete them
+        delete (*it);
+    }
+
+    if (ArrayCreationToken *array = dynamic_cast<ArrayCreationToken *>(*it); array != nullptr)
+    {
+        bytes.push_back((uint8_t)Operation::CreateArray);
+        bytes.push_back((uint8_t)array->getArgCount());
+    }
+    else if (ConstructorCallToken *contr = dynamic_cast<ConstructorCallToken *>(*it); contr != nullptr)
+    {
+        bytes.push_back((uint8_t)Operation::New);
+        bytes.push_back((uint8_t)contr->getStructId());
+    }
+    else if (MethodCallToken *method = dynamic_cast<MethodCallToken *>(*it); method != nullptr)
+    {
+        bytes.push_back((uint8_t)Operation::PushConstString);
+        bytes.push_back((uint8_t)method->getMethodNameId());
+
+        // method call also has to grab the caller which will be the secret first argument
+        std::vector<uint8_t> temp = (*stack.rbegin())->getOperationGetBytes();
+        bytes.insert(bytes.end(), temp.begin(), temp.end());
+        stack.pop_back();
+
+        bytes.push_back((uint8_t)Operation::GetField);
+        bytes.push_back((uint8_t)Operation::Call);
+    }
+    else if (FunctionCallToken *func = dynamic_cast<FunctionCallToken *>(*it); func != nullptr)
+    {
+        if (func->usesLocalFunction())
+        {
+            bytes.push_back((uint8_t)Operation::GetLocalFunction);
+            bytes.push_back((uint8_t)func->getFuncId());
+            bytes.push_back((uint8_t)Operation::Call);
+        }
+        else
+        {
+            CompilerNode *funcNode = *stack.rbegin();
+            stack.pop_back();
+            std::vector<uint8_t> fTemp = funcNode->getOperationGetBytes();
+            bytes.insert(bytes.end(), fTemp.begin(), fTemp.end());
+            delete funcNode;
+            bytes.push_back((uint8_t)Operation::Call);
+        }
+    }
+    stack.push_back(new OperationCompilerNode(bytes));
+}
+
+void GobLang::Compiler::Compiler::_generateOperator(OperatorToken const *opToken, std::vector<CompilerNode *> &stack, std::vector<Token *>::const_iterator &it)
+{
+    if (opToken->isUnary())
+    {
+        // 'not' only uses one argument
+        CompilerNode *value = stack[stack.size() - 1];
+        stack.pop_back();
+        std::vector<uint8_t> opBytes = value->getOperationGetBytes();
+        opBytes.push_back((uint8_t)opToken->getOperation());
+        stack.push_back(new OperationCompilerNode(opBytes));
+        delete value;
+        return;
+    }
+    CompilerNode *setter = stack[stack.size() - 2];
+    CompilerNode *valueToSet = stack[stack.size() - 1];
+    stack.pop_back();
+    stack.pop_back();
+    if (opToken->getOperator() == Operator::Assign)
+    {
+        if (LocalVarTokenCompilerNode *localNode = dynamic_cast<LocalVarTokenCompilerNode *>(setter); localNode != nullptr)
+        {
+            appendCompilerNode(valueToSet, true);
+            appendByteCode(localNode->getOperationSetBytes());
+        }
+        else
+        {
+            appendCompilerNode(setter, false);
+            appendCompilerNode(valueToSet, true);
+            if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
+            {
+                m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
+            }
+            else if (FieldAccessNode *fieldNode = dynamic_cast<FieldAccessNode *>(setter); fieldNode != nullptr)
+            {
+                m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetField);
+            }
+            else
+            {
+                m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
+            }
+        }
+    }
+    // handle '+=' and such
+    else if (opToken->isAssignment())
+    {
+        std::vector<uint8_t> opBytes;
+        std::vector<uint8_t> aBytes = setter->getOperationGetBytes();
+        std::vector<uint8_t> bBytes = valueToSet->getOperationGetBytes();
+
+        opBytes.insert(opBytes.end(), aBytes.begin(), aBytes.end());
+        opBytes.insert(opBytes.end(), bBytes.begin(), bBytes.end());
+        opBytes.push_back((uint8_t)opToken->getOperation());
+
+        if (LocalVarTokenCompilerNode *localNode = dynamic_cast<LocalVarTokenCompilerNode *>(setter); localNode != nullptr)
+        {
+            appendByteCode(opBytes);
+            appendCompilerNode(localNode, false);
+        }
+        else
+        {
+            appendCompilerNode(setter, false);
+            appendByteCode(opBytes);
+            if (ArrayCompilerNode *arrNode = dynamic_cast<ArrayCompilerNode *>(setter); arrNode != nullptr)
+            {
+                m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetArray);
+            }
+            else if (FieldAccessNode *fieldNode = dynamic_cast<FieldAccessNode *>(setter); fieldNode != nullptr)
+            {
+                m_byteCode.operations.push_back((uint8_t)GobLang::Operation::SetField);
+            }
+            else
+            {
+                m_byteCode.operations.push_back((uint8_t)GobLang::Operation::Set);
+            }
+        }
+    }
+    else
+    {
+        std::vector<uint8_t> opBytes;
+        std::vector<uint8_t> aBytes = setter->getOperationGetBytes();
+        std::vector<uint8_t> bBytes = valueToSet->getOperationGetBytes();
+
+        opBytes.insert(opBytes.end(), aBytes.begin(), aBytes.end());
+        opBytes.insert(opBytes.end(), bBytes.begin(), bBytes.end());
+        opBytes.push_back((uint8_t)opToken->getOperation());
+        stack.push_back(new OperationCompilerNode(opBytes));
+    }
+    // since they are no longer on the stack they are not accessible outside of this block
+    // leaving them undeleted will make them a memory leak
+    delete setter;
+    delete valueToSet;
+}
+
+void GobLang::Compiler::Compiler::_generateSeparator(SeparatorToken const *sepTok, std::vector<CompilerNode *> &stack, std::vector<Token *>::const_iterator &it)
+{
+    if (sepTok->getSeparator() == Separator::End)
+    {
+        if (!stack.empty())
+        {
+            appendCompilerNode(*stack.rbegin(), true);
+            delete *stack.rbegin();
+            stack.pop_back();
+        }
+    }
+    else if (sepTok->getSeparator() == Separator::Dot)
+    {
+        CompilerNode *object = stack[stack.size() - 2];
+        CompilerNode *field = stack[stack.size() - 1];
+        stack.pop_back();
+        stack.pop_back();
+
+        stack.push_back(new FieldAccessNode(object, field));
     }
 }

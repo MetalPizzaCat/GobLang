@@ -1,4 +1,5 @@
 #include "Machine.hpp"
+#include "FunctionRef.hpp"
 #include <iostream>
 #include <vector>
 GobLang::Machine::Machine(Compiler::ByteCode const &code)
@@ -6,6 +7,12 @@ GobLang::Machine::Machine(Compiler::ByteCode const &code)
     m_constStrings = code.ids;
     m_operations = code.operations;
     m_functions = code.functions;
+    for (Struct::Structure const &structure : code.structures)
+    {
+        Structure *str = new Structure();
+        *str = structure;
+        m_structures.push_back(std::unique_ptr<Structure>(str));
+    }
 }
 void GobLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
 
@@ -38,8 +45,8 @@ void GobLang::Machine::step()
     case Operation::Call:
         _call();
         break;
-    case Operation::CallLocal:
-        _callLocal();
+    case Operation::GetLocalFunction:
+        _getLocalFunc();
         break;
     case Operation::Set:
         _set();
@@ -94,6 +101,16 @@ void GobLang::Machine::step()
     case Operation::SetArray:
         _setArray();
         collectGarbage();
+        break;
+    case Operation::GetField:
+        _getField();
+        break;
+    case Operation::SetField:
+        _setField();
+        collectGarbage();
+        break;
+    case Operation::CallMethod:
+        _callMethod();
         break;
     case Operation::Jump:
         _jump();
@@ -154,6 +171,9 @@ void GobLang::Machine::step()
     case Operation::CreateArray:
         _createArray();
         break;
+    case Operation::New:
+        _new();
+        break;
     case Operation::End:
         m_forcedEnd = true;
         break;
@@ -168,7 +188,7 @@ void GobLang::Machine::printGlobalsInfo()
 {
     for (std::map<std::string, MemoryValue>::iterator it = m_globals.begin(); it != m_globals.end(); it++)
     {
-        std::cout << it->first << "(" << typeToString(it->second.type) << ")" << " = " << valueToString(it->second, true) << std::endl;
+        std::cout << it->first << "(" << typeToString(it->second.type) << ")" << " = " << valueToString(it->second, true, 0) << std::endl;
     }
 }
 
@@ -180,7 +200,7 @@ void GobLang::Machine::printVariablesInfo()
         std::cout << "Frame: " << layerIt - m_variables.begin() << std::endl;
         for (std::vector<MemoryValue>::iterator it = layerIt->begin(); it != layerIt->end(); it++)
         {
-            std::cout << it - layerIt->begin() << ": " << typeToString(it->type) << " = " << valueToString(*it, true) << std::endl;
+            std::cout << it - layerIt->begin() << ": " << typeToString(it->type) << " = " << valueToString(*it, true, 0) << std::endl;
         }
     }
 }
@@ -193,7 +213,7 @@ void GobLang::Machine::printStack()
         std::cout << "Frame: " << layerIt - m_operationStack.begin() << std::endl;
         for (std::vector<MemoryValue>::reverse_iterator it = layerIt->rbegin(); it != layerIt->rend(); it++)
         {
-            std::cout << it - layerIt->rbegin() << ": " << typeToString(it->type) << " = " << valueToString(*it, true) << std::endl;
+            std::cout << it - layerIt->rbegin() << ": " << typeToString(it->type) << " = " << valueToString(*it, true, 0) << std::endl;
         }
     }
 }
@@ -215,13 +235,10 @@ GobLang::MemoryValue *GobLang::Machine::getStackTopAndPop()
 {
     if (m_operationStack.back().empty())
     {
-        return nullptr;
+        throw RuntimeException("Unable to get value from the stack because stack is empty");
     }
-    else
-    {
-        MemoryValue *m = new MemoryValue(_getFromTopAndPop());
-        return m;
-    }
+    MemoryValue *m = new MemoryValue(_getFromTopAndPop());
+    return m;
 }
 
 GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
@@ -255,7 +272,11 @@ GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool
 
 void GobLang::Machine::addObject(MemoryNode *obj)
 {
-    m_memoryRoot.pushBack(obj);
+    if (!obj->isRegistered())
+    {
+        obj->registerGC();
+        m_memoryRoot.pushBack(obj);
+    }
 }
 
 void GobLang::Machine::popStack()
@@ -266,6 +287,21 @@ void GobLang::Machine::popStack()
 void GobLang::Machine::pushToStack(MemoryValue const &val)
 {
     m_operationStack.back().push_back(val);
+}
+
+void GobLang::Machine::pushIntToStack(int32_t val)
+{
+    m_operationStack.back().push_back(MemoryValue{.type = Type::Int, .value = val});
+}
+
+void GobLang::Machine::pushFloatToStack(float val)
+{
+    m_operationStack.back().push_back(MemoryValue{.type = Type::Float, .value = val});
+}
+
+void GobLang::Machine::pushObjectToStack(MemoryNode *obj)
+{
+    m_operationStack.back().push_back(MemoryValue{.type = Type::MemoryObj, .value = obj});
 }
 
 void GobLang::Machine::setLocalVariableValue(size_t id, MemoryValue const &val)
@@ -305,7 +341,7 @@ void GobLang::Machine::shrinkLocalVariableStackBy(size_t size)
             std::get<MemoryNode *>(it->value)->decreaseRefCount();
         }
     }
-    // possibly add m_variables.resize(m_variables.size() - size)
+    m_variables.back().resize(m_variables.back().size() - size);
 }
 
 void GobLang::Machine::removeFunctionFrame()
@@ -334,9 +370,52 @@ void GobLang::Machine::removeFunctionFrame()
     m_operationStack.pop_back();
 }
 
+void GobLang::Machine::callLocalFunction(size_t funcId)
+{
+    if (funcId > m_functions.size())
+    {
+        throw RuntimeException(std::string("Attempted to call function with id ") + std::to_string(funcId) + " but no function uses that id");
+    }
+    m_callStack.push_back(m_programCounter);
+    m_programCounter = m_functions[funcId].start - 1;
+    std::vector<MemoryValue> args = std::vector<MemoryValue>(m_functions[funcId].arguments.size());
+
+    std::vector<MemoryValue> &variableFrame = m_variables.back();
+
+    for (std::vector<MemoryValue>::reverse_iterator it = args.rbegin(); it != args.rend(); it++)
+    {
+        *it = _getFromTopAndPop();
+        // for the entirety of the value being in the function we assume that it is in use so we can not delete it
+        if (it->type == Type::MemoryObj)
+        {
+            std::get<MemoryNode *>(it->value)->increaseRefCount();
+        }
+    }
+    m_variables.push_back(args);
+    m_operationStack.push_back({});
+}
+
 void GobLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
 {
     m_globals[name] = value;
+}
+
+void GobLang::Machine::createType(std::string const &name, FunctionValue const &constructor, std::map<std::string, FunctionValue> const &methods)
+{
+    addFunction(constructor, name);
+    m_nativeStructures[name] = std::unique_ptr<Struct::NativeStructureInfo>(new NativeStructureInfo{
+        .name = name,
+        .constructor = constructor,
+        .methods = methods});
+}
+
+NativeStructureInfo const *GobLang::Machine::getNativeStructure(std::string const &name)
+{
+    if (m_nativeStructures.count(name))
+    {
+        return m_nativeStructures[name].get();
+    }
+    return nullptr;
 }
 
 void GobLang::Machine::collectGarbage()
@@ -731,36 +810,49 @@ void GobLang::Machine::_getLocal()
 void GobLang::Machine::_call()
 {
     MemoryValue func = _getFromTopAndPop();
-    if (std::holds_alternative<FunctionValue>(func.value))
+    switch (func.type)
     {
+    case Type::NativeFunction:
         std::get<FunctionValue>(func.value)(this);
-    }
-    else
-    {
-        throw RuntimeException("Attempted to call a function, but top of the stack doesn't contain a function");
+        break;
+    case Type::MemoryObj:
+        if (FunctionRef *f = dynamic_cast<FunctionRef *>(std::get<MemoryNode *>(func.value)); f != nullptr)
+        {
+            if (f->isLocal())
+            {
+                callLocalFunction(f->getLocalFuncId());
+                return;
+            }
+            else
+            {
+                if (f->hasOwner())
+                {
+                    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = f->getOwner()});
+                    f->getFunction()->operator()(this);
+                }
+                else
+                {
+                    f->getFunction()->operator()(this);
+                }
+            }
+        }
+        else
+        {
+            throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString(func.type));
+        }
+        break;
+    default:
+        throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString(func.type));
     }
 }
 
-void GobLang::Machine::_callLocal()
+void GobLang::Machine::_getLocalFunc()
 {
-    size_t funcId = (size_t)m_operations[m_programCounter + 1];
-    m_callStack.push_back(m_programCounter + 1);
-    m_programCounter = m_functions[funcId].start - 1;
-    std::vector<MemoryValue> args = std::vector<MemoryValue>(m_functions[funcId].arguments.size());
-
-    std::vector<MemoryValue> &variableFrame = m_variables.back();
-
-    for (std::vector<MemoryValue>::reverse_iterator it = args.rbegin(); it != args.rend(); it++)
-    {
-        *it = _getFromTopAndPop();
-        // for the entirety of the value being in the function we assume that it is in use so we can not delete it
-        if (it->type == Type::MemoryObj)
-        {
-            std::get<MemoryNode *>(it->value)->increaseRefCount();
-        }
-    }
-    m_variables.push_back(args);
-    m_operationStack.push_back({});
+    m_programCounter++;
+    size_t funcId = (size_t)m_operations[m_programCounter];
+    FunctionRef *f = new FunctionRef(funcId);
+    addObject(f);
+    pushObjectToStack(f);
 }
 
 void GobLang::Machine::_return()
@@ -867,6 +959,99 @@ void GobLang::Machine::_setArray()
     else if (StringNode *strNode = dynamic_cast<StringNode *>(m); strNode != nullptr && value.type == Type::Char)
     {
         strNode->setCharAt(std::get<char>(value.value), std::get<int32_t>(index.value));
+    }
+}
+
+inline void GobLang::Machine::_getField()
+{
+    MemoryValue object = _getFromTopAndPop();
+    MemoryValue field = _getFromTopAndPop();
+    if (!std::holds_alternative<MemoryNode *>(object.value))
+    {
+        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
+    }
+    if (!std::holds_alternative<MemoryNode *>(field.value))
+    {
+        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(field.type));
+    }
+    if (StructureObjectNode *arrNode = dynamic_cast<StructureObjectNode *>(std::get<MemoryNode *>(object.value)); arrNode != nullptr)
+    {
+        if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
+        {
+            MemoryValue v = arrNode->getField(strNode->getString());
+            if(std::holds_alternative<MemoryNode*>(v.value))
+            {
+                addObject(std::get<MemoryNode*>(v.value));
+            }
+            pushToStack(v);
+        }
+        else
+        {
+            throw RuntimeException("Attempted to get field on a but field name is not a string");
+        }
+    }
+    else
+    {
+        throw RuntimeException("Attempted to get field on a non-struct object");
+    }
+}
+
+inline void GobLang::Machine::_setField()
+{
+    MemoryValue value = _getFromTopAndPop();
+    MemoryValue object = _getFromTopAndPop();
+    MemoryValue field = _getFromTopAndPop();
+    if (!std::holds_alternative<MemoryNode *>(object.value))
+    {
+        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
+    }
+    if (!std::holds_alternative<MemoryNode *>(field.value))
+    {
+        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(field.type));
+    }
+    if (StructureObjectNode *arrNode = dynamic_cast<StructureObjectNode *>(std::get<MemoryNode *>(object.value)); arrNode != nullptr)
+    {
+        if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
+        {
+            arrNode->setField(strNode->getString(), value);
+        }
+    }
+}
+
+inline void GobLang::Machine::_callMethod()
+{
+    MemoryValue methodName = _getFromTopAndPop();
+    MemoryValue object = _getFromTopAndPop();
+
+    if (!std::holds_alternative<MemoryNode *>(object.value))
+    {
+        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
+    }
+    if (!std::holds_alternative<MemoryNode *>(methodName.value))
+    {
+        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(methodName.type));
+    }
+
+    std::string name;
+
+    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(methodName.value)); strNode != nullptr)
+    {
+        name = strNode->getString();
+    }
+
+    if (StructureObjectNode *objNode = dynamic_cast<StructureObjectNode *>(std::get<MemoryNode *>(object.value)); objNode != nullptr)
+    {
+        // this is to simulate "this" argument
+        // or if comparing to python, passing "self" argument
+        pushToStack(object);
+        if (objNode->hasNativeMethod(name))
+        {
+            objNode->getNativeMethod(name)->operator()(this);
+        }
+        else
+        {
+            throw RuntimeException(std::string("Attempted to call a goblang method '") + name + "' but only natively binded methods are supported");
+        }
     }
 }
 
@@ -1065,4 +1250,14 @@ void GobLang::Machine::_createArray()
         array->setItem(i, _getFromTopAndPop());
     }
     pushToStack(MemoryValue{.type = Type::MemoryObj, .value = array});
+}
+
+inline void GobLang::Machine::_new()
+{
+    m_programCounter++;
+    size_t structId = m_operations[m_programCounter];
+
+    StructureObjectNode *obj = new StructureObjectNode(m_structures[structId].get());
+    addObject(obj);
+    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = obj});
 }

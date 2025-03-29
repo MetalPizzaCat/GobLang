@@ -27,6 +27,7 @@ int main(int argc, char **argv)
     std::vector<std::string> HelpArgs = {"-h", "--help"};
     std::vector<std::string> FileArgs = {"-i", "--input"};
     std::vector<std::string> DecompArgs = {"-s", "--showbytes"};
+    std::vector<std::string> RecursionArgs = {"-p", "--printdepth"};
     std::vector<std::string> args;
     for (int i = 0; i < argc; i++)
     {
@@ -38,6 +39,7 @@ int main(int argc, char **argv)
         std::cout << "GobLang v" << GOB_LANG_VERSION_MAJOR << "." << GOB_LANG_VERSION_MINOR << "." << GOB_LANG_VERSION_PATCH << std::endl;
         return EXIT_SUCCESS;
     }
+
     verIt = std::find_first_of(args.begin(), args.end(), HelpArgs.begin(), HelpArgs.end());
     if (verIt != args.end())
     {
@@ -48,7 +50,32 @@ int main(int argc, char **argv)
         std::cout << "-h | --help       : View help about the interpreter" << std::endl;
         std::cout << "-i | --input      : Run code from file in a given location" << std::endl;
         std::cout << "-s | --showbytes  : Show bytecode before running code" << std::endl;
+        std::cout << "-p | --printdepth : Set the max print recursion depth" << std::endl;
         return EXIT_SUCCESS;
+    }
+
+    verIt = std::find_first_of(args.begin(), args.end(), RecursionArgs.begin(), RecursionArgs.end());
+    if (verIt != args.end())
+    {
+        if (verIt + 1 == args.end())
+        {
+            std::cerr << "Missing input stack size" << std::endl;
+            return EXIT_FAILURE;
+        }
+        try
+        {
+            GobLang::MAX_PRINT_RECURSION_DEPTH = std::stoul(*(verIt + 1));
+        }
+        catch (std::invalid_argument const &e)
+        {
+            std::cerr << "Invalid stack recursion number" << std::endl;
+            return EXIT_FAILURE;
+        }
+        catch (std::out_of_range const &e)
+        {
+            std::cerr << "Invalid stack recursion number" << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
     verIt = std::find_first_of(args.begin(), args.end(), FileArgs.begin(), FileArgs.end());

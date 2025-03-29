@@ -45,12 +45,12 @@ GobLang::MemoryValue *GobLang::ArrayNode::getItem(size_t i)
     }
 }
 
-std::string GobLang::ArrayNode::toString(bool pretty)
+std::string GobLang::ArrayNode::toString(bool pretty, size_t depth)
 {
     std::string text = "[";
     for (size_t i = 0; i < m_data.size(); i++)
     {
-        text += valueToString(m_data[i], pretty);
+        text += valueToString(m_data[i], pretty, depth);
         if (i != m_data.size() - 1)
         {
             text += ",";

@@ -58,7 +58,7 @@ bool GobLang::MemoryNode::equalsTo(MemoryNode *other)
     return other == this;
 }
 
-std::string GobLang::StringNode::toString(bool pretty)
+std::string GobLang::StringNode::toString(bool pretty, size_t depth)
 {
     if (pretty)
     {

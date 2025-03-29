@@ -16,7 +16,7 @@ namespace GobLang
         /**
          * @brief Call a function defined by the user
          */
-        CallLocal,
+        GetLocalFunction,
         Set,
         Get,
         GetLocal,
@@ -29,6 +29,9 @@ namespace GobLang
          * @brief Set value of the nth element of an array
          */
         SetArray,
+        GetField,
+        SetField,
+        CallMethod,
         PushConstInt,
         PushConstUnsignedInt,
         PushConstFloat,
@@ -78,6 +81,10 @@ namespace GobLang
          */
         CreateArray,
         /**
+         * @brief Create a new object from a structure. Uses 
+         */
+        New,
+        /**
          * @brief End program execution
          */
         End
@@ -115,7 +122,7 @@ namespace GobLang
         OperationData{.op = Operation::Div, .text = "div", .argType = OperatorArgType::None},
         OperationData{.op = Operation::Modulo, .text = "mod", .argType = OperatorArgType::None},
         OperationData{.op = Operation::Call, .text = "call", .argType = OperatorArgType::None},
-        OperationData{.op = Operation::CallLocal, .text = "call_local", .argType = OperatorArgType::Byte},
+        OperationData{.op = Operation::GetLocalFunction, .text = "get_local_func", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::CreateArray, .text = "create_array", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::Set, .text = "set_global", .argType = OperatorArgType::None},
         OperationData{.op = Operation::Get, .text = "get_global", .argType = OperatorArgType::None},
@@ -123,6 +130,9 @@ namespace GobLang
         OperationData{.op = Operation::GetLocal, .text = "get", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::SetArray, .text = "set_arr", .argType = OperatorArgType::None},
         OperationData{.op = Operation::GetArray, .text = "get_arr", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::SetField, .text = "set_field", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::GetField, .text = "get_field", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::CallMethod, .text = "call_method", .argType = OperatorArgType::None},
         OperationData{.op = Operation::PushConstInt, .text = "push_int", .argType = OperatorArgType::Int},
         OperationData{.op = Operation::PushConstUnsignedInt, .text = "push_uint", .argType = OperatorArgType::UnsignedInt},
         OperationData{.op = Operation::PushConstFloat, .text = "push_float", .argType = OperatorArgType::Float},
@@ -144,6 +154,7 @@ namespace GobLang
         OperationData{.op = Operation::ShrinkLocal, .text = "local_free", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::Return, .text = "ret", .argType = OperatorArgType::None},
         OperationData{.op = Operation::ReturnValue, .text = "ret_val", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::New, .text = "new", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::End, .text = "hlt", .argType = OperatorArgType::None},
     };
 } // namespace SimpleLang

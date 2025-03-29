@@ -63,6 +63,38 @@ namespace GobLang::Compiler
         bool m_usesLocalFunc = false;
     };
 
+    class ConstructorCallToken : public FunctionCallToken
+    {
+    public:
+        explicit ConstructorCallToken(
+            size_t row,
+            size_t column,
+            size_t structId,
+            size_t expectedArgCount = 0) : FunctionCallToken(row, column, expectedArgCount),
+                                           m_structId(structId)
+        {
+        }
+        std::string toString() override;
+        bool validateArgumentCount() override;
+
+        size_t getStructId() const { return m_structId; }
+
+    private:
+        size_t m_structId;
+    };
+
+    class MethodCallToken : public FunctionCallToken
+    {
+    public:
+        explicit MethodCallToken(size_t row, size_t column, size_t methodName) : FunctionCallToken(row, column, -1), m_methodNameId(methodName) {}
+        std::string toString() override;
+
+        size_t getMethodNameId() const { return m_methodNameId; }
+
+    private:
+        size_t m_methodNameId;
+    };
+
     /**
      * @brief Class representing an array literal. For example a = [1,2,3] will create an array that will be pushed onto the stack
      *
@@ -85,6 +117,13 @@ namespace GobLang::Compiler
         explicit ArrayIndexToken(size_t row, size_t column) : Token(row, column) {}
 
         std::string toString() override { return "AIO"; }
+    };
+
+    class FieldIndexToken : public Token
+    {
+    public:
+        explicit FieldIndexToken(size_t row, size_t column) : Token(row, column) {}
+        std::string toString() override { return "FAO"; }
     };
 
     class LoopControlToken : public GotoToken
@@ -111,6 +150,19 @@ namespace GobLang::Compiler
 
     private:
         size_t m_varId;
+    };
+
+    class LocalFunctionAccessToken : public Token
+    {
+    public:
+        explicit LocalFunctionAccessToken(size_t row, size_t column, size_t id) : Token(row, column), m_funcId(id) {}
+
+        size_t getId() const { return m_funcId; }
+
+        std::string toString() override { return "FUNC_" + std::to_string(m_funcId); }
+
+    private:
+        size_t m_funcId;
     };
 
     class LocalVarShrinkToken : public Token
