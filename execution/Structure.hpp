@@ -41,7 +41,7 @@ namespace GobLang::Struct
     public:
         explicit StructureObjectNode(Structure const *base);
         void setField(std::string const &field, MemoryValue const &value);
-        MemoryValue getField(std::string const &field);
+        virtual MemoryValue getField(std::string const &field);
 
         virtual bool hasNativeMethod(std::string const &name) { return false; }
 

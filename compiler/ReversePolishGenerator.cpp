@@ -183,6 +183,13 @@ int32_t GobLang::Compiler::ReversePolishGenerator::_getLocalVariableAccessId(siz
     return found ? (int32_t)curr : -1;
 }
 
+size_t GobLang::Compiler::ReversePolishGenerator::_getFunctionAccessId(size_t nameId)
+{
+    auto it = std::find_if(m_funcs.begin(), m_funcs.end(), [nameId](FunctionTokenSequence const *func)
+                           { return func->getInfo()->nameId == nameId; });
+    return it == m_funcs.end() ? -1 : (it - m_funcs.begin());
+}
+
 void GobLang::Compiler::ReversePolishGenerator::_appendVariableBlock()
 {
     m_blockVariables.push_back({});
@@ -847,6 +854,12 @@ void GobLang::Compiler::ReversePolishGenerator::_compileIdToken(IdToken const *i
         if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(*(m_it + 1)); sepTok != nullptr && sepTok->getSeparator() == Separator::BracketOpen)
         {
             return;
+        }
+        else if (size_t funcId = _getFunctionAccessId(id->getId()); funcId != -1)
+        {
+            LocalFunctionAccessToken *local = new LocalFunctionAccessToken(id->getRow(), id->getColumn(), funcId);
+            addToken(local);
+            m_compilerTokens.push_back(local);
         }
     }
     else if (int32_t varId = _getLocalVariableAccessId(id->getId()); varId != -1)

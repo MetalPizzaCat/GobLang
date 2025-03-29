@@ -119,6 +119,10 @@ namespace GobLang
 
         void removeFunctionFrame();
 
+        /// @brief Call local function that is stored under id funcId
+        /// @param funcId Id of the function
+        void callLocalFunction(size_t funcId);
+
         /**
          * @brief Create a custom variable that will be accessible in code. Useful for binding with c code
          *
@@ -203,7 +207,7 @@ namespace GobLang
 
         inline void _call();
 
-        inline void _callLocal();
+        inline void _getLocalFunc();
 
         inline void _return();
 

@@ -1,4 +1,5 @@
 #include "Machine.hpp"
+#include "FunctionRef.hpp"
 #include <iostream>
 #include <vector>
 GobLang::Machine::Machine(Compiler::ByteCode const &code)
@@ -44,8 +45,8 @@ void GobLang::Machine::step()
     case Operation::Call:
         _call();
         break;
-    case Operation::CallLocal:
-        _callLocal();
+    case Operation::GetLocalFunction:
+        _getLocalFunc();
         break;
     case Operation::Set:
         _set();
@@ -271,7 +272,11 @@ GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool
 
 void GobLang::Machine::addObject(MemoryNode *obj)
 {
-    m_memoryRoot.pushBack(obj);
+    if (!obj->isRegistered())
+    {
+        obj->registerGC();
+        m_memoryRoot.pushBack(obj);
+    }
 }
 
 void GobLang::Machine::popStack()
@@ -363,6 +368,31 @@ void GobLang::Machine::removeFunctionFrame()
         }
     }
     m_operationStack.pop_back();
+}
+
+void GobLang::Machine::callLocalFunction(size_t funcId)
+{
+    if (funcId > m_functions.size())
+    {
+        throw RuntimeException(std::string("Attempted to call function with id ") + std::to_string(funcId) + " but no function uses that id");
+    }
+    m_callStack.push_back(m_programCounter);
+    m_programCounter = m_functions[funcId].start - 1;
+    std::vector<MemoryValue> args = std::vector<MemoryValue>(m_functions[funcId].arguments.size());
+
+    std::vector<MemoryValue> &variableFrame = m_variables.back();
+
+    for (std::vector<MemoryValue>::reverse_iterator it = args.rbegin(); it != args.rend(); it++)
+    {
+        *it = _getFromTopAndPop();
+        // for the entirety of the value being in the function we assume that it is in use so we can not delete it
+        if (it->type == Type::MemoryObj)
+        {
+            std::get<MemoryNode *>(it->value)->increaseRefCount();
+        }
+    }
+    m_variables.push_back(args);
+    m_operationStack.push_back({});
 }
 
 void GobLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
@@ -780,36 +810,49 @@ void GobLang::Machine::_getLocal()
 void GobLang::Machine::_call()
 {
     MemoryValue func = _getFromTopAndPop();
-    if (std::holds_alternative<FunctionValue>(func.value))
+    switch (func.type)
     {
+    case Type::NativeFunction:
         std::get<FunctionValue>(func.value)(this);
-    }
-    else
-    {
-        throw RuntimeException("Attempted to call a function, but top of the stack doesn't contain a function");
+        break;
+    case Type::MemoryObj:
+        if (FunctionRef *f = dynamic_cast<FunctionRef *>(std::get<MemoryNode *>(func.value)); f != nullptr)
+        {
+            if (f->isLocal())
+            {
+                callLocalFunction(f->getLocalFuncId());
+                return;
+            }
+            else
+            {
+                if (f->hasOwner())
+                {
+                    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = f->getOwner()});
+                    f->getFunction()->operator()(this);
+                }
+                else
+                {
+                    f->getFunction()->operator()(this);
+                }
+            }
+        }
+        else
+        {
+            throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString(func.type));
+        }
+        break;
+    default:
+        throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString(func.type));
     }
 }
 
-void GobLang::Machine::_callLocal()
+void GobLang::Machine::_getLocalFunc()
 {
-    size_t funcId = (size_t)m_operations[m_programCounter + 1];
-    m_callStack.push_back(m_programCounter + 1);
-    m_programCounter = m_functions[funcId].start - 1;
-    std::vector<MemoryValue> args = std::vector<MemoryValue>(m_functions[funcId].arguments.size());
-
-    std::vector<MemoryValue> &variableFrame = m_variables.back();
-
-    for (std::vector<MemoryValue>::reverse_iterator it = args.rbegin(); it != args.rend(); it++)
-    {
-        *it = _getFromTopAndPop();
-        // for the entirety of the value being in the function we assume that it is in use so we can not delete it
-        if (it->type == Type::MemoryObj)
-        {
-            std::get<MemoryNode *>(it->value)->increaseRefCount();
-        }
-    }
-    m_variables.push_back(args);
-    m_operationStack.push_back({});
+    m_programCounter++;
+    size_t funcId = (size_t)m_operations[m_programCounter];
+    FunctionRef *f = new FunctionRef(funcId);
+    addObject(f);
+    pushObjectToStack(f);
 }
 
 void GobLang::Machine::_return()
@@ -935,8 +978,21 @@ inline void GobLang::Machine::_getField()
     {
         if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
         {
-            pushToStack(arrNode->getField(strNode->getString()));
+            MemoryValue v = arrNode->getField(strNode->getString());
+            if(std::holds_alternative<MemoryNode*>(v.value))
+            {
+                addObject(std::get<MemoryNode*>(v.value));
+            }
+            pushToStack(v);
         }
+        else
+        {
+            throw RuntimeException("Attempted to get field on a but field name is not a string");
+        }
+    }
+    else
+    {
+        throw RuntimeException("Attempted to get field on a non-struct object");
     }
 }
 

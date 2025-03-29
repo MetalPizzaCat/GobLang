@@ -1,0 +1,19 @@
+func filter(array, f){
+    let result = [];
+    let i = 0;
+    while(i < sizeof(array)){
+        if (f(array[i]) == true){
+            append(result, array[i]);
+        }
+        i += 1;
+    }
+    return result;
+}
+
+func cond(a){
+    return a % 2 == 0;
+}
+
+let test = [1,2,3,4,5,6,7];
+
+print_line(filter(test,cond));
