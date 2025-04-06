@@ -13,7 +13,7 @@
 #include "Array.hpp"
 #include "Exception.hpp"
 #include "Structure.hpp"
-#include "../compiler/ByteCode.hpp"
+#include "../codegen/ByteCode.hpp"
 #include "NativeStructure.hpp"
 
 using namespace GobLang::Struct;

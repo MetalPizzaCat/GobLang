@@ -1,4 +1,4 @@
-#include "Compiler.hpp"
+
 #include <cctype>
 #include <cstring>
 #include <sstream>
@@ -6,7 +6,7 @@
 #include <limits>
 #include "Parser.hpp"
 
-void GobLang::Compiler::Parser::skipWhitespace()
+void GobLang::Codegen::Parser::skipWhitespace()
 {
     while (std::isspace(*m_rowIt) && m_rowIt != getEndOfTheLine())
     {
@@ -18,7 +18,7 @@ void GobLang::Compiler::Parser::skipWhitespace()
     }
 }
 
-bool GobLang::Compiler::Parser::skipComments()
+bool GobLang::Codegen::Parser::skipComments()
 {
     if ((m_rowIt != getEndOfTheLine() && *m_rowIt == '#') || m_rowIt == getEndOfTheLine())
     {
@@ -28,14 +28,14 @@ bool GobLang::Compiler::Parser::skipComments()
     return false;
 }
 
-void GobLang::Compiler::Parser::parse()
+void GobLang::Codegen::Parser::parse()
 {
 
     if (m_code.empty())
     {
         return;
     }
-    std::vector<std::function<Token *(void)>> parsers = {
+    std::vector<std::function<std::unique_ptr<Token> (void)>> parsers = {
         std::bind(&Parser::parseBool, this),
         std::bind(&Parser::parseNullConst, this),
         std::bind(&Parser::parseKeywords, this),
@@ -60,17 +60,18 @@ void GobLang::Compiler::Parser::parse()
             continue;
         }
 
-        Token *token = nullptr;
-        for (std::function<Token *(void)> const &f : parsers)
+        bool foundValidToken = false;
+        for (std::function<std::unique_ptr<Token>  (void)> const &f : parsers)
         {
-            token = f();
+            std::unique_ptr<Token> token = f();
             if (token != nullptr)
             {
-                m_tokens.push_back(token);
+                m_tokens.push_back(std::move(token));
+                foundValidToken = true;
                 break;
             }
         }
-        if (token == nullptr)
+        if (!foundValidToken)
         {
             throw ParsingError(getLineNumber(), getColumnNumber(), "Unknown character sequence");
         }
@@ -79,7 +80,7 @@ void GobLang::Compiler::Parser::parse()
     } while (m_rowIt != getEndOfTheLine() && m_lineIt != m_code.end());
 }
 
-bool GobLang::Compiler::Parser::tryKeyword(std::string const &keyword)
+bool GobLang::Codegen::Parser::tryKeyword(std::string const &keyword)
 {
     for (size_t i = 0; i < keyword.size(); i++)
     {
@@ -96,7 +97,7 @@ bool GobLang::Compiler::Parser::tryKeyword(std::string const &keyword)
     return true;
 }
 
-bool GobLang::Compiler::Parser::tryOperator(OperatorData const &op)
+bool GobLang::Codegen::Parser::tryOperator(OperatorData const &op)
 {
     for (size_t i = 0; i < strnlen(op.symbol, 3); i++)
     {
@@ -108,7 +109,7 @@ bool GobLang::Compiler::Parser::tryOperator(OperatorData const &op)
     return true;
 }
 
-GobLang::Compiler::KeywordToken *GobLang::Compiler::Parser::parseKeywords()
+std::unique_ptr<GobLang::Codegen::KeywordToken> GobLang::Codegen::Parser::parseKeywords()
 {
 
     for (std::map<std::string, Keyword>::const_iterator it = Keywords.begin(); it != Keywords.end(); it++)
@@ -118,7 +119,7 @@ GobLang::Compiler::KeywordToken *GobLang::Compiler::Parser::parseKeywords()
             size_t row = getLineNumber();
             size_t column = getColumnNumber();
             advanceRowIterator(it->first.size());
-            return new KeywordToken(
+            return std::make_unique<KeywordToken>( 
                 row,
                 column,
                 it->second);
@@ -127,7 +128,7 @@ GobLang::Compiler::KeywordToken *GobLang::Compiler::Parser::parseKeywords()
     return nullptr;
 }
 
-GobLang::Compiler::OperatorToken *GobLang::Compiler::Parser::parseOperators()
+std::unique_ptr<GobLang::Codegen::OperatorToken> GobLang::Codegen::Parser::parseOperators()
 {
     for (std::vector<OperatorData>::const_iterator it = Operators.begin(); it != Operators.end(); it++)
     {
@@ -137,7 +138,7 @@ GobLang::Compiler::OperatorToken *GobLang::Compiler::Parser::parseOperators()
             size_t column = getColumnNumber();
             size_t offset = strnlen(it->symbol, 3);
             advanceRowIterator(offset);
-            return new OperatorToken(row,
+            return std::make_unique<OperatorToken>( row,
                                      column,
                                      &(*it));
         }
@@ -145,7 +146,7 @@ GobLang::Compiler::OperatorToken *GobLang::Compiler::Parser::parseOperators()
     return nullptr;
 }
 
-GobLang::Compiler::IdToken *GobLang::Compiler::Parser::parseId()
+std::unique_ptr<GobLang::Codegen::IdToken> GobLang::Codegen::Parser::parseId()
 {
     // must start with a character or underscore
     if (!std::isalpha(*m_rowIt) && (*m_rowIt) != '_')
@@ -173,10 +174,10 @@ GobLang::Compiler::IdToken *GobLang::Compiler::Parser::parseId()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new IdToken(row, column, index);
+    return std::make_unique<IdToken>( row, column, index);
 }
 
-GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseInt()
+std::unique_ptr<GobLang::Codegen::IntToken> GobLang::Codegen::Parser::parseInt()
 {
     if (!std::isdigit(*m_rowIt))
     {
@@ -211,10 +212,10 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseInt()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new IntToken(row, column, numVal);
+    return std::make_unique<IntToken>( row, column, numVal);
 }
 
-GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseHexInt()
+std::unique_ptr<GobLang::Codegen::IntToken> GobLang::Codegen::Parser::parseHexInt()
 {
     // hex numbers follow 0x1234abcd pattern
     if (m_rowIt + 2 == getEndOfTheLine() || !((*m_rowIt == '0' && *(m_rowIt + 1) == 'x')))
@@ -255,10 +256,10 @@ GobLang::Compiler::IntToken *GobLang::Compiler::Parser::parseHexInt()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new IntToken(row, column, numVal);
+    return std::make_unique<IntToken>( row, column, numVal);
 }
 
-GobLang::Compiler::UnsignedIntToken *GobLang::Compiler::Parser::parseUnsignedInt()
+std::unique_ptr<GobLang::Codegen::UnsignedIntToken> GobLang::Codegen::Parser::parseUnsignedInt()
 {
     if (*m_rowIt != 'u')
     {
@@ -300,10 +301,10 @@ GobLang::Compiler::UnsignedIntToken *GobLang::Compiler::Parser::parseUnsignedInt
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new UnsignedIntToken(row, column, (uint32_t)numVal);
+    return std::make_unique<UnsignedIntToken>( row, column, (uint32_t)numVal);
 }
 
-GobLang::Compiler::UnsignedIntToken *GobLang::Compiler::Parser::parseHexUnsignedInt()
+std::unique_ptr<GobLang::Codegen::UnsignedIntToken> GobLang::Codegen::Parser::parseHexUnsignedInt()
 {
     // unsigned hex numbers follow u0x1234abcd pattern
     if (m_rowIt + 3 == getEndOfTheLine() || !(*m_rowIt == 'u' && (*(m_rowIt + 1) == '0' && *(m_rowIt + 2) == 'x')))
@@ -348,10 +349,10 @@ GobLang::Compiler::UnsignedIntToken *GobLang::Compiler::Parser::parseHexUnsigned
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new UnsignedIntToken(row, column, numVal);
+    return std::make_unique<UnsignedIntToken>( row, column, numVal);
 }
 
-GobLang::Compiler::FloatToken *GobLang::Compiler::Parser::parseFloat()
+std::unique_ptr<GobLang::Codegen::FloatToken> GobLang::Codegen::Parser::parseFloat()
 {
     if (!std::isdigit(*m_rowIt))
     {
@@ -403,10 +404,10 @@ GobLang::Compiler::FloatToken *GobLang::Compiler::Parser::parseFloat()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return new FloatToken(row, column, numVal);
+    return std::make_unique<FloatToken>( row, column, numVal);
 }
 
-GobLang::Compiler::SeparatorToken *GobLang::Compiler::Parser::parseSeparators()
+std::unique_ptr<GobLang::Codegen::SeparatorToken> GobLang::Codegen::Parser::parseSeparators()
 {
 
     for (std::vector<SeparatorData>::const_iterator it = Separators.begin(); it != Separators.end(); it++)
@@ -416,13 +417,13 @@ GobLang::Compiler::SeparatorToken *GobLang::Compiler::Parser::parseSeparators()
             size_t row = getLineNumber();
             size_t column = getColumnNumber();
             advanceRowIterator(1);
-            return new SeparatorToken(row, column, it->separator);
+            return std::make_unique<SeparatorToken>( row, column, it->separator);
         }
     }
     return nullptr;
 }
 
-GobLang::Compiler::StringToken *GobLang::Compiler::Parser::parseString()
+std::unique_ptr<GobLang::Codegen::StringToken> GobLang::Codegen::Parser::parseString()
 {
 
     if (*m_rowIt != '"')
@@ -459,10 +460,10 @@ GobLang::Compiler::StringToken *GobLang::Compiler::Parser::parseString()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset + 1);
-    return new StringToken(row, column, index);
+    return std::make_unique<StringToken>( row, column, index);
 }
 
-GobLang::Compiler::SpecialCharacter const *GobLang::Compiler::Parser::parseSpecialCharacter(std::string::iterator const &it)
+GobLang::Codegen::SpecialCharacter const *GobLang::Codegen::Parser::parseSpecialCharacter(std::string::iterator const &it)
 {
     std::vector<SpecialCharacter>::const_iterator charIt = std::find_if(
         SpecialCharacters.begin(),
@@ -481,7 +482,7 @@ GobLang::Compiler::SpecialCharacter const *GobLang::Compiler::Parser::parseSpeci
     return charIt == SpecialCharacters.end() ? nullptr : &*charIt;
 }
 
-GobLang::Compiler::NullConstToken *GobLang::Compiler::Parser::parseNullConst()
+std::unique_ptr<GobLang::Codegen::NullConstToken> GobLang::Codegen::Parser::parseNullConst()
 {
     const char *nullKeyword = "null";
     const size_t nullSize = strlen("null");
@@ -500,10 +501,10 @@ GobLang::Compiler::NullConstToken *GobLang::Compiler::Parser::parseNullConst()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(nullSize);
-    return new NullConstToken(row, column);
+    return std::make_unique<NullConstToken>( row, column);
 }
 
-GobLang::Compiler::BoolConstToken *GobLang::Compiler::Parser::parseBool()
+std::unique_ptr<GobLang::Codegen::BoolConstToken> GobLang::Codegen::Parser::parseBool()
 {
     std::map<std::string, bool>::const_iterator it = std::find_if(
         Booleans.begin(),
@@ -526,10 +527,10 @@ GobLang::Compiler::BoolConstToken *GobLang::Compiler::Parser::parseBool()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(it->first.size());
-    return new BoolConstToken(row, column, it->second);
+    return std::make_unique<BoolConstToken>( row, column, it->second);
 }
 
-GobLang::Compiler::CharToken *GobLang::Compiler::Parser::parseChar()
+std::unique_ptr<GobLang::Codegen::CharToken> GobLang::Codegen::Parser::parseChar()
 {
     if (*m_rowIt != '\'')
     {
@@ -556,10 +557,10 @@ GobLang::Compiler::CharToken *GobLang::Compiler::Parser::parseChar()
     size_t column = getColumnNumber();
     advanceRowIterator(offset + 1);
 
-    return new CharToken(row, column, ch);
+    return std::make_unique<CharToken>( row, column, ch);
 }
 
-void GobLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)
+void GobLang::Codegen::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)
 {
     size_t currentOffset = 0;
     for (; currentOffset < offset && m_rowIt != getEndOfTheLine(); currentOffset++)
@@ -581,7 +582,7 @@ void GobLang::Compiler::Parser::advanceRowIterator(size_t offset, bool stopAtEnd
     }
 }
 
-void GobLang::Compiler::Parser::advanceLineIterator(size_t offset)
+void GobLang::Codegen::Parser::advanceLineIterator(size_t offset)
 {
     m_lineIt += offset;
     if (m_lineIt != m_code.end())
@@ -590,17 +591,17 @@ void GobLang::Compiler::Parser::advanceLineIterator(size_t offset)
     }
 }
 
-size_t GobLang::Compiler::Parser::getLineNumber() const
+size_t GobLang::Codegen::Parser::getLineNumber() const
 {
     return m_lineIt - m_code.begin();
 }
 
-size_t GobLang::Compiler::Parser::getColumnNumber() const
+size_t GobLang::Codegen::Parser::getColumnNumber() const
 {
     return m_rowIt - m_lineIt->begin();
 }
 
-void GobLang::Compiler::Parser::printInfoTable()
+void GobLang::Codegen::Parser::printInfoTable()
 {
     for (size_t i = 0; i < m_ids.size(); i++)
     {
@@ -608,15 +609,15 @@ void GobLang::Compiler::Parser::printInfoTable()
     }
 }
 
-void GobLang::Compiler::Parser::printCode()
+void GobLang::Codegen::Parser::printCode()
 {
-    for (std::vector<Token *>::iterator it = m_tokens.begin(); it != m_tokens.end(); it++)
+    for(auto const& it : m_tokens)
     {
-        std::cout << (*it)->toString() << " ";
+        std::cout << it->toString() << " ";
     }
     std::cout << std::endl;
 }
-GobLang::Compiler::Parser::Parser(std::vector<std::string> const &code) : m_code(code)
+GobLang::Codegen::Parser::Parser(std::vector<std::string> const &code) : m_code(code)
 {
     if (!code.empty())
     {
@@ -625,7 +626,7 @@ GobLang::Compiler::Parser::Parser(std::vector<std::string> const &code) : m_code
     }
 }
 
-GobLang::Compiler::Parser::Parser(std::string const &code)
+GobLang::Codegen::Parser::Parser(std::string const &code)
 {
     std::stringstream stream(code);
     std::string to;
@@ -637,21 +638,17 @@ GobLang::Compiler::Parser::Parser(std::string const &code)
     m_rowIt = m_lineIt->begin();
 }
 
-GobLang::Compiler::Parser::~Parser()
+GobLang::Codegen::Parser::~Parser()
 {
-    for (size_t i = 0; i < m_tokens.size(); i++)
-    {
-        delete m_tokens[i];
-    }
     m_tokens.clear();
 }
 
-const char *GobLang::Compiler::ParsingError::what() const throw()
+const char *GobLang::Codegen::ParsingError::what() const throw()
 {
     return m_full.c_str();
 }
 
-GobLang::Compiler::ParsingError::ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg)
+GobLang::Codegen::ParsingError::ParsingError(size_t row, size_t column, std::string const &msg) : m_row(row), m_column(column), m_message(msg)
 {
     m_full = ("Error at line " + std::to_string(m_row + 1) + " row " + std::to_string(m_column + 1) + ": " + m_message);
 }

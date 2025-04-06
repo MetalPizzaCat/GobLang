@@ -2,7 +2,8 @@
 #include <vector>
 #include <map>
 #include <cstdint>
-namespace GobLang::Compiler
+#include "../execution/Operations.hpp"
+namespace GobLang::Codegen
 {
     enum class Keyword
     {
@@ -131,7 +132,7 @@ namespace GobLang::Compiler
         {"False", false}};
 
     /**
-     * @brief Static array containing info about all operators used in the compiler
+     * @brief Static array containing info about all operators used in the Codegen
      *
      */
     static const std::vector<OperatorData> Operators = {
@@ -181,8 +182,8 @@ namespace GobLang::Compiler
      *
      */
     static const std::vector<SeparatorData> Separators = {
-        SeparatorData{.symbol = '(', .separator = Separator::BracketOpen, .priority = 1},
-        SeparatorData{.symbol = ')', .separator = Separator::BracketClose, .priority = 2},
+        SeparatorData{.symbol = '(', .separator = Separator::BracketOpen, .priority = -1},
+        SeparatorData{.symbol = ')', .separator = Separator::BracketClose, .priority = -1},
         SeparatorData{.symbol = '{', .separator = Separator::BlockOpen, .priority = 1},
         SeparatorData{.symbol = '}', .separator = Separator::BlockClose, .priority = 2},
         SeparatorData{.symbol = '[', .separator = Separator::ArrayOpen, .priority = 1},

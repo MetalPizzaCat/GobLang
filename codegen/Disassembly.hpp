@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <cstdint>
-namespace GobLang::Compiler
+namespace GobLang::Codegen
 {
     template <typename T>
     T parseBytesIntoValue(std::vector<uint8_t>::const_iterator begin, std::vector<uint8_t>::const_iterator end)
