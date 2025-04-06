@@ -19,6 +19,16 @@ namespace GobLang::Codegen
 
         std::unique_ptr<VariableCreationNode> parseVarCreation();
 
+        std::unique_ptr<CodeNode> parseStandaloneExpression();
+
+        /// @brief Parse the condition + body of a branch. Could be used for loops
+        /// @return 
+        std::unique_ptr<BranchNode> parseBranch();
+
+        /// @brief Parse if-elif-else block
+        /// @return 
+        std::unique_ptr<BranchChainNode> parseBranchChain();
+
         std::unique_ptr<FloatNode> parseFloat();
 
         std::unique_ptr<IntNode> parseInt();
@@ -33,7 +43,11 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeNode> parseExpression();
 
+        
+
         inline void advance() { m_it++; }
+
+        inline void retract() { m_it--; }
 
         /// @brief Parse the binary operation. binopright = (op primary)*
         /// @param priority

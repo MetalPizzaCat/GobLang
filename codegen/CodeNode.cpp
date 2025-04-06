@@ -99,3 +99,42 @@ std::string GobLang::Codegen::VariableCreationNode::toString()
 {
     return "{\"type\" : \"let\", \"var\": " + std::to_string(m_id) + ", \"body\" : " + m_body->toString() + "}";
 }
+
+GobLang::Codegen::BranchNode::BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body) : m_cond(std::move(cond)), m_body(std::move(body))
+{
+}
+
+std::string GobLang::Codegen::BranchNode::toString()
+{
+    return "{\"cond\": " + m_cond->toString() + ", \"body\": " + m_body->toString() + "}";
+}
+
+GobLang::Codegen::BranchChainNode::BranchChainNode(
+    std::unique_ptr<BranchNode> primary,
+    std::vector<std::unique_ptr<BranchNode>> secondary,
+    std::unique_ptr<CodeNode> elseBlock) : m_primary(std::move(primary)), m_secondary(std::move(secondary)), m_else(std::move(elseBlock))
+{
+}
+
+std::string GobLang::Codegen::BranchChainNode::toString()
+{
+    std::string base = "{ \"if\": " + m_primary->toString() + ", \"elifs\" : [";
+    for (std::vector<std::unique_ptr<BranchNode>>::const_iterator it = m_secondary.begin(); it != m_secondary.end(); it++)
+    {
+        base += (*it)->toString();
+        if (it + 1 != m_secondary.end())
+        {
+            base += ',';
+        }
+    }
+    base += "], \"else\" : ";
+    if (m_else)
+    {
+        base += m_else->toString();
+    }
+    else
+    {
+        base += "null";
+    }
+    return base + "}";
+}

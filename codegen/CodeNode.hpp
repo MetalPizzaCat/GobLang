@@ -105,6 +105,29 @@ namespace GobLang::Codegen
         std::vector<std::unique_ptr<CodeNode>> m_args;
     };
 
+    class BranchNode : public CodeNode
+    {
+    public:
+        explicit BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body);
+        std::string toString() override;
+
+    private:
+        std::unique_ptr<CodeNode> m_cond;
+        std::unique_ptr<CodeNode> m_body;
+    };
+
+    class BranchChainNode : public CodeNode
+    {
+    public:
+        explicit BranchChainNode(std::unique_ptr<BranchNode> primary, std::vector<std::unique_ptr<BranchNode>> secondary, std::unique_ptr<CodeNode> elseBlock = nullptr);
+        std::string toString() override;
+
+    private:
+        std::unique_ptr<BranchNode> m_primary;
+        std::vector<std::unique_ptr<BranchNode>> m_secondary;
+        std::unique_ptr<CodeNode> m_else;
+    };
+
     class VariableCreationNode : public CodeNode
     {
     public:

@@ -25,6 +25,18 @@ std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
         {
             seq.push_back(std::move(parseVarCreation()));
         }
+        else if (isKeyword(Keyword::If))
+        {
+            seq.push_back(std::move(parseBranchChain()));
+        }
+        else if (isOfType<IdToken>())
+        {
+            seq.push_back(std::move(parseStandaloneExpression()));
+        }
+        else
+        {
+            error("Unknown character sequence");
+        }
         if (isSeparator(Separator::BlockClose) || isAtTheEnd())
         {
             break;
@@ -48,24 +60,82 @@ std::unique_ptr<VariableCreationNode> GobLang::Codegen::CodeGenerator::parseVarC
     return std::make_unique<VariableCreationNode>(id->getId(), std::move(body));
 }
 
-std::unique_ptr<FloatNode> GobLang::Codegen::CodeGenerator::parseFloat()
+
+std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseStandaloneExpression()
 {
-    if (FloatToken *t = getTokenOrError<FloatToken>("Expected a number"); t != nullptr)
+    IdToken *t = getTokenOrError<IdToken>("Expected an identifier");
+    advance();
+    if (isSeparator(Separator::BracketOpen))
     {
         advance();
-        return std::make_unique<FloatNode>(t->getValue());
+        std::vector<std::unique_ptr<CodeNode>> args = parseFunctionCallArguments();
+        consumeSeparator(Separator::End, "Expected ';'");
+        return std::make_unique<FunctionCallNode>(t->getId(), std::move(args));
     }
-    return nullptr;
+    else
+    {
+        retract();
+        std::unique_ptr<CodeNode> assignment = parseExpression();
+        auto a = getCurrent()->toString();
+        consumeSeparator(Separator::End, "Expected ';'");
+        return assignment;
+    }
+}
+
+std::unique_ptr<BranchNode> GobLang::Codegen::CodeGenerator::parseBranch()
+{
+    // skip if
+    advance();
+    consumeSeparator(Separator::BracketOpen, "Expected '('");
+    std::unique_ptr<CodeNode> cond = parseExpression();
+    if (!cond)
+    {
+        error("Expected expression");
+    }
+    consumeSeparator(Separator::BracketClose, "Expected ')'");
+    consumeSeparator(Separator::BlockOpen, "Expected '{'");
+    std::unique_ptr<CodeNode> body = parseBody();
+    consumeSeparator(Separator::BlockClose, "Expected '}'");
+
+    return std::make_unique<BranchNode>(std::move(cond), std::move(body));
+}
+
+std::unique_ptr<BranchChainNode> GobLang::Codegen::CodeGenerator::parseBranchChain()
+{
+    std::unique_ptr<BranchNode> ifBlock = parseBranch();
+    if (!ifBlock)
+    {
+        error("Expected condition block");
+    }
+    std::vector<std::unique_ptr<BranchNode>> elifs;
+    while (isKeyword(Keyword::Elif))
+    {
+        elifs.push_back(std::move(parseBranch()));
+    }
+    std::unique_ptr<CodeNode> elseBlock = nullptr;
+
+    if (isKeyword(Keyword::Else))
+    {
+        advance();
+        consumeSeparator(Separator::BlockOpen, "Expected '{'");
+        elseBlock = parseBody();
+        consumeSeparator(Separator::BlockClose, "Expected '}'");
+    }
+    return std::make_unique<BranchChainNode>(std::move(ifBlock), std::move(elifs), std::move(elseBlock));
+}
+
+std::unique_ptr<FloatNode> GobLang::Codegen::CodeGenerator::parseFloat()
+{
+    FloatToken *t = getTokenOrError<FloatToken>("Expected a number");
+    advance();
+    return std::make_unique<FloatNode>(t->getValue());
 }
 
 std::unique_ptr<IntNode> GobLang::Codegen::CodeGenerator::parseInt()
 {
-    if (IntToken *t = getTokenOrError<IntToken>("Expected a number"); t != nullptr)
-    {
-        advance();
-        return std::make_unique<IntNode>(t->getValue());
-    }
-    return nullptr;
+    IntToken *t = getTokenOrError<IntToken>("Expected a number");
+    advance();
+    return std::make_unique<IntNode>(t->getValue());
 }
 
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseId()
@@ -92,6 +162,7 @@ std::vector<std::unique_ptr<CodeNode>> GobLang::Codegen::CodeGenerator::parseFun
 {
     if (isSeparator(Separator::BracketClose))
     {
+        advance();
         return {};
     }
     std::vector<std::unique_ptr<CodeNode>> args;
@@ -112,7 +183,7 @@ std::vector<std::unique_ptr<CodeNode>> GobLang::Codegen::CodeGenerator::parseFun
         consumeSeparator(Separator::Comma, "Expected ', or ')'");
     }
     // consume the ')'
-    advance();
+    consumeSeparator(Separator::BracketClose, "Expected ')'");
     return args;
 }
 
