@@ -69,6 +69,8 @@ private:
 
 int main()
 {
+    size_t s = sizeof(std::variant<bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>);
+    size_t s1 = sizeof( uint32_t);
     std::string file = "./code.gob";
     std::vector<std::string> lines;
     std::ifstream codeFile(file);

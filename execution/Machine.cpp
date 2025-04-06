@@ -828,11 +828,11 @@ void GobLang::Machine::_call()
                 if (f->hasOwner())
                 {
                     pushToStack(MemoryValue{.type = Type::MemoryObj, .value = f->getOwner()});
-                    f->getFunction()->operator()(this);
+                    (*f->getFunction())(this);
                 }
                 else
                 {
-                    f->getFunction()->operator()(this);
+                    (*f->getFunction())(this);
                 }
             }
         }
@@ -1046,7 +1046,7 @@ inline void GobLang::Machine::_callMethod()
         pushToStack(object);
         if (objNode->hasNativeMethod(name))
         {
-            objNode->getNativeMethod(name)->operator()(this);
+            (*objNode->getNativeMethod(name))(this);
         }
         else
         {

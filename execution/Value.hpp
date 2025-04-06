@@ -11,7 +11,7 @@ namespace GobLang
     static size_t MAX_PRINT_RECURSION_DEPTH = MAX_PRINT_DEPTH;
     class Machine;
     class MemoryNode;
-    using FunctionValue = std::function<void(Machine *)>;
+    using FunctionValue = void (*)(Machine *);
     using Value = std::variant<bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>;
 
     struct MemoryValue
