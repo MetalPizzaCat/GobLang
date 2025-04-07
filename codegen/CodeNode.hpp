@@ -23,7 +23,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit IdNode(size_t id);
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
 
     private:
@@ -69,7 +69,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit StringNode(size_t id);
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
 
     private:
@@ -104,7 +104,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit FunctionCallNode(size_t id, std::vector<std::unique_ptr<CodeNode>> args);
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
 
     private:

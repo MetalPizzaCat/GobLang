@@ -34,6 +34,8 @@ namespace GobLang::Codegen
 
         std::unique_ptr<FloatNode> parseFloat();
 
+        std::unique_ptr<StringNode> parseString();
+
         std::unique_ptr<IntNode> parseInt();
 
         std::unique_ptr<CodeNode> parseId();

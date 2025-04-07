@@ -142,6 +142,13 @@ std::unique_ptr<FloatNode> GobLang::Codegen::CodeGenerator::parseFloat()
     return std::make_unique<FloatNode>(t->getValue());
 }
 
+std::unique_ptr<StringNode> GobLang::Codegen::CodeGenerator::parseString()
+{
+    StringToken *t = getTokenOrError<StringToken>("Expected a string");
+    advance();
+    return std::make_unique<StringNode>(t->getId());
+}
+
 std::unique_ptr<IntNode> GobLang::Codegen::CodeGenerator::parseInt()
 {
     IntToken *t = getTokenOrError<IntToken>("Expected a number");
@@ -211,6 +218,10 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parsePrimary()
     else if (isOfType<IntToken>())
     {
         return parseInt();
+    }
+    else if(isOfType<StringToken>())
+    {
+        return parseString();
     }
     else if (isSeparator(Separator::BracketOpen))
     {

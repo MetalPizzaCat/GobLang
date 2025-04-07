@@ -30,6 +30,8 @@ list(APPEND CODEGEN_FILES codegen/CodeGenerator.hpp
     codegen/SpecialCharacter.hpp
     codegen/Builder.hpp
     codegen/Builder.cpp
+    codegen/CodeGenValue.hpp
+    codegen/CodeGenValue.cpp
 )
 
 list(APPEND COMMON_SOURCE_FILES execution/Type.hpp

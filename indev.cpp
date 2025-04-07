@@ -91,21 +91,21 @@ int main()
     GobLang::Codegen::ByteCode bytes =  gen.getByteCode();
     GobLang::Codegen::byteCodeToText(bytes.operations);
 
-    // GobLang::Machine machine(compiler.getByteCode());
-    // MachineFunctions::bind(&machine);
+    GobLang::Machine machine(bytes);
+    MachineFunctions::bind(&machine);
     // machine.createType("NativeObject", NativeNode::constructor, {{"do_a_thing", NativeNode::nativeDoAThing}});
-    // std::vector<size_t> debugPoints = {};
-    // while (!machine.isAtTheEnd())
-    // {
-    //     if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
-    //     {
-    //         std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << ". Memory state: " << std::endl;
-    //         machine.printGlobalsInfo();
-    //         machine.printVariablesInfo();
-    //         machine.printStack();
-    //     }
-    //     machine.step();
-    // }
+    std::vector<size_t> debugPoints = {};
+    while (!machine.isAtTheEnd())
+    {
+        if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
+        {
+            std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << ". Memory state: " << std::endl;
+            machine.printGlobalsInfo();
+            machine.printVariablesInfo();
+            machine.printStack();
+        }
+        machine.step();
+    }
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }

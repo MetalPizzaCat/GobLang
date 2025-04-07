@@ -632,8 +632,8 @@ inline void GobLang::Machine::_mod()
 void GobLang::Machine::_set()
 {
     // (name val =)
-    MemoryValue val = _getFromTopAndPop();
     MemoryValue name = _getFromTopAndPop();
+    MemoryValue val = _getFromTopAndPop();
     StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
     if (memStr != nullptr)
     {

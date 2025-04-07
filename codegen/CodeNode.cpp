@@ -6,6 +6,11 @@ GobLang::Codegen::IdNode::IdNode(size_t id) : m_id(id)
 {
 }
 
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::IdNode::generateCode(Builder &builder)
+{
+    return builder.createVariableAccess(m_id);
+}
+
 std::string GobLang::Codegen::IdNode::toString()
 {
     return "{\"id\": \"" + std::to_string(m_id) + "\"}";
@@ -46,6 +51,15 @@ GobLang::Codegen::UnsignedIntNode::UnsignedIntNode(uint32_t val) : m_val(val)
 std::string GobLang::Codegen::UnsignedIntNode::toString()
 {
     return std::to_string(m_val);
+}
+
+GobLang::Codegen::StringNode::StringNode(size_t id) : m_id(id)
+{
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::StringNode::generateCode(Builder &builder)
+{
+    return builder.createConstString(m_id);
 }
 
 std::string GobLang::Codegen::StringNode::toString()
@@ -106,20 +120,24 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
     case Operator::MulAssign:
     case Operator::DivAssign:
     case Operator::ModuloAssign:
-    {
-    }
-    break;
+        return builder.createAssignment(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
     default:
-    {
-        return builder.createFloatOperation(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
+        return builder.createOperation(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
     }
-    break;
-    }
-    return std::unique_ptr<CodeGenValue>();
 }
 
 GobLang::Codegen::FunctionCallNode::FunctionCallNode(size_t id, std::vector<std::unique_ptr<CodeNode>> args) : m_id(id), m_args(std::move(args))
 {
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::FunctionCallNode::generateCode(Builder &builder)
+{
+    std::vector<std::unique_ptr<CodeGenValue>> args;
+    for (std::vector<std::unique_ptr<CodeNode>>::const_iterator it = m_args.begin(); it != m_args.end(); it++)
+    {
+        args.push_back(std::move((*it)->generateCode(builder)));
+    }
+    return builder.createCall(m_id, std::move(args));
 }
 
 std::string GobLang::Codegen::FunctionCallNode::toString()
