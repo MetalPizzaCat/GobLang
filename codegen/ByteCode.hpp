@@ -4,7 +4,7 @@
 #include <cstdint>
 #include "../execution/Function.hpp"
 #include "../execution/Structure.hpp"
-namespace GobLang::Compiler
+namespace GobLang::Codegen
 {
     struct ByteCode
     {

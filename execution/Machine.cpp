@@ -2,7 +2,7 @@
 #include "FunctionRef.hpp"
 #include <iostream>
 #include <vector>
-GobLang::Machine::Machine(Compiler::ByteCode const &code)
+GobLang::Machine::Machine(Codegen::ByteCode const &code)
 {
     m_constStrings = code.ids;
     m_operations = code.operations;

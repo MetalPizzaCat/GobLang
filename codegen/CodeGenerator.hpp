@@ -1,6 +1,7 @@
 #pragma once
 #include "Parser.hpp"
 #include "CodeNode.hpp"
+#include "ByteCode.hpp"
 
 namespace GobLang::Codegen
 {
@@ -13,6 +14,8 @@ namespace GobLang::Codegen
 
         void generate();
 
+        ByteCode getByteCode();
+
         /// @brief Block of code with n expressions separated by ;
         /// @return
         std::unique_ptr<SequenceNode> parseBody();
@@ -22,11 +25,11 @@ namespace GobLang::Codegen
         std::unique_ptr<CodeNode> parseStandaloneExpression();
 
         /// @brief Parse the condition + body of a branch. Could be used for loops
-        /// @return 
+        /// @return
         std::unique_ptr<BranchNode> parseBranch();
 
         /// @brief Parse if-elif-else block
-        /// @return 
+        /// @return
         std::unique_ptr<BranchChainNode> parseBranchChain();
 
         std::unique_ptr<FloatNode> parseFloat();
@@ -42,8 +45,6 @@ namespace GobLang::Codegen
         std::unique_ptr<CodeNode> parseGrouped();
 
         std::unique_ptr<CodeNode> parseExpression();
-
-        
 
         inline void advance() { m_it++; }
 
@@ -100,5 +101,7 @@ namespace GobLang::Codegen
     private:
         Parser const &m_parser;
         std::vector<std::unique_ptr<Token>>::const_iterator m_it;
+
+        std::unique_ptr<SequenceNode> m_rootSequence;
     };
 } // namespace CodeGen

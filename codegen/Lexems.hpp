@@ -2,6 +2,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <string>
 #include "../execution/Operations.hpp"
 namespace GobLang::Codegen
 {

@@ -1,6 +1,7 @@
 #include "CodeNode.hpp"
 #include <algorithm>
 
+#include "Lexems.hpp"
 GobLang::Codegen::IdNode::IdNode(size_t id) : m_id(id)
 {
 }
@@ -14,6 +15,11 @@ GobLang::Codegen::FloatNode::FloatNode(float val) : m_val(val)
 {
 }
 
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::FloatNode::generateCode(Builder &builder)
+{
+    return builder.createConstFloat(m_val);
+}
+
 std::string GobLang::Codegen::FloatNode::toString()
 {
     return std::to_string(m_val);
@@ -21,6 +27,11 @@ std::string GobLang::Codegen::FloatNode::toString()
 
 GobLang::Codegen::IntNode::IntNode(int32_t val) : m_val(val)
 {
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::IntNode::generateCode(Builder &builder)
+{
+    return builder.createConstInt(m_val);
 }
 
 std::string GobLang::Codegen::IntNode::toString()
@@ -44,6 +55,18 @@ std::string GobLang::Codegen::StringNode::toString()
 
 GobLang::Codegen::SequenceNode::SequenceNode(std::vector<std::unique_ptr<CodeNode>> seq) : m_sequence(std::move(seq))
 {
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::SequenceNode::generateCode(Builder &builder)
+{
+    builder.pushEmptyBlock();
+    BlockContext *block = builder.getCurrentBlock();
+    for (std::vector<std::unique_ptr<CodeNode>>::const_iterator it = m_sequence.begin(); it != m_sequence.end(); it++)
+    {
+        block->insert((*it)->generateCode(builder)->getGetOperationBytes());
+    }
+    block->appendMemoryClear();
+    return std::make_unique<BlockCodeGenValue>(builder.popBlock());
 }
 
 std::string GobLang::Codegen::SequenceNode::toString()
@@ -72,6 +95,29 @@ std::string GobLang::Codegen::BinaryOperationNode::toString()
     return "{ \"left\":" + m_left->toString() + ", \"right\": " + m_right->toString() + ", \"op\":\"" + symb + "\"}";
 }
 
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperationNode::generateCode(Builder &builder)
+{
+    switch (m_op)
+    {
+    // handle assignment first
+    case Operator::Assign:
+    case Operator::AddAssign:
+    case Operator::SubAssign:
+    case Operator::MulAssign:
+    case Operator::DivAssign:
+    case Operator::ModuloAssign:
+    {
+    }
+    break;
+    default:
+    {
+        return builder.createFloatOperation(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
+    }
+    break;
+    }
+    return std::unique_ptr<CodeGenValue>();
+}
+
 GobLang::Codegen::FunctionCallNode::FunctionCallNode(size_t id, std::vector<std::unique_ptr<CodeNode>> args) : m_id(id), m_args(std::move(args))
 {
 }
@@ -98,6 +144,16 @@ GobLang::Codegen::VariableCreationNode::VariableCreationNode(size_t id, std::uni
 std::string GobLang::Codegen::VariableCreationNode::toString()
 {
     return "{\"type\" : \"let\", \"var\": " + std::to_string(m_id) + ", \"body\" : " + m_body->toString() + "}";
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::VariableCreationNode::generateCode(Builder &builder)
+{
+    size_t var = builder.insertVariable(m_id);
+    if (var == -1)
+    {
+        throw std::exception();
+    }
+    return builder.createVariableInit(var, m_body->generateCode(builder));
 }
 
 GobLang::Codegen::BranchNode::BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body) : m_cond(std::move(cond)), m_body(std::move(body))

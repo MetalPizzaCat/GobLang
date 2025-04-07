@@ -88,8 +88,8 @@ int main()
     comp.parse();
     comp.printCode();
     GobLang::Codegen::CodeGenerator gen(comp);
-    gen.generate();
-
+    GobLang::Codegen::ByteCode bytes =  gen.getByteCode();
+    GobLang::Codegen::byteCodeToText(bytes.operations);
 
     // GobLang::Machine machine(compiler.getByteCode());
     // MachineFunctions::bind(&machine);

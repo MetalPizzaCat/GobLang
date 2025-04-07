@@ -31,7 +31,7 @@ namespace GobLang
         {
         }
 
-        explicit Machine(Compiler::ByteCode const &code);
+        explicit Machine(Codegen::ByteCode const &code);
 
         void addOperation(Operation op)
         {

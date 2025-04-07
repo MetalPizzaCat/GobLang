@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include "Lexems.hpp"
+#include "Builder.hpp"
 
 namespace GobLang::Codegen
 {
@@ -10,6 +11,8 @@ namespace GobLang::Codegen
     {
     public:
         virtual ~CodeNode() = default;
+
+        virtual std::unique_ptr<CodeGenValue> generateCode(Builder &builder) = 0;
 
         virtual std::string toString() = 0;
 
@@ -20,7 +23,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit IdNode(size_t id);
-
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
         std::string toString() override;
 
     private:
@@ -32,6 +35,8 @@ namespace GobLang::Codegen
     public:
         explicit FloatNode(float val);
 
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+
         std::string toString() override;
 
     private:
@@ -42,7 +47,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit IntNode(int32_t val);
-
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
 
     private:
@@ -53,7 +58,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit UnsignedIntNode(uint32_t val);
-
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
         std::string toString() override;
 
     private:
@@ -64,7 +69,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit StringNode(size_t id);
-
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
         std::string toString() override;
 
     private:
@@ -75,7 +80,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit SequenceNode(std::vector<std::unique_ptr<CodeNode>> seq);
-
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
 
     private:
@@ -87,6 +92,7 @@ namespace GobLang::Codegen
     public:
         explicit BinaryOperationNode(Operator op, std::unique_ptr<CodeNode> left, std::unique_ptr<CodeNode> right);
         std::string toString() override;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
 
     private:
         std::unique_ptr<CodeNode> m_left;
@@ -98,6 +104,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit FunctionCallNode(size_t id, std::vector<std::unique_ptr<CodeNode>> args);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
         std::string toString() override;
 
     private:
@@ -109,6 +116,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
         std::string toString() override;
 
     private:
@@ -121,6 +129,7 @@ namespace GobLang::Codegen
     public:
         explicit BranchChainNode(std::unique_ptr<BranchNode> primary, std::vector<std::unique_ptr<BranchNode>> secondary, std::unique_ptr<CodeNode> elseBlock = nullptr);
         std::string toString() override;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
 
     private:
         std::unique_ptr<BranchNode> m_primary;
@@ -133,6 +142,7 @@ namespace GobLang::Codegen
     public:
         explicit VariableCreationNode(size_t id, std::unique_ptr<CodeNode> body);
         std::string toString() override;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
 
     private:
         size_t m_id;

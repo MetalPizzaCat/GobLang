@@ -9,11 +9,23 @@ GobLang::Codegen::CodeGenerator::CodeGenerator(Parser const &parser) : m_parser(
 
 void GobLang::Codegen::CodeGenerator::generate()
 {
-    auto seq = parseBody();
-    if (seq)
+    m_rootSequence = parseBody();
+    if (m_rootSequence)
     {
-        std::cout << seq->toString() << std::endl;
+        std::cout << m_rootSequence->toString() << std::endl;
     }
+}
+
+ByteCode GobLang::Codegen::CodeGenerator::getByteCode()
+{
+    generate();
+    Builder builder;
+    ByteCode result;
+    result.ids = m_parser.getIds();
+
+    result.operations = m_rootSequence->generateCode(builder)->getGetOperationBytes();
+    result.operations.push_back((uint8_t)Operation::End);
+    return result;
 }
 
 std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
@@ -59,7 +71,6 @@ std::unique_ptr<VariableCreationNode> GobLang::Codegen::CodeGenerator::parseVarC
     consumeSeparator(Separator::End, "Expected ';'");
     return std::make_unique<VariableCreationNode>(id->getId(), std::move(body));
 }
-
 
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseStandaloneExpression()
 {

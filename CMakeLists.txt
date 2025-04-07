@@ -28,6 +28,8 @@ list(APPEND CODEGEN_FILES codegen/CodeGenerator.hpp
     codegen/ByteCode.hpp
     codegen/Lexems.hpp
     codegen/SpecialCharacter.hpp
+    codegen/Builder.hpp
+    codegen/Builder.cpp
 )
 
 list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
