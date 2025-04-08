@@ -297,3 +297,29 @@ std::string GobLang::Codegen::BoolNode::toString()
 {
     return m_val ? "true" : "false";
 }
+
+GobLang::Codegen::WhileLoopNode::WhileLoopNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body) : BranchNode(std::move(cond), std::move(body))
+{
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode::generateCode(Builder &builder)
+{
+    BlockContext *block = builder.getCurrentBlock();
+    std::vector<uint8_t> bytes = m_cond->generateCode(builder)->getGetOperationBytes();
+    bytes.push_back((uint8_t)Operation::JumpIfNot);
+    // don't pad cause we can just insert value later
+    
+    std::vector<uint8_t> body = m_body->generateCode(builder)->getGetOperationBytes();
+    std::vector<uint8_t> retNum = parseToBytes(body.size() + bytes.size() + sizeof(ProgramAddressType));
+    // body always has a return, but it goes backwards and is equal to sizeof(body)
+    body.push_back((uint8_t)Operation::JumpBack);
+   
+    body.insert(body.end(), retNum.begin(), retNum.end());
+
+    // recalculate the size with the address included to properly jump forward
+    retNum = parseToBytes(body.size() + sizeof(ProgramAddressType) + 1);
+    bytes.insert(bytes.end(), retNum.begin(), retNum.end());
+    bytes.insert(bytes.end(), body.begin(), body.end());
+
+    return std::make_unique<GeneratedCodeGenValue>(bytes);
+}

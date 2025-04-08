@@ -28,6 +28,8 @@ namespace GobLang::Codegen
         /// @return
         std::unique_ptr<BranchNode> parseBranch();
 
+        std::unique_ptr<WhileLoopNode> parseLoop();
+
         /// @brief Parse if-elif-else block
         /// @return
         std::unique_ptr<BranchChainNode> parseBranchChain();

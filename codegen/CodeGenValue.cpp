@@ -84,6 +84,11 @@ void GobLang::Codegen::BranchCodeGenValue::addJump(size_t offset)
     m_jumpAfter = offset;
 }
 
+void GobLang::Codegen::BranchCodeGenValue::addJumpBack(size_t offset)
+{
+    m_jumpAfter = offset;
+}
+
 std::vector<uint8_t> GobLang::Codegen::BranchCodeGenValue::getGetOperationBytes()
 {
     std::vector<uint8_t> bytes = m_condBytes;
@@ -91,7 +96,7 @@ std::vector<uint8_t> GobLang::Codegen::BranchCodeGenValue::getGetOperationBytes(
     bytes.insert(bytes.end(), m_bodyBytes.begin(), m_bodyBytes.end());
     if (m_jumpAfter != -1)
     {
-        bytes.push_back((uint8_t)Operation::Jump);
+        bytes.push_back(m_backwards ? (uint8_t)Operation::JumpBack : (uint8_t)Operation::Jump);
         std::vector<uint8_t> num = parseToBytes(m_jumpAfter);
         bytes.insert(bytes.end(), num.begin(), num.end());
     }

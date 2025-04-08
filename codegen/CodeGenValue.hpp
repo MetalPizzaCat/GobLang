@@ -82,6 +82,8 @@ namespace GobLang::Codegen
         /// @param offset
         void addJump(size_t offset);
 
+        void addJumpBack(size_t offset);
+
         std::vector<uint8_t> getGetOperationBytes() override;
 
         /// @brief Set value for the jump that occurs if condition is evaluated to false
@@ -102,6 +104,7 @@ namespace GobLang::Codegen
 
     private:
         size_t m_jumpAfter = -1;
+        bool m_backwards = false;
         std::vector<uint8_t> m_condBytes;
         std::vector<uint8_t> m_bodyBytes;
     };

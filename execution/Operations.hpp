@@ -56,10 +56,10 @@ namespace GobLang
         ShiftLeft,
         ShiftRight,
         Negate,
-        /**
-         * @brief Unconditionally jump. Uses sizeof(size_t) bytes to get the address to jump to
-         */
+        /// @brief  Unconditionally jump to PC + n bytes forward
         Jump,
+        /// @brief  Unconditionally jump to PC + n bytes backward
+        JumpBack,
         /**
          * @brief Jump only if the last operation on stack is false. Uses sizeof(size_t) bytes to get the address to jump to
          */
@@ -151,8 +151,9 @@ namespace GobLang
         OperationData{.op = Operation::LessOrEq, .text = "eqless", .argType = OperatorArgType::None},
         OperationData{.op = Operation::Or, .text = "or", .argType = OperatorArgType::None},
         OperationData{.op = Operation::And, .text = "and", .argType = OperatorArgType::None},
-        OperationData{.op = Operation::Jump, .text = "goto", .argType = OperatorArgType::Address},
-        OperationData{.op = Operation::JumpIfNot, .text = "goto_if_not", .argType = OperatorArgType::Address},
+        OperationData{.op = Operation::Jump, .text = "jmp_by", .argType = OperatorArgType::Address},
+        OperationData{.op = Operation::JumpBack, .text = "jump_back_by", .argType = OperatorArgType::Address},
+        OperationData{.op = Operation::JumpIfNot, .text = "jmp_by_if_not", .argType = OperatorArgType::Address},
         OperationData{.op = Operation::ShrinkLocal, .text = "local_free", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::Return, .text = "ret", .argType = OperatorArgType::None},
         OperationData{.op = Operation::ReturnValue, .text = "ret_val", .argType = OperatorArgType::None},

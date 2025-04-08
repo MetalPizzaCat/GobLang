@@ -41,6 +41,10 @@ std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
         {
             seq.push_back(std::move(parseBranchChain()));
         }
+        else if(isKeyword(Keyword::While))
+        {
+            seq.push_back(parseLoop());
+        }
         else if (isOfType<IdToken>())
         {
             seq.push_back(std::move(parseStandaloneExpression()));
@@ -109,6 +113,24 @@ std::unique_ptr<BranchNode> GobLang::Codegen::CodeGenerator::parseBranch()
     consumeSeparator(Separator::BlockClose, "Expected '}'");
 
     return std::make_unique<BranchNode>(std::move(cond), std::move(body));
+}
+
+std::unique_ptr<WhileLoopNode> GobLang::Codegen::CodeGenerator::parseLoop()
+{
+      // skip if
+      advance();
+      consumeSeparator(Separator::BracketOpen, "Expected '('");
+      std::unique_ptr<CodeNode> cond = parseExpression();
+      if (!cond)
+      {
+          error("Expected expression");
+      }
+      consumeSeparator(Separator::BracketClose, "Expected ')'");
+      consumeSeparator(Separator::BlockOpen, "Expected '{'");
+      std::unique_ptr<CodeNode> body = parseBody();
+      consumeSeparator(Separator::BlockClose, "Expected '}'");
+  
+      return std::make_unique<WhileLoopNode>(std::move(cond), std::move(body));
 }
 
 std::unique_ptr<BranchChainNode> GobLang::Codegen::CodeGenerator::parseBranchChain()

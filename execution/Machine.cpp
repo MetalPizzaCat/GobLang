@@ -114,7 +114,10 @@ void GobLang::Machine::step()
         break;
     case Operation::Jump:
         _jump();
-        return; // this uses return because we want to avoid advancing the counter after jup
+        return; // this uses return because we want to avoid advancing the counter after jmp
+    case Operation::JumpBack:
+        _jumpBack();
+        return;
     case Operation::JumpIfNot:
         _jumpIf();
         return;
@@ -488,6 +491,16 @@ void GobLang::Machine::_jumpIf()
     {
         throw RuntimeException(std::string("Invalid data type passed to condition check. Expected bool got: ") + typeToString(a.type));
     }
+}
+
+inline void GobLang::Machine::_jumpBack()
+{
+    ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
+    if (dest > m_programCounter)
+    {
+        throw RuntimeException("Jump back offset is larger than the PC");
+    }
+    m_programCounter -= dest;
 }
 
 void GobLang::Machine::_add()

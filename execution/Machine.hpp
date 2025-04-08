@@ -170,6 +170,8 @@ namespace GobLang
 
         inline void _jumpIf();
 
+        inline void _jumpBack();
+
         inline void _add();
 
         inline void _sub();

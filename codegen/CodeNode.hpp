@@ -132,9 +132,16 @@ namespace GobLang::Codegen
         std::unique_ptr<BranchCodeGenValue> generateBranchCode(Builder &builder);
         std::string toString() override;
 
-    private:
+    protected:
         std::unique_ptr<CodeNode> m_cond;
         std::unique_ptr<CodeNode> m_body;
+    };
+
+    class WhileLoopNode : public BranchNode
+    {
+    public:
+        explicit WhileLoopNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
     };
 
     class BranchChainNode : public CodeNode
