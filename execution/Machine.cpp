@@ -465,23 +465,23 @@ GobLang::ProgramAddressType GobLang::Machine::_getAddressFromByteCode(size_t sta
 void GobLang::Machine::_jump()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
-    m_programCounter = dest;
+    m_programCounter = dest + m_programCounter;
 }
 
 void GobLang::Machine::_jumpIf()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
-    m_programCounter += sizeof(ProgramAddressType);
+
     MemoryValue a = _getFromTopAndPop();
     if (a.type == Type::Bool)
     {
         if (!std::get<bool>(a.value))
         {
-            m_programCounter = dest;
+            m_programCounter = dest + m_programCounter;
         }
         else
         {
-            m_programCounter++;
+            m_programCounter += sizeof(ProgramAddressType) + 1;
         }
     }
     else
@@ -979,9 +979,9 @@ inline void GobLang::Machine::_getField()
         if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
         {
             MemoryValue v = arrNode->getField(strNode->getString());
-            if(std::holds_alternative<MemoryNode*>(v.value))
+            if (std::holds_alternative<MemoryNode *>(v.value))
             {
-                addObject(std::get<MemoryNode*>(v.value));
+                addObject(std::get<MemoryNode *>(v.value));
             }
             pushToStack(v);
         }

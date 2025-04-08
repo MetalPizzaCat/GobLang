@@ -38,6 +38,8 @@ namespace GobLang::Codegen
 
         std::unique_ptr<IntNode> parseInt();
 
+        std::unique_ptr<BoolNode> parseBool();
+
         std::unique_ptr<CodeNode> parseId();
 
         std::vector<std::unique_ptr<CodeNode>> parseFunctionCallArguments();

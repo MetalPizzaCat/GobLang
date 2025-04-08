@@ -54,6 +54,17 @@ namespace GobLang::Codegen
         int32_t m_val;
     };
 
+    class BoolNode : public CodeNode
+    {
+    public:
+        explicit BoolNode(bool val);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::string toString() override;
+
+    private:
+        bool m_val;
+    };
+
     class UnsignedIntNode : public CodeNode
     {
     public:
@@ -116,7 +127,9 @@ namespace GobLang::Codegen
     {
     public:
         explicit BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body);
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateBranchCode(builder); }
+
+        std::unique_ptr<BranchCodeGenValue> generateBranchCode(Builder &builder);
         std::string toString() override;
 
     private:
@@ -129,7 +142,7 @@ namespace GobLang::Codegen
     public:
         explicit BranchChainNode(std::unique_ptr<BranchNode> primary, std::vector<std::unique_ptr<BranchNode>> secondary, std::unique_ptr<CodeNode> elseBlock = nullptr);
         std::string toString() override;
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
 
     private:
         std::unique_ptr<BranchNode> m_primary;

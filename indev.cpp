@@ -68,7 +68,7 @@ private:
 int main()
 {
     size_t s = sizeof(std::variant<bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>);
-    size_t s1 = sizeof( uint32_t);
+    size_t s1 = sizeof(uint32_t);
     std::string file = "./code.gob";
     std::vector<std::string> lines;
     std::ifstream codeFile(file);
@@ -88,12 +88,11 @@ int main()
     comp.parse();
     comp.printCode();
     GobLang::Codegen::CodeGenerator gen(comp);
-    GobLang::Codegen::ByteCode bytes =  gen.getByteCode();
+    GobLang::Codegen::ByteCode bytes = gen.getByteCode();
     GobLang::Codegen::byteCodeToText(bytes.operations);
 
     GobLang::Machine machine(bytes);
     MachineFunctions::bind(&machine);
-    // machine.createType("NativeObject", NativeNode::constructor, {{"do_a_thing", NativeNode::nativeDoAThing}});
     std::vector<size_t> debugPoints = {};
     while (!machine.isAtTheEnd())
     {

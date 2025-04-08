@@ -1,6 +1,7 @@
 #include "CodeGenValue.hpp"
 #include "../execution/Operations.hpp"
 #include "Builder.hpp"
+#include "../execution/Value.hpp"
 
 GobLang::Codegen::BlockCodeGenValue::BlockCodeGenValue(std::unique_ptr<BlockContext> block) : m_block(std::move(block))
 {
@@ -66,6 +67,54 @@ void GobLang::Codegen::BlockContext::insert(std::vector<uint8_t> const &bytes)
 
 void GobLang::Codegen::BlockContext::appendMemoryClear()
 {
-    m_bytes.push_back((uint8_t)Operation::ShrinkLocal);
-    m_bytes.push_back((uint8_t)m_variables.size());
+    if (m_variables.size() > 0)
+    {
+        m_bytes.push_back((uint8_t)Operation::ShrinkLocal);
+        m_bytes.push_back((uint8_t)m_variables.size());
+    }
+}
+
+GobLang::Codegen::BranchCodeGenValue::BranchCodeGenValue(std::vector<uint8_t> cond, std::vector<uint8_t> body)
+    : m_condBytes(std::move(cond)), m_bodyBytes(std::move(body))
+{
+}
+
+void GobLang::Codegen::BranchCodeGenValue::addJump(size_t offset)
+{
+    m_jumpAfter = offset;
+}
+
+std::vector<uint8_t> GobLang::Codegen::BranchCodeGenValue::getGetOperationBytes()
+{
+    std::vector<uint8_t> bytes = m_condBytes;
+
+    bytes.insert(bytes.end(), m_bodyBytes.begin(), m_bodyBytes.end());
+    if (m_jumpAfter != -1)
+    {
+        bytes.push_back((uint8_t)Operation::Jump);
+        std::vector<uint8_t> num = parseToBytes(m_jumpAfter);
+        bytes.insert(bytes.end(), num.begin(), num.end());
+    }
+    return bytes;
+}
+
+void GobLang::Codegen::BranchCodeGenValue::setConditionJumpOffset(size_t offset)
+{
+    std::vector<uint8_t> num = parseToBytes(offset);
+    std::copy(num.begin(), num.end(), m_condBytes.end() - sizeof(ProgramAddressType));
+}
+
+size_t GobLang::Codegen::BranchCodeGenValue::getBodySize()
+{
+    return m_bodyBytes.size() + ((m_jumpAfter != -1) ? (sizeof(ProgramAddressType) + 1) : 0);
+}
+
+size_t GobLang::Codegen::BranchCodeGenValue::getFullSize()
+{
+    return m_condBytes.size() + getBodySize();
+}
+
+size_t GobLang::Codegen::BranchCodeGenValue::getConditionSize()
+{
+    return m_condBytes.size();
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <cstdint>
+#include <iostream>
 namespace GobLang::Codegen
 {
     template <typename T>
@@ -27,6 +28,11 @@ namespace GobLang::Codegen
                 {
                     return (uint8_t)a.op == *it;
                 });
+            if (opIt == Operations.end())
+            {
+                std::cerr << "Unknown byte at " << std::hex << address << std::dec << std::endl;
+                return;
+            }
             if (opIt != Operations.end())
             {
                 std::cout << std::hex << address << std::dec << ": " << (opIt->text) << " ";

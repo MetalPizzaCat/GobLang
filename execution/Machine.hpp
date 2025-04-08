@@ -19,11 +19,6 @@
 using namespace GobLang::Struct;
 namespace GobLang
 {
-    /**
-     * @brief Type used to store jump addresses in the code
-     *
-     */
-    using ProgramAddressType = size_t;
     class Machine
     {
     public:

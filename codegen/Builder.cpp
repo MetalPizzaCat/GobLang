@@ -25,7 +25,13 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstString(size_t strId)
 {
-    return std::make_unique<GeneratedCodeGenValue>( std::vector<uint8_t>{(uint8_t)Operation::PushConstString, (uint8_t)strId});
+    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Operation::PushConstString, (uint8_t)strId});
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstBool(bool val)
+{
+    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{
+        (val ? (uint8_t)Operation::PushTrue : (uint8_t)Operation::PushFalse)});
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createOperation(
@@ -36,6 +42,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     std::vector<OperatorData>::const_iterator opIt = std::find_if(Operators.begin(), Operators.end(), [op](OperatorData const &opData)
                                                                   { return op == opData.op; });
 
+    
     std::vector<uint8_t> bytes;
     std::vector<uint8_t> l = left->getGetOperationBytes();
     std::vector<uint8_t> r = right->getGetOperationBytes();

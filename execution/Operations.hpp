@@ -149,6 +149,8 @@ namespace GobLang
         OperationData{.op = Operation::Less, .text = "less", .argType = OperatorArgType::None},
         OperationData{.op = Operation::MoreOrEq, .text = "eqmore", .argType = OperatorArgType::None},
         OperationData{.op = Operation::LessOrEq, .text = "eqless", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::Or, .text = "or", .argType = OperatorArgType::None},
+        OperationData{.op = Operation::And, .text = "and", .argType = OperatorArgType::None},
         OperationData{.op = Operation::Jump, .text = "goto", .argType = OperatorArgType::Address},
         OperationData{.op = Operation::JumpIfNot, .text = "goto_if_not", .argType = OperatorArgType::Address},
         OperationData{.op = Operation::ShrinkLocal, .text = "local_free", .argType = OperatorArgType::Byte},

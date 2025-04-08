@@ -162,10 +162,10 @@ namespace GobLang::Codegen
         OperatorData{.symbol = "*", .op = Operator::Mul, .priority = 7, .operation = Operation::Mul,.isCombinedAssignment = false},
         OperatorData{.symbol = "/", .op = Operator::Div, .priority = 7, .operation = Operation::Div,.isCombinedAssignment = false},
         // boolean operators
-        OperatorData{.symbol = "and", .op = Operator::And, .priority = 4, .operation = Operation::And,.isCombinedAssignment = false},
         OperatorData{.symbol = "&&", .op = Operator::And, .priority = 4, .operation = Operation::And,.isCombinedAssignment = false},
-        OperatorData{.symbol = "or", .op = Operator::Or, .priority = 3, .operation = Operation::Or,.isCombinedAssignment = false},
         OperatorData{.symbol = "||", .op = Operator::Or, .priority = 3, .operation = Operation::Or,.isCombinedAssignment = false},
+        OperatorData{.symbol = "and", .op = Operator::And, .priority = 4, .operation = Operation::And,.isCombinedAssignment = false},
+        OperatorData{.symbol = "or", .op = Operator::Or, .priority = 3, .operation = Operation::Or,.isCombinedAssignment = false},
         // bit math
         OperatorData{.symbol = "&=", .op = Operator::BitAndAssign, .priority = 1, .operation = Operation::BitAnd,.isCombinedAssignment = true},
         OperatorData{.symbol = "~=", .op = Operator::BitNotAssign, .priority = 1, .operation = Operation::BitNot,.isCombinedAssignment = true},

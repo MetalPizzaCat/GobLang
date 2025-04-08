@@ -7,23 +7,6 @@
 
 namespace GobLang::Codegen
 {
-    template <typename T>
-    std::vector<uint8_t> parseToBytes(T val)
-    {
-        uint32_t *v = reinterpret_cast<uint32_t *>(&val);
-        std::vector<uint8_t> res;
-        for (int32_t i = sizeof(T) - 1; i >= 0; i--)
-        {
-            uint64_t offset = (sizeof(uint8_t) * i) * 8;
-            const size_t mask = 0xff;
-            uint64_t num = (*v) & (mask << offset);
-            uint64_t numFixed = num >> offset;
-            res.push_back((uint8_t)numFixed);
-        }
-        return res;
-    }
-
-
     class Builder
     {
     public:
@@ -34,6 +17,8 @@ namespace GobLang::Codegen
         std::unique_ptr<CodeGenValue> createConstInt(int32_t val);
 
         std::unique_ptr<CodeGenValue> createConstString(size_t strId);
+
+        std::unique_ptr<CodeGenValue> createConstBool(bool val);
 
         std::unique_ptr<CodeGenValue> createOperation(std::unique_ptr<CodeGenValue> left, std::unique_ptr<CodeGenValue> right, Operator op);
 

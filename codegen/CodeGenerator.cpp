@@ -156,6 +156,13 @@ std::unique_ptr<IntNode> GobLang::Codegen::CodeGenerator::parseInt()
     return std::make_unique<IntNode>(t->getValue());
 }
 
+std::unique_ptr<BoolNode> GobLang::Codegen::CodeGenerator::parseBool()
+{
+    BoolConstToken *t = getTokenOrError<BoolConstToken>("Expected a bool value");
+    advance();
+    return std::make_unique<BoolNode>(t->getValue());
+}
+
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseId()
 {
     IdToken *t = getTokenOrError<IdToken>("Expected an identifier");
@@ -219,9 +226,13 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parsePrimary()
     {
         return parseInt();
     }
-    else if(isOfType<StringToken>())
+    else if (isOfType<StringToken>())
     {
         return parseString();
+    }
+    else if (isOfType<BoolConstToken>())
+    {
+        return parseBool();
     }
     else if (isSeparator(Separator::BracketOpen))
     {

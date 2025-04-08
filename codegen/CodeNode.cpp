@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "Lexems.hpp"
+#include "../execution/Value.hpp"
 GobLang::Codegen::IdNode::IdNode(size_t id) : m_id(id)
 {
 }
@@ -113,13 +114,18 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
 {
     switch (m_op)
     {
-    // handle assignment first
-    case Operator::Assign:
+
     case Operator::AddAssign:
     case Operator::SubAssign:
     case Operator::MulAssign:
     case Operator::DivAssign:
+    case Operator::BitAndAssign:
+    case Operator::BitNotAssign:
+    case Operator::BitXorAssign:
     case Operator::ModuloAssign:
+        throw std::exception();
+    // handle assignment first
+    case Operator::Assign:
         return builder.createAssignment(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
     default:
         return builder.createOperation(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
@@ -178,6 +184,20 @@ GobLang::Codegen::BranchNode::BranchNode(std::unique_ptr<CodeNode> cond, std::un
 {
 }
 
+std::unique_ptr<GobLang::Codegen::BranchCodeGenValue> GobLang::Codegen::BranchNode::generateBranchCode(Builder &builder)
+{
+    std::vector<uint8_t> bytes = m_cond->generateCode(builder)->getGetOperationBytes();
+    bytes.push_back((uint8_t)Operation::JumpIfNot);
+    // pad the space to allocate space for future offset
+    for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
+    {
+        bytes.push_back(0x0);
+    }
+    std::vector<uint8_t> body = m_body->generateCode(builder)->getGetOperationBytes();
+
+    return std::make_unique<BranchCodeGenValue>(bytes, body);
+}
+
 std::string GobLang::Codegen::BranchNode::toString()
 {
     return "{\"cond\": " + m_cond->toString() + ", \"body\": " + m_body->toString() + "}";
@@ -211,4 +231,69 @@ std::string GobLang::Codegen::BranchChainNode::toString()
         base += "null";
     }
     return base + "}";
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BranchChainNode::generateCode(Builder &builder)
+{
+    BlockContext *block = builder.getCurrentBlock();
+    // where to jump if all blocks fail
+    size_t endOffset = 0;
+
+    std::unique_ptr<BranchCodeGenValue> ifBlock = m_primary->generateBranchCode(builder);
+    if (m_secondary.empty() || m_else)
+    {
+        ifBlock->addJump(0);
+    }
+    // head jumps just beyond this block if condition is false
+    ifBlock->setConditionJumpOffset(ifBlock->getBodySize() + sizeof(ProgramAddressType) + 1);
+
+    std::vector<std::unique_ptr<BranchCodeGenValue>> elifBlocks;
+    for (std::vector<std::unique_ptr<BranchNode>>::const_iterator it = m_secondary.begin(); it != m_secondary.end(); it++)
+    {
+        elifBlocks.push_back((*it)->generateBranchCode(builder));
+
+        if (it + 1 != m_secondary.end() || m_else)
+        {
+            elifBlocks.back()->addJump(0);
+        }
+        elifBlocks.back()->setConditionJumpOffset(elifBlocks.back()->getBodySize() + sizeof(ProgramAddressType) + 1);
+        // skip past the entire block
+        endOffset += elifBlocks.back()->getFullSize();
+    }
+
+    std::vector<uint8_t> elseBlock = m_else ? m_else->generateCode(builder)->getGetOperationBytes() : std::vector<uint8_t>();
+
+    // primary block jumps to sizeof(self) + sum(...sizeof(elif)) + sizeof(else)
+
+    endOffset += elseBlock.size();
+    ifBlock->addJump(endOffset + sizeof(ProgramAddressType) + 1);
+    // but we don't update the value with the last block cause we are going to reuse it for writing proper elif jumps
+    std::vector<uint8_t> bytes = ifBlock->getGetOperationBytes();
+    for (std::vector<std::unique_ptr<BranchCodeGenValue>>::const_iterator it = elifBlocks.begin(); it != elifBlocks.end(); it++)
+    {
+        endOffset -= (*it)->getFullSize();
+        if ((*it)->hasEndJump())
+        {
+            (*it)->addJump(endOffset + sizeof(ProgramAddressType) + 1);
+        }
+        std::vector<uint8_t> temp = (*it)->getGetOperationBytes();
+        bytes.insert(bytes.end(), temp.begin(), temp.end());
+    }
+    bytes.insert(bytes.end(), elseBlock.begin(), elseBlock.end());
+
+    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+}
+
+GobLang::Codegen::BoolNode::BoolNode(bool val) : m_val(val)
+{
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BoolNode::generateCode(Builder &builder)
+{
+    return builder.createConstBool(m_val);
+}
+
+std::string GobLang::Codegen::BoolNode::toString()
+{
+    return m_val ? "true" : "false";
 }
