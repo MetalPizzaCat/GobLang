@@ -9,9 +9,9 @@
 #include "standard/MachineFunctions.hpp"
 #include "codegen/Disassembly.hpp"
 
-
-//#define INDEV_DEBUG_TREE_ONLY
+// #define INDEV_DEBUG_TREE_ONLY
 #define INDEV_DEBUG_RUN_FULL_CODE
+#define INDEV_DEBUG_SHOW_TREE
 
 using namespace GobLang;
 class NativeNode : public GobLang::Struct::NativeStructureObjectNode
@@ -98,6 +98,9 @@ int main()
     gen.printTree();
 #else
     GobLang::Codegen::ByteCode bytes = gen.getByteCode();
+#ifdef INDEV_DEBUG_SHOW_TREE
+    gen.printTree();
+#endif
     GobLang::Codegen::byteCodeToText(bytes.operations);
 #ifdef INDEV_DEBUG_RUN_FULL_CODE
     GobLang::Machine machine(bytes);

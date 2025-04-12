@@ -14,7 +14,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::IdNode::genera
 
 std::string GobLang::Codegen::IdNode::toString()
 {
-    return "{\"id\": \"" + std::to_string(m_id) + "\"}";
+    return "{\"id\": " + std::to_string(m_id) + "}";
 }
 
 GobLang::Codegen::FloatNode::FloatNode(float val) : m_val(val)
@@ -65,7 +65,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::StringNode::ge
 
 std::string GobLang::Codegen::StringNode::toString()
 {
-    return "{\"str\": \"" + std::to_string(m_id) + "\"}";
+    return "{\"str\": " + std::to_string(m_id) + "}";
 }
 
 GobLang::Codegen::SequenceNode::SequenceNode(std::vector<std::unique_ptr<CodeNode>> seq) : m_sequence(std::move(seq))
@@ -123,10 +123,18 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
     case Operator::BitNotAssign:
     case Operator::BitXorAssign:
     case Operator::ModuloAssign:
-        throw std::exception();
+    case Operator::BitRightShiftAssign:
+    case Operator::BitLeftShiftAssign:
+    {
+        std::unique_ptr<CodeGenValue> oper = builder.createOperation(m_left->generateCode(builder),
+                                                                     m_right->generateCode(builder),
+                                                                     AssignmentAndActionOperatorOrigins.at(m_op));
+
+        return builder.createAssignment(m_left->generateCode(builder), std::move(oper));
+    }
     // handle assignment first
     case Operator::Assign:
-        return builder.createAssignment(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
+        return builder.createAssignment(m_left->generateCode(builder), m_right->generateCode(builder));
     default:
         return builder.createOperation(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
     }

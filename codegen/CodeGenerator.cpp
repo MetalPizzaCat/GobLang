@@ -10,10 +10,6 @@ GobLang::Codegen::CodeGenerator::CodeGenerator(Parser const &parser) : m_parser(
 void GobLang::Codegen::CodeGenerator::generate()
 {
     m_rootSequence = parseBody();
-    if (m_rootSequence)
-    {
-        std::cout << m_rootSequence->toString() << std::endl;
-    }
 }
 
 ByteCode GobLang::Codegen::CodeGenerator::getByteCode()
@@ -91,7 +87,7 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseStandaloneExpres
     std::unique_ptr<CodeNode> expr = parseIdExpression(std::make_unique<IdNode>(t->getId()));
     if (isAssignment())
     {
-        std::unique_ptr<CodeNode> val =  parseBinaryOperationRightSide(0, std::move(expr));
+        std::unique_ptr<CodeNode> val = parseBinaryOperationRightSide(0, std::move(expr));
         if (!val)
         {
             error("Expected a value");
@@ -450,8 +446,19 @@ bool GobLang::Codegen::CodeGenerator::isAssignment()
 
 void GobLang::Codegen::CodeGenerator::printTree()
 {
-    if (!m_rootSequence)
+    if (m_rootSequence)
     {
-        std::cout << m_rootSequence->toString() << std::endl;
+        std::string out = "{\"strings\" : [";
+        std::string strings;
+        for (std::vector<std::string>::const_iterator it = m_parser.getIds().begin(); it != m_parser.getIds().end(); it++)
+        {
+            out += "\"" + (*it) + "\"";
+            if (it + 1 != m_parser.getIds().end())
+            {
+                out += ",";
+            }
+        }
+        out += "], \"code\" : " + m_rootSequence->toString() + "}";
+        std::cout << out << std::endl;
     }
 }

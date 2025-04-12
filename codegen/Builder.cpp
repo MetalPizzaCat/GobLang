@@ -53,12 +53,8 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createAssignment(
     std::unique_ptr<CodeGenValue> left,
-    std::unique_ptr<CodeGenValue> right,
-    Operator op)
+    std::unique_ptr<CodeGenValue> right)
 {
-
-    std::vector<OperatorData>::const_iterator opIt = std::find_if(Operators.begin(), Operators.end(), [op](OperatorData const &opData)
-                                                                  { return op == opData.op; });
 
     std::vector<uint8_t> bytes;
     std::vector<uint8_t> l = left->getSetOperationBytes();
