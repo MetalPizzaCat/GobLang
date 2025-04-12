@@ -87,6 +87,22 @@ namespace GobLang::Codegen
         size_t m_id;
     };
 
+    class BreakNode : public CodeNode
+    {
+    public:
+        explicit BreakNode() = default;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::string toString() override;
+    };
+
+    class ContinueNode : public CodeNode
+    {
+    public:
+        explicit ContinueNode() = default;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::string toString() override;
+    };
+
     class SequenceNode : public CodeNode
     {
     public:
@@ -111,15 +127,27 @@ namespace GobLang::Codegen
         Operator m_op;
     };
 
+    class ArrayAccessNode : public CodeNode
+    {
+    public:
+        explicit ArrayAccessNode(std::unique_ptr<CodeNode> value, std::unique_ptr<CodeNode> address);
+        std::string toString() override;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+
+    private:
+        std::unique_ptr<CodeNode> m_array;
+        std::unique_ptr<CodeNode> m_index;
+    };
+
     class FunctionCallNode : public CodeNode
     {
     public:
-        explicit FunctionCallNode(size_t id, std::vector<std::unique_ptr<CodeNode>> args);
+        explicit FunctionCallNode(std::unique_ptr<CodeNode> value, std::vector<std::unique_ptr<CodeNode>> args);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
 
     private:
-        size_t m_id;
+        std::unique_ptr<CodeNode> m_value;
         std::vector<std::unique_ptr<CodeNode>> m_args;
     };
 

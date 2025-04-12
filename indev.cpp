@@ -9,6 +9,10 @@
 #include "standard/MachineFunctions.hpp"
 #include "codegen/Disassembly.hpp"
 
+
+//#define INDEV_DEBUG_TREE_ONLY
+#define INDEV_DEBUG_RUN_FULL_CODE
+
 using namespace GobLang;
 class NativeNode : public GobLang::Struct::NativeStructureObjectNode
 {
@@ -88,9 +92,14 @@ int main()
     comp.parse();
     comp.printCode();
     GobLang::Codegen::CodeGenerator gen(comp);
+
+#ifdef INDEV_DEBUG_TREE_ONLY
+    gen.generate();
+    gen.printTree();
+#else
     GobLang::Codegen::ByteCode bytes = gen.getByteCode();
     GobLang::Codegen::byteCodeToText(bytes.operations);
-
+#ifdef INDEV_DEBUG_RUN_FULL_CODE
     GobLang::Machine machine(bytes);
     MachineFunctions::bind(&machine);
     std::vector<size_t> debugPoints = {};
@@ -105,6 +114,8 @@ int main()
         }
         machine.step();
     }
+#endif
+#endif
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }

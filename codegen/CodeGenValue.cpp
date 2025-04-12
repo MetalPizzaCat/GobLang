@@ -123,3 +123,25 @@ size_t GobLang::Codegen::BranchCodeGenValue::getConditionSize()
 {
     return m_condBytes.size();
 }
+
+GobLang::Codegen::ArrayAccessCodeGenValue::ArrayAccessCodeGenValue(std::vector<uint8_t> value,
+                                                                   std::vector<uint8_t> address) : m_valueBytes(std::move(value)),
+                                                                                                   m_addressBytes(std::move(address))
+{
+}
+
+std::vector<uint8_t> GobLang::Codegen::ArrayAccessCodeGenValue::getGetOperationBytes()
+{
+    std::vector<uint8_t> bytes = m_addressBytes;
+    bytes.insert(bytes.end(), m_valueBytes.begin(), m_valueBytes.end());
+    bytes.push_back((uint8_t)Operation::GetArray);
+    return bytes;
+}
+
+std::vector<uint8_t> GobLang::Codegen::ArrayAccessCodeGenValue::getSetOperationBytes()
+{
+    std::vector<uint8_t> bytes = m_addressBytes;
+    bytes.insert(bytes.end(), m_valueBytes.begin(), m_valueBytes.end());
+    bytes.push_back((uint8_t)Operation::SetArray);
+    return bytes;
+}

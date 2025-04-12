@@ -44,7 +44,11 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeNode> parseId();
 
+        std::unique_ptr<CodeNode> parseIdExpression(std::unique_ptr<CodeNode> left);
+
         std::vector<std::unique_ptr<CodeNode>> parseFunctionCallArguments();
+
+        std::unique_ptr<CodeNode> parseArrayAccess();
 
         std::unique_ptr<CodeNode> parsePrimary();
 
@@ -52,8 +56,14 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeNode> parseExpression();
 
+        std::unique_ptr<CodeNode> parseBreak();
+
+        std::unique_ptr<CodeNode> parseContinue();
+
+        /// @brief Advance iterator by one
         inline void advance() { m_it++; }
 
+        /// @brief Move iterator back by one
         inline void retract() { m_it--; }
 
         /// @brief Parse the binary operation. binopright = (op primary)*
@@ -66,9 +76,13 @@ namespace GobLang::Codegen
         /// @brief Throw an error using current token as the reference point
         /// @param message Message to display
         std::unique_ptr<CodeNode> error(std::string const &message);
-
+        
+        /// @brief Cast current token to a given type or display an error if cast failed
+        /// @tparam T Type to cast into
+        /// @param msg Message to display on failure
+        /// @return Constant pointer to the token converted into the requested type
         template <class T>
-        T *getTokenOrError(std::string const &msg)
+        T const *getTokenOrError(std::string const &msg)
         {
             if (T *t = dynamic_cast<T *>(getCurrent()); t != nullptr)
             {
@@ -88,18 +102,35 @@ namespace GobLang::Codegen
         /// @param err Message to display
         void consumeKeyword(Keyword keyword, std::string const &err);
 
+        /// @brief Check if current token is valid and an operator, otherwise print an error. Advance pointer on success
+        /// @param op Operator to consume
+        /// @param err Message to display on failure
         void consumeOperator(Operator op, std::string const &err);
 
+        /// @brief Is current token a given separator
+        /// @param sep Separator to check
+        /// @return False if not that separator or null
         bool isSeparator(Separator sep);
 
+        /// @brief Is current token a given keyword
+        /// @param keyword
+        /// @return False if not that keyword or null
         bool isKeyword(Keyword keyword);
 
+        /// @brief Check if the given token is an operator and stores any of the assignment operators in it
+        /// @return False if not assignment or null
+        bool isAssignment();
+
+        /// @brief Is current token of a given type. Performs a dynamic cast and checks it against `nullptr`
+        /// @tparam T Type to check against
+        /// @return True if of that type, false if not or null
         template <class T>
         inline bool isOfType()
         {
             return dynamic_cast<T *>(getCurrent()) != nullptr;
         }
 
+        void printTree();
         Token *getCurrent() { return isAtTheEnd() ? nullptr : m_it->get(); }
 
         bool isAtTheEnd() { return m_it == m_parser.getTokens().end(); }

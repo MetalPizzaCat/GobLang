@@ -28,6 +28,10 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeGenValue> createCall(size_t nameId, std::vector<std::unique_ptr<CodeGenValue>> args);
 
+        std::unique_ptr<CodeGenValue> createCallFromValue(std::unique_ptr<CodeGenValue> value, std::vector<std::unique_ptr<CodeGenValue>> args);
+
+        std::unique_ptr<ArrayAccessCodeGenValue> createArrayAccess(std::unique_ptr<CodeGenValue> array, std::unique_ptr<CodeGenValue> index);
+
         std::unique_ptr<VariableCodeGenValue> createVariableAccess(size_t nameId);
 
         BlockContext *getCurrentBlock() { return m_blocks.back().get(); }

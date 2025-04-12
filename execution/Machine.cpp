@@ -953,9 +953,10 @@ void GobLang::Machine::_getArray()
 
 void GobLang::Machine::_setArray()
 {
-    MemoryValue value = _getFromTopAndPop();
     MemoryValue array = _getFromTopAndPop();
     MemoryValue index = _getFromTopAndPop();
+    MemoryValue value = _getFromTopAndPop();
+   
     if (!std::holds_alternative<MemoryNode *>(array.value))
     {
         throw RuntimeException(std::string("Attempted to set array value, but array has instead type: ") + typeToString(array.type));

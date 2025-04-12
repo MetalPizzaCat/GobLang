@@ -42,7 +42,6 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     std::vector<OperatorData>::const_iterator opIt = std::find_if(Operators.begin(), Operators.end(), [op](OperatorData const &opData)
                                                                   { return op == opData.op; });
 
-    
     std::vector<uint8_t> bytes;
     std::vector<uint8_t> l = left->getGetOperationBytes();
     std::vector<uint8_t> r = right->getGetOperationBytes();
@@ -96,6 +95,30 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     bytes.push_back((uint8_t)GobLang::Operation::Get);
     bytes.push_back((uint8_t)Operation::Call);
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createCallFromValue(
+    std::unique_ptr<CodeGenValue> value,
+    std::vector<std::unique_ptr<CodeGenValue>> args)
+{
+    std::vector<uint8_t> bytes;
+
+    for (std::vector<std::unique_ptr<CodeGenValue>>::const_iterator it = args.begin(); it != args.end(); it++)
+    {
+        std::vector<uint8_t> argBytes = (*it)->getGetOperationBytes();
+        bytes.insert(bytes.begin(), argBytes.begin(), argBytes.end());
+    }
+    std::vector<uint8_t> valBytes = value->getGetOperationBytes();
+    bytes.insert(bytes.end(), valBytes.begin(), valBytes.end());
+    bytes.push_back((uint8_t)Operation::Call);
+    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+}
+
+std::unique_ptr<GobLang::Codegen::ArrayAccessCodeGenValue> GobLang::Codegen::Builder::createArrayAccess(
+    std::unique_ptr<CodeGenValue> array,
+    std::unique_ptr<CodeGenValue> index)
+{
+    return std::make_unique<ArrayAccessCodeGenValue>(array->getGetOperationBytes(), index->getGetOperationBytes());
 }
 
 std::unique_ptr<GobLang::Codegen::VariableCodeGenValue> GobLang::Codegen::Builder::createVariableAccess(size_t nameId)

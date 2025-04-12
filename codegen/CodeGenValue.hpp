@@ -123,6 +123,19 @@ namespace GobLang::Codegen
         bool m_local;
     };
 
+    class ArrayAccessCodeGenValue : public CodeGenValue
+    {
+    public:
+        explicit ArrayAccessCodeGenValue(std::vector<uint8_t> value, std::vector<uint8_t> address);
+        std::vector<uint8_t> getGetOperationBytes() override;
+
+        std::vector<uint8_t> getSetOperationBytes() override;
+
+    private:
+        std::vector<uint8_t> m_valueBytes;
+        std::vector<uint8_t> m_addressBytes;
+    };
+
     class BlockCodeGenValue : public CodeGenValue
     {
     public:

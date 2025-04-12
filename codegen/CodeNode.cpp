@@ -107,7 +107,7 @@ std::string GobLang::Codegen::BinaryOperationNode::toString()
     const char *symb = std::find_if(Operators.begin(), Operators.end(), [this](OperatorData const &op)
                                     { return op.op == m_op; })
                            ->symbol;
-    return "{ \"left\":" + m_left->toString() + ", \"right\": " + m_right->toString() + ", \"op\":\"" + symb + "\"}";
+    return "{\"type\" : \"op\", \"left\":" + m_left->toString() + ", \"right\": " + m_right->toString() + ", \"op\":\"" + symb + "\"}";
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperationNode::generateCode(Builder &builder)
@@ -132,7 +132,9 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
     }
 }
 
-GobLang::Codegen::FunctionCallNode::FunctionCallNode(size_t id, std::vector<std::unique_ptr<CodeNode>> args) : m_id(id), m_args(std::move(args))
+GobLang::Codegen::FunctionCallNode::FunctionCallNode(std::unique_ptr<CodeNode> value,
+                                                     std::vector<std::unique_ptr<CodeNode>> args) : m_value(std::move(value)),
+                                                                                                    m_args(std::move(args))
 {
 }
 
@@ -143,12 +145,12 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::FunctionCallNo
     {
         args.push_back(std::move((*it)->generateCode(builder)));
     }
-    return builder.createCall(m_id, std::move(args));
+    return builder.createCallFromValue(std::make_unique<GeneratedCodeGenValue>(m_value->generateCode(builder)->getGetOperationBytes()), std::move(args));
 }
 
 std::string GobLang::Codegen::FunctionCallNode::toString()
 {
-    std::string base = "{ \"type\" : \"call\", \"name\":\"" + std::to_string(m_id) + "\", \"args\": [";
+    std::string base = "{ \"type\" : \"call\", \"name\":" + m_value->toString() + ", \"args\": [";
     for (std::vector<std::unique_ptr<CodeNode>>::const_iterator it = m_args.begin(); it != m_args.end(); it++)
     {
         base += (*it)->toString();
@@ -308,12 +310,12 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode:
     std::vector<uint8_t> bytes = m_cond->generateCode(builder)->getGetOperationBytes();
     bytes.push_back((uint8_t)Operation::JumpIfNot);
     // don't pad cause we can just insert value later
-    
+
     std::vector<uint8_t> body = m_body->generateCode(builder)->getGetOperationBytes();
     std::vector<uint8_t> retNum = parseToBytes(body.size() + bytes.size() + sizeof(ProgramAddressType));
     // body always has a return, but it goes backwards and is equal to sizeof(body)
     body.push_back((uint8_t)Operation::JumpBack);
-   
+
     body.insert(body.end(), retNum.begin(), retNum.end());
 
     // recalculate the size with the address included to properly jump forward
@@ -322,4 +324,30 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode:
     bytes.insert(bytes.end(), body.begin(), body.end());
 
     return std::make_unique<GeneratedCodeGenValue>(bytes);
+}
+
+std::string GobLang::Codegen::BreakNode::toString()
+{
+    return "\"break\"";
+}
+
+std::string GobLang::Codegen::ContinueNode::toString()
+{
+    return "\"continue\"";
+}
+
+GobLang::Codegen::ArrayAccessNode::ArrayAccessNode(std::unique_ptr<CodeNode> value, std::unique_ptr<CodeNode> address)
+    : m_array(std::move(value)), m_index(std::move(address))
+{
+}
+
+std::string GobLang::Codegen::ArrayAccessNode::toString()
+{
+    return "{\"type\" : \"array_access\", \"val\" :" + m_array->toString() + ", \"addr\" : " + m_index->toString() + " }";
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ArrayAccessNode::generateCode(Builder &builder)
+{
+
+    return builder.createArrayAccess(m_array->generateCode(builder), m_index->generateCode(builder));
 }
