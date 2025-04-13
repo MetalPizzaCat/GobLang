@@ -460,3 +460,35 @@ std::string GobLang::Codegen::CharacterNode::toString()
 {
     return "{\"ch\" : \"" + std::string{m_char} + "\"}";
 }
+
+GobLang::Codegen::ArrayLiteralNode::ArrayLiteralNode(std::vector<std::unique_ptr<CodeNode>> values)
+    : m_values(std::move(values))
+{
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ArrayLiteralNode::generateCode(Builder &builder)
+{
+    std::vector<uint8_t> bytes;
+    for (std::vector<std::unique_ptr<CodeNode>>::const_iterator it = m_values.begin(); it != m_values.end(); it++)
+    {
+        std::vector<uint8_t> temp = (*it)->generateCode(builder)->getGetOperationBytes();
+        bytes.insert(bytes.end(), temp.begin(), temp.end());
+    }
+    bytes.push_back((uint8_t)Operation::CreateArray);
+    bytes.push_back((uint8_t)m_values.size());
+    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+}
+
+std::string GobLang::Codegen::ArrayLiteralNode::toString()
+{
+    std::string str = "{\"type\":\"array_literal\", \"values\" : [";
+    for (std::vector<std::unique_ptr<CodeNode>>::const_iterator it = m_values.begin(); it != m_values.end(); it++)
+    {
+        str += (*it)->toString();
+        if (it + 1 != m_values.end())
+        {
+            str += ',';
+        }
+    }
+    return str + "]}";
+}

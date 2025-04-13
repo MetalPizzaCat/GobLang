@@ -31,7 +31,7 @@ ByteCode GobLang::Codegen::CodeGenerator::getByteCode()
         result.functions.push_back(*func->getFuncInfo());
         result.functions.back().start = funcBytes.size();
 
-        funcBytes.insert(result.operations.end(), bytes.begin(), bytes.end());
+        funcBytes.insert(funcBytes.end(), bytes.begin(), bytes.end());
     }
 
     result.operations = m_rootSequence->generateCode(builder)->getGetOperationBytes();
@@ -156,6 +156,36 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseStandaloneExpres
     }
     consumeSeparator(Separator::End, "Expected ';'");
     return expr;
+}
+
+std::unique_ptr<ArrayLiteralNode> GobLang::Codegen::CodeGenerator::parseArrayLiteral()
+{
+    consumeSeparator(Separator::ArrayOpen, "Expected '['");
+    if (isSeparator(Separator::ArrayClose))
+    {
+        advance();
+        return std::make_unique<ArrayLiteralNode>();
+    }
+    std::vector<std::unique_ptr<CodeNode>> values;
+    std::unique_ptr<CodeNode> val = nullptr;
+    while ((val = parseExpression()) != nullptr)
+    {
+        values.push_back(std::move(val));
+        if (isSeparator(Separator::Comma))
+        {
+            advance();
+        }
+        else if (isSeparator(Separator::ArrayClose))
+        {
+            break;
+        }
+        else
+        {
+            error("Expected ']' or ','");
+        }
+    }
+    consumeSeparator(Separator::ArrayClose, "Expected ']'");
+    return std::make_unique<ArrayLiteralNode>(std::move(values));
 }
 
 std::unique_ptr<BranchNode> GobLang::Codegen::CodeGenerator::parseBranch()
@@ -339,6 +369,10 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parsePrimary()
     else if (isOfType<CharToken>())
     {
         return parseChar();
+    }
+    else if (isSeparator(Separator::ArrayOpen))
+    {
+        return parseArrayLiteral();
     }
     else if (isSeparator(Separator::BracketOpen))
     {

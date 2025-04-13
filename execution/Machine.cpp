@@ -531,6 +531,10 @@ void GobLang::Machine::_add()
         {
             c = createString(str1->getString() + str2->getString());
         }
+        else
+        {
+            throw RuntimeException(std::string("Invalid type used for math operation: ") + typeToString(a.type));
+        }
     }
     break;
     default:
@@ -956,7 +960,7 @@ void GobLang::Machine::_setArray()
     MemoryValue array = _getFromTopAndPop();
     MemoryValue index = _getFromTopAndPop();
     MemoryValue value = _getFromTopAndPop();
-   
+
     if (!std::holds_alternative<MemoryNode *>(array.value))
     {
         throw RuntimeException(std::string("Attempted to set array value, but array has instead type: ") + typeToString(array.type));

@@ -28,6 +28,8 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeNode> parseStandaloneExpression();
 
+        std::unique_ptr<ArrayLiteralNode> parseArrayLiteral();
+
         /// @brief Parse the condition + body of a branch. Could be used for loops
         /// @return
         std::unique_ptr<BranchNode> parseBranch();

@@ -82,6 +82,7 @@ namespace GobLang::Codegen
         explicit CharacterNode(char ch);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
+
     private:
         char m_char;
     };
@@ -141,6 +142,18 @@ namespace GobLang::Codegen
 
     private:
         std::vector<std::unique_ptr<CodeNode>> m_sequence;
+    };
+
+    class ArrayLiteralNode : public CodeNode
+    {
+    public:
+        explicit ArrayLiteralNode(std::vector<std::unique_ptr<CodeNode>> values);
+        explicit ArrayLiteralNode() = default;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::string toString() override;
+
+    private:
+        std::vector<std::unique_ptr<CodeNode>> m_values;
     };
 
     class BinaryOperationNode : public CodeNode
@@ -228,7 +241,6 @@ namespace GobLang::Codegen
         explicit WhileLoopNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
-
     };
 
     class BranchChainNode : public CodeNode
