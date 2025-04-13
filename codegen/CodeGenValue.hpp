@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <algorithm>
+#include "../execution/Function.hpp"
 
 namespace GobLang::Codegen
 {
@@ -23,11 +24,15 @@ namespace GobLang::Codegen
         return res;
     }
 
-    class Builder;
     class BlockContext
     {
     public:
         explicit BlockContext() = default;
+
+        /// @brief Create block context for a given function
+        /// @param funcId Id of a function
+        /// @param initialVariables Variables that should be added to the block
+        explicit BlockContext(size_t funcId, std::vector<size_t> const &initialVariables);
 
         size_t getVariableCount() const { return m_variables.size(); }
 
@@ -44,10 +49,14 @@ namespace GobLang::Codegen
         /// @brief Append instructions for clearing variable stack
         void appendMemoryClear();
 
+        bool isFunction() const { return m_funcId != -1; }
+
     private:
         std::map<size_t, size_t> m_jumps;
         std::vector<size_t> m_variables;
         std::vector<uint8_t> m_bytes;
+
+        size_t m_funcId = -1;
     };
 
     class CodeGenValue
@@ -60,6 +69,40 @@ namespace GobLang::Codegen
         virtual std::vector<uint8_t> getSetOperationBytes() { return {}; }
 
     private:
+    };
+
+    class BlockCodeGenValue : public CodeGenValue
+    {
+    public:
+        explicit BlockCodeGenValue(std::unique_ptr<BlockContext> block);
+
+        std::vector<uint8_t> getGetOperationBytes() override { return m_block->getBytes(); }
+
+    private:
+        std::unique_ptr<BlockContext> m_block;
+    };
+
+    class FunctionCodeGenValue : public CodeGenValue
+    {
+    public:
+        explicit FunctionCodeGenValue(Function const *func, std::unique_ptr<BlockContext> body);
+        std::vector<uint8_t> getGetOperationBytes() override;
+        Function const *getFuncInfo() const { return m_func; }
+
+    private:
+        std::unique_ptr<BlockContext> m_body;
+        Function const *m_func;
+    };
+
+    class FunctionPrototypeCodeGenValue : public CodeGenValue
+    {
+    public:
+        explicit FunctionPrototypeCodeGenValue(Function const *func);
+        Function const *getFunc() const { return m_func; }
+        std::vector<uint8_t> getGetOperationBytes() override { return {}; }
+
+    private:
+        Function const *m_func;
     };
 
     class GeneratedCodeGenValue : public CodeGenValue
@@ -134,16 +177,5 @@ namespace GobLang::Codegen
     private:
         std::vector<uint8_t> m_valueBytes;
         std::vector<uint8_t> m_addressBytes;
-    };
-
-    class BlockCodeGenValue : public CodeGenValue
-    {
-    public:
-        explicit BlockCodeGenValue(std::unique_ptr<BlockContext> block);
-
-        std::vector<uint8_t> getGetOperationBytes() override { return m_block->getBytes(); }
-
-    private:
-        std::unique_ptr<BlockContext> m_block;
     };
 } // namespace GobLang::Codegen

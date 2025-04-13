@@ -9,6 +9,10 @@ GobLang::Codegen::CodeGenerator::CodeGenerator(Parser const &parser) : m_parser(
 
 void GobLang::Codegen::CodeGenerator::generate()
 {
+    while (isKeyword(Keyword::Function))
+    {
+        m_functions.push_back(parseFunctionDefinition());
+    }
     m_rootSequence = parseBody();
 }
 
@@ -19,9 +23,60 @@ ByteCode GobLang::Codegen::CodeGenerator::getByteCode()
     ByteCode result;
     result.ids = m_parser.getIds();
 
+    std::vector<uint8_t> funcBytes;
+    for (std::vector<std::unique_ptr<FunctionNode>>::const_iterator it = m_functions.begin(); it != m_functions.end(); it++)
+    {
+        std::unique_ptr<FunctionCodeGenValue> func = (*it)->generateFunction(builder);
+        std::vector<uint8_t> bytes = func->getGetOperationBytes();
+        result.functions.push_back(*func->getFuncInfo());
+        result.functions.back().start = funcBytes.size();
+
+        funcBytes.insert(result.operations.end(), bytes.begin(), bytes.end());
+    }
+
     result.operations = m_rootSequence->generateCode(builder)->getGetOperationBytes();
     result.operations.push_back((uint8_t)Operation::End);
+
+    for (std::vector<Function>::iterator it = result.functions.begin(); it != result.functions.end(); it++)
+    {
+        it->start += result.operations.size();
+    }
+    result.operations.insert(result.operations.end(), funcBytes.begin(), funcBytes.end());
     return result;
+}
+
+std::unique_ptr<FunctionNode> GobLang::Codegen::CodeGenerator::parseFunctionDefinition()
+{
+    consumeKeyword(Keyword::Function, "Expected 'func'");
+    std::unique_ptr<FunctionPrototypeNode> proto = parseFunctionPrototype();
+    consumeSeparator(Separator::BlockOpen, "Expected '{'");
+    std::unique_ptr<SequenceNode> body = parseBody();
+    if (!body)
+    {
+        error("Expected function body");
+    }
+    consumeSeparator(Separator::BlockClose, "Expected '}'");
+    return std::make_unique<FunctionNode>(std::move(proto), std::move(body));
+}
+
+std::unique_ptr<FunctionPrototypeNode> GobLang::Codegen::CodeGenerator::parseFunctionPrototype()
+{
+    IdToken const *name = getTokenOrError<IdToken>("Expected function name");
+    advance();
+    consumeSeparator(Separator::BracketOpen, "Expected '('");
+    std::vector<size_t> args;
+    IdToken const *argTok = nullptr;
+    while ((argTok = dynamic_cast<IdToken const *>(getCurrent())) != nullptr)
+    {
+        args.push_back(argTok->getId());
+        advance();
+        if (isSeparator(Separator::Comma))
+        {
+            advance();
+        }
+    }
+    consumeSeparator(Separator::BracketClose, "Expected '('");
+    return std::make_unique<FunctionPrototypeNode>(name->getId(), std::move(args));
 }
 
 std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
@@ -48,6 +103,10 @@ std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
         else if (isKeyword(Keyword::Continue))
         {
             seq.push_back(parseContinue());
+        }
+        else if (isKeyword(Keyword::Return))
+        {
+            seq.push_back(parseReturn());
         }
         else if (isOfType<IdToken>())
         {
@@ -187,6 +246,13 @@ std::unique_ptr<BoolNode> GobLang::Codegen::CodeGenerator::parseBool()
     return std::make_unique<BoolNode>(t->getValue());
 }
 
+std::unique_ptr<CharacterNode> GobLang::Codegen::CodeGenerator::parseChar()
+{
+    CharToken const *t = getTokenOrError<CharToken>("Expected a character");
+    advance();
+    return std::make_unique<CharacterNode>(t->getChar());
+}
+
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseId()
 {
     IdToken const *t = getTokenOrError<IdToken>("Expected an identifier");
@@ -270,6 +336,10 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parsePrimary()
     {
         return parseBool();
     }
+    else if (isOfType<CharToken>())
+    {
+        return parseChar();
+    }
     else if (isSeparator(Separator::BracketOpen))
     {
         return parseGrouped();
@@ -326,6 +396,19 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseContinue()
     advance();
     consumeSeparator(Separator::End, "Expected ';'");
     return std::make_unique<ContinueNode>();
+}
+
+std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseReturn()
+{
+    advance();
+    if (isSeparator(Separator::End))
+    {
+        advance();
+        return std::make_unique<ReturnEmptyNode>();
+    }
+    std::unique_ptr<CodeNode> expr = parseExpression();
+    consumeSeparator(Separator::End, "Expected ';'");
+    return std::make_unique<ReturnNode>(std::move(expr));
 }
 
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseBinaryOperationRightSide(int32_t priority, std::unique_ptr<CodeNode> leftSide)
@@ -405,7 +488,7 @@ void GobLang::Codegen::CodeGenerator::consumeOperator(Operator op, std::string c
 
 bool GobLang::Codegen::CodeGenerator::isSeparator(Separator sep)
 {
-    if (SeparatorToken *sepTok = dynamic_cast<SeparatorToken *>(getCurrent()); sepTok != nullptr && sepTok->getSeparator() == sep)
+    if (SeparatorToken const *sepTok = dynamic_cast<SeparatorToken const *>(getCurrent()); sepTok != nullptr && sepTok->getSeparator() == sep)
     {
         return true;
     }
@@ -414,7 +497,7 @@ bool GobLang::Codegen::CodeGenerator::isSeparator(Separator sep)
 
 bool GobLang::Codegen::CodeGenerator::isKeyword(Keyword keyword)
 {
-    if (KeywordToken *keyTok = dynamic_cast<KeywordToken *>(getCurrent()); keyTok != nullptr && keyTok->getKeyword() == keyword)
+    if (KeywordToken const *keyTok = dynamic_cast<KeywordToken const *>(getCurrent()); keyTok != nullptr && keyTok->getKeyword() == keyword)
     {
         return true;
     }
@@ -423,7 +506,7 @@ bool GobLang::Codegen::CodeGenerator::isKeyword(Keyword keyword)
 
 bool GobLang::Codegen::CodeGenerator::isAssignment()
 {
-    if (OperatorToken *opTok = dynamic_cast<OperatorToken *>(getCurrent()); opTok != nullptr)
+    if (OperatorToken const *opTok = dynamic_cast<OperatorToken const *>(getCurrent()); opTok != nullptr)
     {
         switch (opTok->getOperator())
         {
@@ -454,6 +537,16 @@ void GobLang::Codegen::CodeGenerator::printTree()
         {
             out += "\"" + (*it) + "\"";
             if (it + 1 != m_parser.getIds().end())
+            {
+                out += ",";
+            }
+        }
+        out += "], \"functions\" : [";
+
+        for (std::vector<std::unique_ptr<FunctionNode>>::const_iterator it = m_functions.begin(); it != m_functions.end(); it++)
+        {
+            out += (*it)->toString();
+            if (it + 1 != m_functions.end())
             {
                 out += ",";
             }

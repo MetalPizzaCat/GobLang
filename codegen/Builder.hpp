@@ -4,6 +4,7 @@
 #include <memory>
 #include "Lexems.hpp"
 #include "CodeGenValue.hpp"
+#include "../execution/Function.hpp"
 
 namespace GobLang::Codegen
 {
@@ -16,9 +17,20 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeGenValue> createConstInt(int32_t val);
 
+        std::unique_ptr<CodeGenValue> createConstUnsignedInt(uint32_t val);
+
         std::unique_ptr<CodeGenValue> createConstString(size_t strId);
 
         std::unique_ptr<CodeGenValue> createConstBool(bool val);
+
+        std::unique_ptr<CodeGenValue> createConstChar(char ch);
+
+        Function const *addFunction(size_t nameId, std::vector<size_t> argIds);
+
+        /// @brief Check if a local function with given name id was already registered
+        /// @param nameId
+        /// @return True if function exists
+        bool hasLocalFunctionWithName(size_t nameId);
 
         std::unique_ptr<CodeGenValue> createOperation(std::unique_ptr<CodeGenValue> left, std::unique_ptr<CodeGenValue> right, Operator op);
 
@@ -34,13 +46,17 @@ namespace GobLang::Codegen
 
         std::unique_ptr<VariableCodeGenValue> createVariableAccess(size_t nameId);
 
+        std::unique_ptr<CodeGenValue> createLocalFunctionAccess(size_t nameId);
+
         BlockContext *getCurrentBlock() { return m_blocks.back().get(); }
+
+        bool isCurrentlyInFunction();
 
         size_t getLocalVariableId(size_t nameId) const;
 
-        std::vector<uint8_t> const &getBytes() { return m_bytes; }
-
         void pushEmptyBlock();
+
+        void pushBlockForFunction(Function const *func);
 
         std::unique_ptr<BlockContext> popBlock();
 
@@ -51,6 +67,7 @@ namespace GobLang::Codegen
 
     private:
         std::vector<std::unique_ptr<BlockContext>> m_blocks;
-        std::vector<uint8_t> m_bytes;
+
+        std::vector<std::unique_ptr<Function>> m_functions;
     };
 } // namespace Goblang::Codegen

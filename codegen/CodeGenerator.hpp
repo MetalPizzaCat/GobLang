@@ -16,6 +16,10 @@ namespace GobLang::Codegen
 
         ByteCode getByteCode();
 
+        std::unique_ptr<FunctionNode> parseFunctionDefinition();
+
+        std::unique_ptr<FunctionPrototypeNode> parseFunctionPrototype();
+
         /// @brief Block of code with n expressions separated by ;
         /// @return
         std::unique_ptr<SequenceNode> parseBody();
@@ -42,6 +46,8 @@ namespace GobLang::Codegen
 
         std::unique_ptr<BoolNode> parseBool();
 
+        std::unique_ptr<CharacterNode> parseChar();
+
         std::unique_ptr<CodeNode> parseId();
 
         std::unique_ptr<CodeNode> parseIdExpression(std::unique_ptr<CodeNode> left);
@@ -60,6 +66,8 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeNode> parseContinue();
 
+        std::unique_ptr<CodeNode> parseReturn();
+
         /// @brief Advance iterator by one
         inline void advance() { m_it++; }
 
@@ -76,7 +84,7 @@ namespace GobLang::Codegen
         /// @brief Throw an error using current token as the reference point
         /// @param message Message to display
         std::unique_ptr<CodeNode> error(std::string const &message);
-        
+
         /// @brief Cast current token to a given type or display an error if cast failed
         /// @tparam T Type to cast into
         /// @param msg Message to display on failure
@@ -84,7 +92,7 @@ namespace GobLang::Codegen
         template <class T>
         T const *getTokenOrError(std::string const &msg)
         {
-            if (T *t = dynamic_cast<T *>(getCurrent()); t != nullptr)
+            if (T const *t = dynamic_cast<T const *>(getCurrent()); t != nullptr)
             {
                 return t;
             }
@@ -127,11 +135,11 @@ namespace GobLang::Codegen
         template <class T>
         inline bool isOfType()
         {
-            return dynamic_cast<T *>(getCurrent()) != nullptr;
+            return dynamic_cast<T const*>(getCurrent()) != nullptr;
         }
 
         void printTree();
-        Token *getCurrent() { return isAtTheEnd() ? nullptr : m_it->get(); }
+        Token const *getCurrent() { return isAtTheEnd() ? nullptr : m_it->get(); }
 
         bool isAtTheEnd() { return m_it == m_parser.getTokens().end(); }
 
@@ -140,5 +148,7 @@ namespace GobLang::Codegen
         std::vector<std::unique_ptr<Token>>::const_iterator m_it;
 
         std::unique_ptr<SequenceNode> m_rootSequence;
+
+        std::vector<std::unique_ptr<FunctionNode>> m_functions;
     };
 } // namespace CodeGen

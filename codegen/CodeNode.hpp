@@ -69,11 +69,21 @@ namespace GobLang::Codegen
     {
     public:
         explicit UnsignedIntNode(uint32_t val);
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
 
     private:
         uint32_t m_val;
+    };
+
+    class CharacterNode : public CodeNode
+    {
+    public:
+        explicit CharacterNode(char ch);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::string toString() override;
+    private:
+        char m_char;
     };
 
     class StringNode : public CodeNode
@@ -101,6 +111,25 @@ namespace GobLang::Codegen
         explicit ContinueNode() = default;
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
         std::string toString() override;
+    };
+
+    class ReturnEmptyNode : public CodeNode
+    {
+    public:
+        explicit ReturnEmptyNode() = default;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::string toString() override;
+    };
+
+    class ReturnNode : public CodeNode
+    {
+    public:
+        explicit ReturnNode(std::unique_ptr<CodeNode> val);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::string toString() override;
+
+    private:
+        std::unique_ptr<CodeNode> m_val;
     };
 
     class SequenceNode : public CodeNode
@@ -151,6 +180,34 @@ namespace GobLang::Codegen
         std::vector<std::unique_ptr<CodeNode>> m_args;
     };
 
+    class FunctionPrototypeNode : public CodeNode
+    {
+    public:
+        explicit FunctionPrototypeNode(size_t nameId, std::vector<size_t> args);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateFunction(builder); }
+
+        std::unique_ptr<FunctionPrototypeCodeGenValue> generateFunction(Builder &builder);
+        std::string toString() override;
+
+    private:
+        size_t m_nameId;
+        std::vector<size_t> m_argIds;
+    };
+
+    class FunctionNode : public CodeNode
+    {
+    public:
+        explicit FunctionNode(std::unique_ptr<FunctionPrototypeNode> proto, std::unique_ptr<CodeNode> body);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateFunction(builder); }
+
+        std::unique_ptr<FunctionCodeGenValue> generateFunction(Builder &builder);
+        std::string toString() override;
+
+    private:
+        std::unique_ptr<FunctionPrototypeNode> m_proto;
+        std::unique_ptr<CodeNode> m_body;
+    };
+
     class BranchNode : public CodeNode
     {
     public:
@@ -170,6 +227,8 @@ namespace GobLang::Codegen
     public:
         explicit WhileLoopNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::string toString() override;
+
     };
 
     class BranchChainNode : public CodeNode

@@ -9,6 +9,10 @@ GobLang::Codegen::IdNode::IdNode(size_t id) : m_id(id)
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::IdNode::generateCode(Builder &builder)
 {
+    if (builder.hasLocalFunctionWithName(m_id))
+    {
+        return builder.createLocalFunctionAccess(m_id);
+    }
     return builder.createVariableAccess(m_id);
 }
 
@@ -47,6 +51,11 @@ std::string GobLang::Codegen::IntNode::toString()
 
 GobLang::Codegen::UnsignedIntNode::UnsignedIntNode(uint32_t val) : m_val(val)
 {
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::UnsignedIntNode::generateCode(Builder &builder)
+{
+    return std::unique_ptr<CodeGenValue>();
 }
 
 std::string GobLang::Codegen::UnsignedIntNode::toString()
@@ -222,7 +231,7 @@ GobLang::Codegen::BranchChainNode::BranchChainNode(
 
 std::string GobLang::Codegen::BranchChainNode::toString()
 {
-    std::string base = "{ \"if\": " + m_primary->toString() + ", \"elifs\" : [";
+    std::string base = "{\"type\" : \"branch_chain\",  \"if\": " + m_primary->toString() + ", \"elifs\" : [";
     for (std::vector<std::unique_ptr<BranchNode>>::const_iterator it = m_secondary.begin(); it != m_secondary.end(); it++)
     {
         base += (*it)->toString();
@@ -334,6 +343,11 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode:
     return std::make_unique<GeneratedCodeGenValue>(bytes);
 }
 
+std::string GobLang::Codegen::WhileLoopNode::toString()
+{
+    return "{\"type\": \"while\", \"cond\": " + m_cond->toString() + ", \"body\": " + m_body->toString() + "}";
+}
+
 std::string GobLang::Codegen::BreakNode::toString()
 {
     return "\"break\"";
@@ -358,4 +372,91 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ArrayAccessNod
 {
 
     return builder.createArrayAccess(m_array->generateCode(builder), m_index->generateCode(builder));
+}
+
+GobLang::Codegen::FunctionPrototypeNode::FunctionPrototypeNode(size_t nameId, std::vector<size_t> args) : m_nameId(nameId), m_argIds(std::move(args))
+{
+}
+
+std::unique_ptr<GobLang::Codegen::FunctionPrototypeCodeGenValue> GobLang::Codegen::FunctionPrototypeNode::generateFunction(Builder &builder)
+{
+    return std::make_unique<FunctionPrototypeCodeGenValue>(builder.addFunction(m_nameId, m_argIds));
+}
+
+std::string GobLang::Codegen::FunctionPrototypeNode::toString()
+{
+    std::string str = "{\"type\": \"proto\", \"name\" : " + std::to_string(m_nameId) + ", \"args\" : [";
+    for (std::vector<size_t>::const_iterator it = m_argIds.begin(); it != m_argIds.end(); it++)
+    {
+        str += std::to_string(*it);
+        if (it + 1 != m_argIds.end())
+        {
+            str += ',';
+        }
+    }
+    return str + "]}";
+}
+
+GobLang::Codegen::FunctionNode::FunctionNode(std::unique_ptr<FunctionPrototypeNode> proto,
+                                             std::unique_ptr<CodeNode> body) : m_proto(std::move(proto)), m_body(std::move(body))
+{
+}
+
+std::unique_ptr<GobLang::Codegen::FunctionCodeGenValue> GobLang::Codegen::FunctionNode::generateFunction(Builder &builder)
+{
+    std::unique_ptr<FunctionPrototypeCodeGenValue> func = m_proto->generateFunction(builder);
+    builder.pushBlockForFunction(func->getFunc());
+    BlockContext *body = builder.getCurrentBlock();
+    std::vector<uint8_t> bodyBytes = m_body->generateCode(builder)->getGetOperationBytes();
+    body->insert(bodyBytes);
+    return std::make_unique<FunctionCodeGenValue>(func->getFunc(), builder.popBlock());
+}
+
+std::string GobLang::Codegen::FunctionNode::toString()
+{
+    return "{\"type\":\"function\", \"proto\" : " + m_proto->toString() + ", \"body\":" + m_body->toString() + "}";
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ReturnEmptyNode::generateCode(Builder &builder)
+{
+    if (builder.isCurrentlyInFunction())
+    {
+        return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Operation::Return});
+    }
+    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Operation::End});
+}
+
+std::string GobLang::Codegen::ReturnEmptyNode::toString()
+{
+    return "{\"type\" : \"ret\"}";
+}
+
+GobLang::Codegen::ReturnNode::ReturnNode(std::unique_ptr<CodeNode> val) : m_val(std::move(val))
+{
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ReturnNode::generateCode(Builder &builder)
+{
+    std::vector<uint8_t> bytes = m_val->generateCode(builder)->getGetOperationBytes();
+    bytes.push_back((uint8_t)Operation::ReturnValue);
+    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+}
+
+std::string GobLang::Codegen::ReturnNode::toString()
+{
+    return "{\"type\" : \"ret\", \"expr\" : " + m_val->toString() + "}";
+}
+
+GobLang::Codegen::CharacterNode::CharacterNode(char ch) : m_char(ch)
+{
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::CharacterNode::generateCode(Builder &builder)
+{
+    return builder.createConstChar(m_char);
+}
+
+std::string GobLang::Codegen::CharacterNode::toString()
+{
+    return "{\"ch\" : \"" + std::string{m_char} + "\"}";
 }

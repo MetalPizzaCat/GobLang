@@ -37,6 +37,12 @@ GobLang::Codegen::GeneratedCodeGenValue::GeneratedCodeGenValue(std::vector<uint8
 {
 }
 
+GobLang::Codegen::BlockContext::BlockContext(size_t funcId,
+                                             std::vector<size_t> const &initialVariables) : m_variables(initialVariables),
+                                                                                            m_funcId(funcId)
+{
+}
+
 void GobLang::Codegen::BlockContext::insertVariable(size_t name)
 {
     m_variables.push_back(name);
@@ -144,4 +150,22 @@ std::vector<uint8_t> GobLang::Codegen::ArrayAccessCodeGenValue::getSetOperationB
     bytes.insert(bytes.end(), m_valueBytes.begin(), m_valueBytes.end());
     bytes.push_back((uint8_t)Operation::SetArray);
     return bytes;
+}
+
+GobLang::Codegen::FunctionPrototypeCodeGenValue::FunctionPrototypeCodeGenValue(Function const *func) : m_func(func)
+{
+}
+
+GobLang::Codegen::FunctionCodeGenValue::FunctionCodeGenValue(Function const *func,
+                                                             std::unique_ptr<BlockContext> body) : m_body(std::move(body)),
+                                                                                                   m_func(func)
+{
+}
+
+std::vector<uint8_t> GobLang::Codegen::FunctionCodeGenValue::getGetOperationBytes()
+{
+    std::vector<uint8_t> body = m_body->getBytes();
+    // in case we are in a situation where no return happened
+    body.push_back((uint8_t)Operation::Return);
+    return body;
 }
