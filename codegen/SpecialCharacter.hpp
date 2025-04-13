@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-namespace GobLang::Compiler
+namespace GobLang::Codegen
 {
     struct SpecialCharacter
     {
@@ -15,4 +15,4 @@ namespace GobLang::Compiler
         SpecialCharacter{.sequence = "\\t", .character = '\t'},
         SpecialCharacter{.sequence = "\\\\", .character = '\\'}};
 
-} // namespace SimpleLang::Compiler
+} // namespace SimpleLang::Codegen

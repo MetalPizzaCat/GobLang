@@ -1,15 +1,17 @@
 #include <iostream>
 #include <algorithm>
 #include <fstream>
-#include "compiler/Parser.hpp"
-#include "compiler/ReversePolishGenerator.hpp"
-#include "compiler/Compiler.hpp"
+#include "codegen/Parser.hpp"
+#include "codegen/CodeGenerator.hpp"
 #include "execution/Machine.hpp"
 #include "execution/NativeStructure.hpp"
-#include "compiler/Validator.hpp"
 
 #include "standard/MachineFunctions.hpp"
-#include "compiler/Disassembly.hpp"
+#include "codegen/Disassembly.hpp"
+
+//#define INDEV_DEBUG_TREE_ONLY
+#define INDEV_DEBUG_RUN_FULL_CODE
+#define INDEV_DEBUG_SHOW_TREE
 
 using namespace GobLang;
 class NativeNode : public GobLang::Struct::NativeStructureObjectNode
@@ -70,7 +72,7 @@ private:
 int main()
 {
     size_t s = sizeof(std::variant<bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>);
-    size_t s1 = sizeof( uint32_t);
+    size_t s1 = sizeof(uint32_t);
     std::string file = "./code.gob";
     std::vector<std::string> lines;
     std::ifstream codeFile(file);
@@ -86,24 +88,23 @@ int main()
     }
 
     // GobLang::Compiler::Parser comp("func rec(text, count){if (count < 10) {print(count); print(\": \");print_line(text); rec(text, count + 1);}} rec(\"hello\", 0);");
-    GobLang::Compiler::Parser comp(lines);
+    GobLang::Codegen::Parser comp(lines);
     comp.parse();
     comp.printCode();
-    GobLang::Compiler::Validator validator(comp);
-    // validator.validate();
-    GobLang::Compiler::ReversePolishGenerator rev(comp);
-    rev.compile();
-    rev.printCode();
-    rev.printFunctions();
-    rev.printStructs();
-    GobLang::Compiler::Compiler compiler(rev);
-    compiler.generateByteCode();
-    // compiler.printLocalFunctionInfo();
-    GobLang::Compiler::byteCodeToText(compiler.getByteCode().operations);
+    GobLang::Codegen::CodeGenerator gen(comp);
 
-    GobLang::Machine machine(compiler.getByteCode());
+#ifdef INDEV_DEBUG_TREE_ONLY
+    gen.generate();
+    gen.printTree();
+#else
+    GobLang::Codegen::ByteCode bytes = gen.getByteCode();
+#ifdef INDEV_DEBUG_SHOW_TREE
+    gen.printTree();
+#endif
+    GobLang::Codegen::byteCodeToText(bytes.operations);
+#ifdef INDEV_DEBUG_RUN_FULL_CODE
+    GobLang::Machine machine(bytes);
     MachineFunctions::bind(&machine);
-    machine.createType("NativeObject", NativeNode::constructor, {{"do_a_thing", NativeNode::nativeDoAThing}});
     std::vector<size_t> debugPoints = {};
     while (!machine.isAtTheEnd())
     {
@@ -116,6 +117,8 @@ int main()
         }
         machine.step();
     }
+#endif
+#endif
     // std::cout << "Value of a = " << std::get<int32_t>(machine.getVariableValue("a").value) << std::endl;
     return EXIT_SUCCESS;
 }

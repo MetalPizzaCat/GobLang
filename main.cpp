@@ -10,16 +10,14 @@
 #include <cstring>
 #include <fstream>
 
-#include "compiler/Parser.hpp"
-#include "compiler/ReversePolishGenerator.hpp"
-#include "compiler/Validator.hpp"
-#include "compiler/Compiler.hpp"
+#include "codegen/Parser.hpp"
+#include "codegen/CodeGenerator.hpp"
+#include "codegen/ByteCode.hpp"
 #include "execution/Machine.hpp"
 
-#include "execution/Machine.hpp"
 #include "standard/MachineFunctions.hpp"
 
-#include "compiler/Disassembly.hpp"
+#include "codegen/Disassembly.hpp"
 
 int main(int argc, char **argv)
 {
@@ -106,20 +104,17 @@ int main(int argc, char **argv)
 
     try
     {
-        GobLang::Compiler::Parser comp(lines);
+        GobLang::Codegen::Parser comp(lines);
         comp.parse();
-        GobLang::Compiler::Validator validator(comp);
-        validator.validate();
-        GobLang::Compiler::ReversePolishGenerator generator(comp);
-        generator.compile();
-        GobLang::Compiler::Compiler compiler(generator);
-        compiler.generateByteCode();
+        GobLang::Codegen::CodeGenerator gen(comp);
+        GobLang::Codegen::ByteCode byteCode = gen.getByteCode();
+
         verIt = std::find_first_of(args.begin(), args.end(), DecompArgs.begin(), DecompArgs.end());
         if (verIt != args.end())
         {
-            GobLang::Compiler::byteCodeToText(compiler.getByteCode().operations);
+            GobLang::Codegen::byteCodeToText(byteCode.operations);
         }
-        GobLang::Machine machine(compiler.getByteCode());
+        GobLang::Machine machine(byteCode);
         MachineFunctions::bind(&machine);
         std::vector<size_t> debugPoints = {};
         while (!machine.isAtTheEnd())
@@ -134,7 +129,7 @@ int main(int argc, char **argv)
             machine.step();
         }
     }
-    catch (GobLang::Compiler::ParsingError e)
+    catch (GobLang::Codegen::ParsingError e)
     {
         size_t maxLine = std::min(lines.size(), e.getRow() + LINES_AFTER_ERROR);
         size_t spaces = std::to_string(maxLine).size() + 2;

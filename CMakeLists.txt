@@ -16,6 +16,24 @@ add_compile_definitions(LINES_AFTER_ERROR=3)
 
 add_compile_definitions(DEFAULT_MIN_RAND_INT=0)
 add_compile_definitions(DEFAULT_MAX_RAND_INT=2147483647)
+list(APPEND CODEGEN_FILES codegen/CodeGenerator.hpp
+    codegen/CodeGenerator.cpp
+    codegen/CodeNode.hpp
+    codegen/CodeNode.cpp
+    codegen/Disassembly.hpp
+    codegen/Parser.hpp
+    codegen/Parser.cpp
+    codegen/Token.hpp
+    codegen/Token.cpp
+    codegen/ByteCode.hpp
+    codegen/Lexems.hpp
+    codegen/SpecialCharacter.hpp
+    codegen/Builder.hpp
+    codegen/Builder.cpp
+    codegen/CodeGenValue.hpp
+    codegen/CodeGenValue.cpp
+)
+
 list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Type.cpp
     execution/Operations.hpp
@@ -47,33 +65,11 @@ list(APPEND STD_SOURCE_FILES execution/Type.hpp
 )
 
 
-
-list(APPEND COMPILER_SOURCE_FILES execution/Type.hpp
-    compiler/Compiler.hpp
-    compiler/Compiler.cpp
-    compiler/Parser.hpp
-    compiler/Parser.cpp
-    compiler/Token.hpp
-    compiler/Token.cpp
-    compiler/ByteCode.hpp
-    compiler/Lexems.hpp
-    compiler/CompilerToken.hpp
-    compiler/CompilerToken.cpp
-    compiler/SpecialCharacter.hpp
-    compiler/CompilerNode.hpp
-    compiler/CompilerNode.cpp
-    compiler/Validator.hpp
-    compiler/Validator.cpp
-    compiler/ReversePolishGenerator.hpp
-    compiler/ReversePolishGenerator.cpp
-    compiler/FunctionTokenSequence.hpp
-    compiler/Disassembly.hpp
-)
-
 add_executable(goblang
     main.cpp
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
+    ${CODEGEN_FILES}
     ${STD_SOURCE_FILES}
 )
 
@@ -81,18 +77,14 @@ add_executable(indev
     indev.cpp
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
+    ${CODEGEN_FILES}
     ${STD_SOURCE_FILES}
 )
 
-add_executable(gobtest
-    test.cpp
-    ${COMPILER_SOURCE_FILES}
-    ${COMMON_SOURCE_FILES}
-)
 
-add_library(goblanglib  SHARED GobLang.hpp ${COMPILER_SOURCE_FILES}
-${COMMON_SOURCE_FILES}
-${STD_SOURCE_FILES})
+add_library(goblanglib SHARED GobLang.hpp ${COMPILER_SOURCE_FILES}
+    ${COMMON_SOURCE_FILES}
+    ${STD_SOURCE_FILES})
 
 target_include_directories(goblanglib PUBLIC .)
 

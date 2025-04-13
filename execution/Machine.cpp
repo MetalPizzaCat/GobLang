@@ -2,7 +2,7 @@
 #include "FunctionRef.hpp"
 #include <iostream>
 #include <vector>
-GobLang::Machine::Machine(Compiler::ByteCode const &code)
+GobLang::Machine::Machine(Codegen::ByteCode const &code)
 {
     m_constStrings = code.ids;
     m_operations = code.operations;
@@ -114,7 +114,10 @@ void GobLang::Machine::step()
         break;
     case Operation::Jump:
         _jump();
-        return; // this uses return because we want to avoid advancing the counter after jup
+        return; // this uses return because we want to avoid advancing the counter after jmp
+    case Operation::JumpBack:
+        _jumpBack();
+        return;
     case Operation::JumpIfNot:
         _jumpIf();
         return;
@@ -465,29 +468,39 @@ GobLang::ProgramAddressType GobLang::Machine::_getAddressFromByteCode(size_t sta
 void GobLang::Machine::_jump()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
-    m_programCounter = dest;
+    m_programCounter = dest + m_programCounter;
 }
 
 void GobLang::Machine::_jumpIf()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
-    m_programCounter += sizeof(ProgramAddressType);
+
     MemoryValue a = _getFromTopAndPop();
     if (a.type == Type::Bool)
     {
         if (!std::get<bool>(a.value))
         {
-            m_programCounter = dest;
+            m_programCounter = dest + m_programCounter;
         }
         else
         {
-            m_programCounter++;
+            m_programCounter += sizeof(ProgramAddressType) + 1;
         }
     }
     else
     {
         throw RuntimeException(std::string("Invalid data type passed to condition check. Expected bool got: ") + typeToString(a.type));
     }
+}
+
+inline void GobLang::Machine::_jumpBack()
+{
+    ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
+    if (dest > m_programCounter)
+    {
+        throw RuntimeException("Jump back offset is larger than the PC");
+    }
+    m_programCounter -= dest;
 }
 
 void GobLang::Machine::_add()
@@ -517,6 +530,10 @@ void GobLang::Machine::_add()
         if (str1 != nullptr && str2 != nullptr)
         {
             c = createString(str1->getString() + str2->getString());
+        }
+        else
+        {
+            throw RuntimeException(std::string("Invalid type used for math operation: ") + typeToString(a.type));
         }
     }
     break;
@@ -632,8 +649,8 @@ inline void GobLang::Machine::_mod()
 void GobLang::Machine::_set()
 {
     // (name val =)
-    MemoryValue val = _getFromTopAndPop();
     MemoryValue name = _getFromTopAndPop();
+    MemoryValue val = _getFromTopAndPop();
     StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
     if (memStr != nullptr)
     {
@@ -940,9 +957,10 @@ void GobLang::Machine::_getArray()
 
 void GobLang::Machine::_setArray()
 {
-    MemoryValue value = _getFromTopAndPop();
     MemoryValue array = _getFromTopAndPop();
     MemoryValue index = _getFromTopAndPop();
+    MemoryValue value = _getFromTopAndPop();
+
     if (!std::holds_alternative<MemoryNode *>(array.value))
     {
         throw RuntimeException(std::string("Attempted to set array value, but array has instead type: ") + typeToString(array.type));
@@ -979,9 +997,9 @@ inline void GobLang::Machine::_getField()
         if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
         {
             MemoryValue v = arrNode->getField(strNode->getString());
-            if(std::holds_alternative<MemoryNode*>(v.value))
+            if (std::holds_alternative<MemoryNode *>(v.value))
             {
-                addObject(std::get<MemoryNode*>(v.value));
+                addObject(std::get<MemoryNode *>(v.value));
             }
             pushToStack(v);
         }

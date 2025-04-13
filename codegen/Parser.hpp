@@ -3,12 +3,13 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <memory>
 #include <exception>
 
 #include "Token.hpp"
 #include "SpecialCharacter.hpp"
 
-namespace GobLang::Compiler
+namespace GobLang::Codegen
 {
     static const std::string HexDigits = "1234567890ABCDEFabcdef";
     inline bool isValidHexDigit(char c) { return HexDigits.find(c) != std::string::npos; }
@@ -52,38 +53,38 @@ namespace GobLang::Compiler
         /**
          * @brief Attempt to parse all known keywords
          *
-         * @return KeywordToken* Pointer to the token for the parsed keyword or nullptr if no keywords were found
+         * @return std::unique_ptr<KeywordToken>  Pointer to the token for the parsed keyword or nullptr if no keywords were found
          */
-        KeywordToken *parseKeywords();
+        std::unique_ptr<KeywordToken> parseKeywords();
 
         /**
          * @brief Attempt to parse all known operators
          *
-         * @return OperatorToken* Pointer to token for the parsed operator or nullptr if no tokens were found
+         * @return std::unique_ptr<OperatorToken>  Pointer to token for the parsed operator or nullptr if no tokens were found
          */
-        OperatorToken *parseOperators();
+        std::unique_ptr<OperatorToken> parseOperators();
 
-        IdToken *parseId();
+        std::unique_ptr<IdToken> parseId();
 
-        IntToken *parseInt();
+        std::unique_ptr<IntToken> parseInt();
 
-        IntToken *parseHexInt();
+        std::unique_ptr<IntToken> parseHexInt();
 
-        UnsignedIntToken * parseUnsignedInt();
+        std::unique_ptr<UnsignedIntToken>  parseUnsignedInt();
 
-        UnsignedIntToken * parseHexUnsignedInt();
+        std::unique_ptr<UnsignedIntToken>  parseHexUnsignedInt();
 
-        FloatToken *parseFloat();
+        std::unique_ptr<FloatToken> parseFloat();
 
-        SeparatorToken *parseSeparators();
+        std::unique_ptr<SeparatorToken> parseSeparators();
 
-        StringToken *parseString();
+        std::unique_ptr<StringToken> parseString();
 
-        BoolConstToken *parseBool();
+        std::unique_ptr<BoolConstToken> parseBool();
 
-        CharToken *parseChar();
+        std::unique_ptr<CharToken> parseChar();
 
-        NullConstToken *parseNullConst();
+        std::unique_ptr<NullConstToken> parseNullConst();
 
         SpecialCharacter const *parseSpecialCharacter(std::string::iterator const &it);
 
@@ -139,7 +140,7 @@ namespace GobLang::Compiler
 
         explicit Parser(std::string const &code);
 
-        std::vector<Token *> const &getTokens() const { return m_tokens; }
+        std::vector<std::unique_ptr<Token>> const &getTokens() const { return m_tokens; }
         std::vector<std::string> const &getIds() const { return m_ids; }
 
         size_t getTotalLineCount() const { return m_code.size(); }
@@ -147,7 +148,7 @@ namespace GobLang::Compiler
         ~Parser();
 
     private:
-        std::vector<Token *> m_tokens;
+        std::vector<std::unique_ptr<Token>> m_tokens;
         std::vector<std::string> m_ids;
         std::vector<std::string> m_code;
         /**

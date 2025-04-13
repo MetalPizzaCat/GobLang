@@ -13,17 +13,12 @@
 #include "Array.hpp"
 #include "Exception.hpp"
 #include "Structure.hpp"
-#include "../compiler/ByteCode.hpp"
+#include "../codegen/ByteCode.hpp"
 #include "NativeStructure.hpp"
 
 using namespace GobLang::Struct;
 namespace GobLang
 {
-    /**
-     * @brief Type used to store jump addresses in the code
-     *
-     */
-    using ProgramAddressType = size_t;
     class Machine
     {
     public:
@@ -31,7 +26,7 @@ namespace GobLang
         {
         }
 
-        explicit Machine(Compiler::ByteCode const &code);
+        explicit Machine(Codegen::ByteCode const &code);
 
         void addOperation(Operation op)
         {
@@ -174,6 +169,8 @@ namespace GobLang
         inline void _jump();
 
         inline void _jumpIf();
+
+        inline void _jumpBack();
 
         inline void _add();
 
