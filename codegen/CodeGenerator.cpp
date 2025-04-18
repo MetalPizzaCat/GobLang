@@ -200,7 +200,7 @@ std::unique_ptr<BranchNode> GobLang::Codegen::CodeGenerator::parseBranch()
     }
     consumeSeparator(Separator::BracketClose, "Expected ')'");
     consumeSeparator(Separator::BlockOpen, "Expected '{'");
-    std::unique_ptr<CodeNode> body = parseBody();
+    std::unique_ptr<SequenceNode> body = parseBody();
     consumeSeparator(Separator::BlockClose, "Expected '}'");
 
     return std::make_unique<BranchNode>(std::move(cond), std::move(body));
@@ -218,7 +218,7 @@ std::unique_ptr<WhileLoopNode> GobLang::Codegen::CodeGenerator::parseLoop()
     }
     consumeSeparator(Separator::BracketClose, "Expected ')'");
     consumeSeparator(Separator::BlockOpen, "Expected '{'");
-    std::unique_ptr<CodeNode> body = parseBody();
+    std::unique_ptr<SequenceNode> body = parseBody();
     consumeSeparator(Separator::BlockClose, "Expected '}'");
 
     return std::make_unique<WhileLoopNode>(std::move(cond), std::move(body));

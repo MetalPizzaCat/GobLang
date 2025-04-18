@@ -73,11 +73,26 @@ void GobLang::Codegen::BlockContext::insert(std::vector<uint8_t> const &bytes)
 
 void GobLang::Codegen::BlockContext::appendMemoryClear()
 {
-    if (m_variables.size() > 0)
+    if (!m_variables.empty())
     {
         m_bytes.push_back((uint8_t)Operation::ShrinkLocal);
         m_bytes.push_back((uint8_t)m_variables.size());
     }
+}
+
+void GobLang::Codegen::BlockContext::addJump(bool isBreak)
+{
+    m_jumps[m_bytes.size() + m_baseJumpOffset] = isBreak;
+}
+
+void GobLang::Codegen::BlockContext::addJumpAt(size_t offset, bool isBreak)
+{
+    m_jumps[m_bytes.size() + offset + m_baseJumpOffset] = isBreak;
+}
+
+void GobLang::Codegen::BlockContext::createBaseJumpOffset(size_t offset)
+{
+    m_baseJumpOffset = offset;
 }
 
 GobLang::Codegen::BranchCodeGenValue::BranchCodeGenValue(std::vector<uint8_t> cond, std::vector<uint8_t> body)

@@ -44,18 +44,26 @@ namespace GobLang::Codegen
 
         void insert(std::vector<uint8_t> const &bytes);
 
-        std::vector<uint8_t> const &getBytes() { return m_bytes; }
+        std::vector<uint8_t> const &getBytes() const { return m_bytes; }
 
         /// @brief Append instructions for clearing variable stack
         void appendMemoryClear();
 
         bool isFunction() const { return m_funcId != -1; }
 
+        void addJump(bool isBreak);
+
+        void addJumpAt(size_t offset, bool isBreak);
+
+        void createBaseJumpOffset(size_t offset);
+
+        std::map<size_t, bool> const &getJumps() const { return m_jumps; }
+
     private:
-        std::map<size_t, size_t> m_jumps;
+        std::map<size_t, bool> m_jumps;
         std::vector<size_t> m_variables;
         std::vector<uint8_t> m_bytes;
-
+        size_t m_baseJumpOffset = 0;
         size_t m_funcId = -1;
     };
 
@@ -77,6 +85,8 @@ namespace GobLang::Codegen
         explicit BlockCodeGenValue(std::unique_ptr<BlockContext> block);
 
         std::vector<uint8_t> getGetOperationBytes() override { return m_block->getBytes(); }
+
+        BlockContext const *getBlock() const { return m_block.get(); }
 
     private:
         std::unique_ptr<BlockContext> m_block;

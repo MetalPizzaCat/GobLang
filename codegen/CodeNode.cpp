@@ -3,6 +3,7 @@
 
 #include "Lexems.hpp"
 #include "../execution/Value.hpp"
+#include "Parser.hpp"
 GobLang::Codegen::IdNode::IdNode(size_t id) : m_id(id)
 {
 }
@@ -81,7 +82,7 @@ GobLang::Codegen::SequenceNode::SequenceNode(std::vector<std::unique_ptr<CodeNod
 {
 }
 
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::SequenceNode::generateCode(Builder &builder)
+std::unique_ptr<GobLang::Codegen::BlockCodeGenValue> GobLang::Codegen::SequenceNode::generateBlockContext(Builder &builder)
 {
     builder.pushEmptyBlock();
     BlockContext *block = builder.getCurrentBlock();
@@ -90,7 +91,15 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::SequenceNode::
         block->insert((*it)->generateCode(builder)->getGetOperationBytes());
     }
     block->appendMemoryClear();
-    return std::make_unique<BlockCodeGenValue>(builder.popBlock());
+    std::unique_ptr<BlockContext> generatedBlock = builder.popBlock();
+    if (BlockContext *topBlock = builder.getCurrentBlock(); topBlock != nullptr)
+    {
+        for (auto [addr, isBreak] : generatedBlock->getJumps())
+        {
+            topBlock->addJumpAt(addr, isBreak);
+        }
+    }
+    return std::make_unique<BlockCodeGenValue>(std::move(generatedBlock));
 }
 
 std::string GobLang::Codegen::SequenceNode::toString()
@@ -199,7 +208,9 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::VariableCreati
     return builder.createVariableInit(var, m_body->generateCode(builder));
 }
 
-GobLang::Codegen::BranchNode::BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body) : m_cond(std::move(cond)), m_body(std::move(body))
+GobLang::Codegen::BranchNode::BranchNode(
+    std::unique_ptr<CodeNode> cond,
+    std::unique_ptr<SequenceNode> body) : m_cond(std::move(cond)), m_body(std::move(body))
 {
 }
 
@@ -212,7 +223,8 @@ std::unique_ptr<GobLang::Codegen::BranchCodeGenValue> GobLang::Codegen::BranchNo
     {
         bytes.push_back(0x0);
     }
-    std::vector<uint8_t> body = m_body->generateCode(builder)->getGetOperationBytes();
+    std::unique_ptr<BlockCodeGenValue> bodyContext = m_body->generateBlockContext(builder);
+    std::vector<uint8_t> body = bodyContext->getGetOperationBytes();
 
     return std::make_unique<BranchCodeGenValue>(bytes, body);
 }
@@ -254,7 +266,7 @@ std::string GobLang::Codegen::BranchChainNode::toString()
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BranchChainNode::generateCode(Builder &builder)
 {
-    BlockContext *block = builder.getCurrentBlock();
+    //BlockContext *block = builder.getCurrentBlock();
     // where to jump if all blocks fail
     size_t endOffset = 0;
 
@@ -317,18 +329,20 @@ std::string GobLang::Codegen::BoolNode::toString()
     return m_val ? "true" : "false";
 }
 
-GobLang::Codegen::WhileLoopNode::WhileLoopNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body) : BranchNode(std::move(cond), std::move(body))
+GobLang::Codegen::WhileLoopNode::WhileLoopNode(std::unique_ptr<CodeNode> cond,
+                                               std::unique_ptr<SequenceNode> body) : BranchNode(std::move(cond), std::move(body))
 {
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode::generateCode(Builder &builder)
 {
-    BlockContext *block = builder.getCurrentBlock();
     std::vector<uint8_t> bytes = m_cond->generateCode(builder)->getGetOperationBytes();
     bytes.push_back((uint8_t)Operation::JumpIfNot);
     // don't pad cause we can just insert value later
 
-    std::vector<uint8_t> body = m_body->generateCode(builder)->getGetOperationBytes();
+    std::unique_ptr<BlockCodeGenValue> bodyContext = m_body->generateBlockContext(builder);
+
+    std::vector<uint8_t> body = bodyContext->getGetOperationBytes();
     std::vector<uint8_t> retNum = parseToBytes(body.size() + bytes.size() + sizeof(ProgramAddressType));
     // body always has a return, but it goes backwards and is equal to sizeof(body)
     body.push_back((uint8_t)Operation::JumpBack);
@@ -338,8 +352,12 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode:
     // recalculate the size with the address included to properly jump forward
     retNum = parseToBytes(body.size() + sizeof(ProgramAddressType) + 1);
     bytes.insert(bytes.end(), retNum.begin(), retNum.end());
+    size_t condSize = bytes.size();
     bytes.insert(bytes.end(), body.begin(), body.end());
-
+    for (auto [addr, isBreak] : bodyContext->getBlock()->getJumps())
+    {
+        std::cout << std::hex << addr + condSize << std::dec << std::endl;
+    }
     return std::make_unique<GeneratedCodeGenValue>(bytes);
 }
 
@@ -348,9 +366,41 @@ std::string GobLang::Codegen::WhileLoopNode::toString()
     return "{\"type\": \"while\", \"cond\": " + m_cond->toString() + ", \"body\": " + m_body->toString() + "}";
 }
 
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BreakNode::generateCode(Builder &builder)
+{
+    BlockContext *block = builder.getCurrentBlock();
+    if (block == nullptr)
+    {
+        throw ParsingError(0, 0, "Break used outside of a loop");
+    }
+    block->addJump(true);
+    std::vector<uint8_t> bytes = {(uint8_t)Operation::Jump};
+    for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
+    {
+        bytes.push_back(0);
+    }
+    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+}
+
 std::string GobLang::Codegen::BreakNode::toString()
 {
     return "\"break\"";
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ContinueNode::generateCode(Builder &builder)
+{
+    BlockContext *block = builder.getCurrentBlock();
+    if (block == nullptr)
+    {
+        throw ParsingError(0, 0, "Break used outside of a loop");
+    }
+    block->addJump(false);
+    std::vector<uint8_t> bytes = {(uint8_t)Operation::JumpBack};
+    for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
+    {
+        bytes.push_back(0);
+    }
+    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
 
 std::string GobLang::Codegen::ContinueNode::toString()

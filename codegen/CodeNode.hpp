@@ -102,7 +102,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit BreakNode() = default;
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
     };
 
@@ -110,7 +110,7 @@ namespace GobLang::Codegen
     {
     public:
         explicit ContinueNode() = default;
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
     };
 
@@ -137,7 +137,8 @@ namespace GobLang::Codegen
     {
     public:
         explicit SequenceNode(std::vector<std::unique_ptr<CodeNode>> seq);
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateBlockContext(builder); }
+        std::unique_ptr<BlockCodeGenValue> generateBlockContext(Builder &builder);
         std::string toString() override;
 
     private:
@@ -224,7 +225,7 @@ namespace GobLang::Codegen
     class BranchNode : public CodeNode
     {
     public:
-        explicit BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body);
+        explicit BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<SequenceNode> body);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateBranchCode(builder); }
 
         std::unique_ptr<BranchCodeGenValue> generateBranchCode(Builder &builder);
@@ -232,13 +233,13 @@ namespace GobLang::Codegen
 
     protected:
         std::unique_ptr<CodeNode> m_cond;
-        std::unique_ptr<CodeNode> m_body;
+        std::unique_ptr<SequenceNode> m_body;
     };
 
     class WhileLoopNode : public BranchNode
     {
     public:
-        explicit WhileLoopNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<CodeNode> body);
+        explicit WhileLoopNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<SequenceNode> body);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
     };

@@ -183,6 +183,15 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
         (uint8_t)(funcIt - m_functions.begin())});
 }
 
+GobLang::Codegen::BlockContext *GobLang::Codegen::Builder::getCurrentBlock()
+{
+    if (m_blocks.empty())
+    {
+        return nullptr;
+    }
+    return m_blocks.back().get();
+}
+
 bool GobLang::Codegen::Builder::isCurrentlyInFunction()
 {
     for (std::vector<std::unique_ptr<GobLang::Codegen::BlockContext>>::const_iterator it = m_blocks.begin(); it != m_blocks.end(); it++)

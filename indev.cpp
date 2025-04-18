@@ -10,7 +10,7 @@
 #include "codegen/Disassembly.hpp"
 
 //#define INDEV_DEBUG_TREE_ONLY
-#define INDEV_DEBUG_RUN_FULL_CODE
+//#define INDEV_DEBUG_RUN_FULL_CODE
 #define INDEV_DEBUG_SHOW_TREE
 
 using namespace GobLang;
