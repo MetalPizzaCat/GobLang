@@ -138,7 +138,11 @@ namespace GobLang::Codegen
     public:
         explicit SequenceNode(std::vector<std::unique_ptr<CodeNode>> seq);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateBlockContext(builder); }
-        std::unique_ptr<BlockCodeGenValue> generateBlockContext(Builder &builder);
+        /// @brief Generate block codegen data for the given sequence
+        /// @param builder
+        /// @param jumpStartOffset
+        /// @return
+        std::unique_ptr<BlockCodeGenValue> generateBlockContext(Builder &builder, size_t jumpStartOffset = 0, bool isLoop = false);
         std::string toString() override;
 
     private:
@@ -228,7 +232,11 @@ namespace GobLang::Codegen
         explicit BranchNode(std::unique_ptr<CodeNode> cond, std::unique_ptr<SequenceNode> body);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateBranchCode(builder); }
 
-        std::unique_ptr<BranchCodeGenValue> generateBranchCode(Builder &builder);
+        /// @brief Create a branch codegen value
+        /// @param builder Bytecode builder
+        /// @param prevBranchOffset Offset based on the size of the previous if/elif branches, used for proper break/continue handling
+        /// @return
+        std::unique_ptr<BranchCodeGenValue> generateBranchCode(Builder &builder, size_t prevBranchOffset = 0);
         std::string toString() override;
 
     protected:
@@ -247,14 +255,17 @@ namespace GobLang::Codegen
     class BranchChainNode : public CodeNode
     {
     public:
-        explicit BranchChainNode(std::unique_ptr<BranchNode> primary, std::vector<std::unique_ptr<BranchNode>> secondary, std::unique_ptr<CodeNode> elseBlock = nullptr);
+        explicit BranchChainNode(
+            std::unique_ptr<BranchNode> primary,
+            std::vector<std::unique_ptr<BranchNode>> secondary,
+            std::unique_ptr<SequenceNode> elseBlock = nullptr);
         std::string toString() override;
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
 
     private:
         std::unique_ptr<BranchNode> m_primary;
         std::vector<std::unique_ptr<BranchNode>> m_secondary;
-        std::unique_ptr<CodeNode> m_else;
+        std::unique_ptr<SequenceNode> m_else;
     };
 
     class VariableCreationNode : public CodeNode

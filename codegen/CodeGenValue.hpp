@@ -57,6 +57,10 @@ namespace GobLang::Codegen
 
         void createBaseJumpOffset(size_t offset);
 
+        void markAsLoopBlock() { m_loopBlock = true; }
+
+        bool isLoopBlock() const { return m_loopBlock; }
+
         std::map<size_t, bool> const &getJumps() const { return m_jumps; }
 
     private:
@@ -65,6 +69,7 @@ namespace GobLang::Codegen
         std::vector<uint8_t> m_bytes;
         size_t m_baseJumpOffset = 0;
         size_t m_funcId = -1;
+        bool m_loopBlock;
     };
 
     class CodeGenValue

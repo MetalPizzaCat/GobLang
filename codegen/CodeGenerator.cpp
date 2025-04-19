@@ -236,7 +236,7 @@ std::unique_ptr<BranchChainNode> GobLang::Codegen::CodeGenerator::parseBranchCha
     {
         elifs.push_back(std::move(parseBranch()));
     }
-    std::unique_ptr<CodeNode> elseBlock = nullptr;
+    std::unique_ptr<SequenceNode> elseBlock = nullptr;
 
     if (isKeyword(Keyword::Else))
     {
