@@ -16,7 +16,6 @@ namespace GobLang::Codegen
 
         virtual std::string toString() = 0;
 
-    private:
     };
 
     class IdNode : public CodeNode
@@ -239,7 +238,10 @@ namespace GobLang::Codegen
         std::unique_ptr<BranchCodeGenValue> generateBranchCode(Builder &builder, size_t prevBranchOffset = 0);
         std::string toString() override;
 
-    protected:
+        std::unique_ptr<CodeNode> &getCond() { return m_cond; }
+        std::unique_ptr<SequenceNode> &getBody() { return m_body; }
+
+    private:
         std::unique_ptr<CodeNode> m_cond;
         std::unique_ptr<SequenceNode> m_body;
     };

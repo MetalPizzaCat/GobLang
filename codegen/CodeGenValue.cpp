@@ -118,7 +118,7 @@ std::vector<uint8_t> GobLang::Codegen::BranchCodeGenValue::getGetOperationBytes(
     if (m_jumpAfter != -1)
     {
         bytes.push_back(m_backwards ? (uint8_t)Operation::JumpBack : (uint8_t)Operation::Jump);
-        std::vector<uint8_t> num = parseToBytes(m_jumpAfter);
+        std::vector<uint8_t> num = parseToBytes((uint32_t)m_jumpAfter);
         bytes.insert(bytes.end(), num.begin(), num.end());
     }
     return bytes;
@@ -126,21 +126,21 @@ std::vector<uint8_t> GobLang::Codegen::BranchCodeGenValue::getGetOperationBytes(
 
 void GobLang::Codegen::BranchCodeGenValue::setConditionJumpOffset(size_t offset)
 {
-    std::vector<uint8_t> num = parseToBytes(offset);
+    std::vector<uint8_t> num = parseToBytes((uint32_t)offset);
     std::copy(num.begin(), num.end(), m_condBytes.end() - sizeof(ProgramAddressType));
 }
 
-size_t GobLang::Codegen::BranchCodeGenValue::getBodySize()
+size_t GobLang::Codegen::BranchCodeGenValue::getBodySize() const
 {
     return m_bodyBytes.size() + ((m_jumpAfter != -1) ? (sizeof(ProgramAddressType) + 1) : 0);
 }
 
-size_t GobLang::Codegen::BranchCodeGenValue::getFullSize()
+size_t GobLang::Codegen::BranchCodeGenValue::getFullSize() const
 {
     return m_condBytes.size() + getBodySize();
 }
 
-size_t GobLang::Codegen::BranchCodeGenValue::getConditionSize()
+size_t GobLang::Codegen::BranchCodeGenValue::getConditionSize() const
 {
     return m_condBytes.size();
 }

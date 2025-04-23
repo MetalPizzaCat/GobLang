@@ -12,7 +12,7 @@ namespace GobLang
      * @brief Type used to store jump addresses in the code
      *
      */
-    using ProgramAddressType = size_t;
+    using ProgramAddressType = uint32_t;
     static size_t MAX_PRINT_RECURSION_DEPTH = MAX_PRINT_DEPTH;
     class Machine;
     class MemoryNode;
