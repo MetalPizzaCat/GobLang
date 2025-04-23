@@ -112,14 +112,15 @@ std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
         {
             seq.push_back(std::move(parseStandaloneExpression()));
         }
+        else if (isSeparator(Separator::BlockClose) || isAtTheEnd())
+        {
+            break;
+        }
         else
         {
             error("Unknown character sequence");
         }
-        if (isSeparator(Separator::BlockClose) || isAtTheEnd())
-        {
-            break;
-        }
+        
     }
     return std::make_unique<SequenceNode>(std::move(seq));
 }
@@ -200,7 +201,7 @@ std::unique_ptr<BranchNode> GobLang::Codegen::CodeGenerator::parseBranch()
     }
     consumeSeparator(Separator::BracketClose, "Expected ')'");
     consumeSeparator(Separator::BlockOpen, "Expected '{'");
-    std::unique_ptr<CodeNode> body = parseBody();
+    std::unique_ptr<SequenceNode> body = parseBody();
     consumeSeparator(Separator::BlockClose, "Expected '}'");
 
     return std::make_unique<BranchNode>(std::move(cond), std::move(body));
@@ -218,7 +219,7 @@ std::unique_ptr<WhileLoopNode> GobLang::Codegen::CodeGenerator::parseLoop()
     }
     consumeSeparator(Separator::BracketClose, "Expected ')'");
     consumeSeparator(Separator::BlockOpen, "Expected '{'");
-    std::unique_ptr<CodeNode> body = parseBody();
+    std::unique_ptr<SequenceNode> body = parseBody();
     consumeSeparator(Separator::BlockClose, "Expected '}'");
 
     return std::make_unique<WhileLoopNode>(std::move(cond), std::move(body));
@@ -236,7 +237,7 @@ std::unique_ptr<BranchChainNode> GobLang::Codegen::CodeGenerator::parseBranchCha
     {
         elifs.push_back(std::move(parseBranch()));
     }
-    std::unique_ptr<CodeNode> elseBlock = nullptr;
+    std::unique_ptr<SequenceNode> elseBlock = nullptr;
 
     if (isKeyword(Keyword::Else))
     {

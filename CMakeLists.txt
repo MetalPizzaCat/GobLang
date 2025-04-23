@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.5.0)
-project(goblang VERSION 0.3.0 LANGUAGES C CXX)
+cmake_minimum_required(VERSION 3.20.0)
+project(goblang VERSION 0.7.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED true)
 
 set(USE_STATIC_BUILD ON CACHE BOOL "Build static executable")
 

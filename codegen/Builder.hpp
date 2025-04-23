@@ -48,7 +48,7 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeGenValue> createLocalFunctionAccess(size_t nameId);
 
-        BlockContext *getCurrentBlock() { return m_blocks.back().get(); }
+        BlockContext *getCurrentBlock();
 
         bool isCurrentlyInFunction();
 

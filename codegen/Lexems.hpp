@@ -110,7 +110,7 @@ namespace GobLang::Codegen
      * @brief Info about all keywords used in the parser
      *
      */
-    static const std::map<std::string, Keyword> Keywords = {
+    static const std::map<std::string, Keyword,  std::less<>> Keywords = {
         //{"int", Keyword::Int},
         //{"float", Keyword::Float},
         {"func", Keyword::Function},
@@ -126,7 +126,7 @@ namespace GobLang::Codegen
         {"let", Keyword::Let},
         {"type", Keyword::Struct}};
 
-    static const std::map<std::string, bool> Booleans = {
+    static const std::map<std::string, bool,  std::less<>> Booleans = {
         {"true", true},
         {"false", false},
         {"True", true},

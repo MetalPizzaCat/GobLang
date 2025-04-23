@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <algorithm>
+#include <bit>
 #include "../execution/Function.hpp"
 
 namespace GobLang::Codegen
@@ -11,13 +12,13 @@ namespace GobLang::Codegen
     template <typename T>
     std::vector<uint8_t> parseToBytes(T val)
     {
-        uint32_t *v = reinterpret_cast<uint32_t *>(&val);
+        uint32_t const v =  std::bit_cast<uint32_t>(val);
         std::vector<uint8_t> res;
         for (int32_t i = sizeof(T) - 1; i >= 0; i--)
         {
             uint64_t offset = (sizeof(uint8_t) * i) * 8;
             const size_t mask = 0xff;
-            uint64_t num = (*v) & (mask << offset);
+            uint64_t num = v & (mask << offset);
             uint64_t numFixed = num >> offset;
             res.push_back((uint8_t)numFixed);
         }
@@ -44,19 +45,32 @@ namespace GobLang::Codegen
 
         void insert(std::vector<uint8_t> const &bytes);
 
-        std::vector<uint8_t> const &getBytes() { return m_bytes; }
+        std::vector<uint8_t> const &getBytes() const { return m_bytes; }
 
         /// @brief Append instructions for clearing variable stack
         void appendMemoryClear();
 
         bool isFunction() const { return m_funcId != -1; }
 
+        void addJump(bool isBreak);
+
+        void addJumpAt(size_t offset, bool isBreak);
+
+        void createBaseJumpOffset(size_t offset);
+
+        void markAsLoopBlock() { m_loopBlock = true; }
+
+        bool isLoopBlock() const { return m_loopBlock; }
+
+        std::map<size_t, bool> const &getJumps() const { return m_jumps; }
+
     private:
-        std::map<size_t, size_t> m_jumps;
+        std::map<size_t, bool> m_jumps;
         std::vector<size_t> m_variables;
         std::vector<uint8_t> m_bytes;
-
+        size_t m_baseJumpOffset = 0;
         size_t m_funcId = -1;
+        bool m_loopBlock;
     };
 
     class CodeGenValue
@@ -67,8 +81,6 @@ namespace GobLang::Codegen
         virtual std::vector<uint8_t> getGetOperationBytes() = 0;
 
         virtual std::vector<uint8_t> getSetOperationBytes() { return {}; }
-
-    private:
     };
 
     class BlockCodeGenValue : public CodeGenValue
@@ -77,6 +89,10 @@ namespace GobLang::Codegen
         explicit BlockCodeGenValue(std::unique_ptr<BlockContext> block);
 
         std::vector<uint8_t> getGetOperationBytes() override { return m_block->getBytes(); }
+
+        BlockContext const *getBlock() const { return m_block.get(); }
+
+        size_t getBlockSize() const { return m_block->getBytes().size(); }
 
     private:
         std::unique_ptr<BlockContext> m_block;
@@ -135,13 +151,13 @@ namespace GobLang::Codegen
 
         /// @brief Get size of the body block in bytes, accounting for the optional end jump
         /// @return
-        size_t getBodySize();
+        size_t getBodySize() const;
 
         /// @brief Get the full size of the block in bytes
         /// @return
-        size_t getFullSize();
+        size_t getFullSize() const;
 
-        size_t getConditionSize();
+        size_t getConditionSize() const;
 
         bool hasEndJump() const { return m_jumpAfter != -1; }
 
