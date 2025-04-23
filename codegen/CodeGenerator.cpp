@@ -112,14 +112,15 @@ std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
         {
             seq.push_back(std::move(parseStandaloneExpression()));
         }
+        else if (isSeparator(Separator::BlockClose) || isAtTheEnd())
+        {
+            break;
+        }
         else
         {
             error("Unknown character sequence");
         }
-        if (isSeparator(Separator::BlockClose) || isAtTheEnd())
-        {
-            break;
-        }
+        
     }
     return std::make_unique<SequenceNode>(std::move(seq));
 }

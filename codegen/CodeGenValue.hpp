@@ -93,6 +93,8 @@ namespace GobLang::Codegen
 
         BlockContext const *getBlock() const { return m_block.get(); }
 
+        size_t getBlockSize() const { return m_block->getBytes().size(); }
+
     private:
         std::unique_ptr<BlockContext> m_block;
     };

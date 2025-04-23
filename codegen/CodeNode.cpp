@@ -259,7 +259,7 @@ std::string GobLang::Codegen::BranchChainNode::toString()
     std::string base = "{\"type\" : \"branch_chain\",  \"if\": " + m_primary->toString() + ", \"elifs\" : [";
     for (std::vector<std::unique_ptr<BranchNode>>::const_iterator it = m_secondary.begin(); it != m_secondary.end(); it++)
     {
-        base += (*it)->toString();
+        base.append((*it)->toString());
         if (it + 1 != m_secondary.end())
         {
             base += ',';
@@ -284,7 +284,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BranchChainNod
     size_t endOffset = 0;
 
     std::unique_ptr<BranchCodeGenValue> ifBlock = m_primary->generateBranchCode(builder);
-    if (m_secondary.empty() || m_else)
+    if (!m_secondary.empty() || m_else)
     {
         ifBlock->addJump(0);
     }
@@ -293,7 +293,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BranchChainNod
 
     std::vector<std::unique_ptr<BranchCodeGenValue>> elifBlocks;
     // current size of the block + the future jump
-    size_t prevChainSize = ifBlock->getFullSize() + sizeof(ProgramAddressType) + 1;
+    size_t prevChainSize = ifBlock->getFullSize(); // + sizeof(ProgramAddressType) + 1;
     for (std::vector<std::unique_ptr<BranchNode>>::const_iterator it = m_secondary.begin(); it != m_secondary.end(); it++)
     {
         elifBlocks.push_back((*it)->generateBranchCode(builder, prevChainSize));
@@ -306,17 +306,23 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BranchChainNod
         // skip past the entire block
         endOffset += last->getFullSize();
         prevChainSize += last->getFullSize();
-        if(last->hasEndJump())
+        if (last->hasEndJump())
         {
-            prevChainSize += sizeof(ProgramAddressType);
+            // prevChainSize += sizeof(ProgramAddressType);
         }
     }
 
-    std::vector<uint8_t> elseBlock = m_else ? m_else->generateBlockContext(builder, prevChainSize)->getGetOperationBytes() : std::vector<uint8_t>();
+    std::unique_ptr<BlockCodeGenValue> elseBlock = m_else ? m_else->generateBlockContext(
+                                                                builder,
+                                                                prevChainSize)
+                                                          : nullptr;
 
     // primary block jumps to sizeof(self) + sum(...sizeof(elif)) + sizeof(else)
 
-    endOffset += elseBlock.size();
+    if (elseBlock)
+    {
+        endOffset += elseBlock->getBlockSize();
+    }
     ifBlock->addJump(endOffset + sizeof(ProgramAddressType) + 1);
     // but we don't update the value with the last block cause we are going to reuse it for writing proper elif jumps
     std::vector<uint8_t> bytes = ifBlock->getGetOperationBytes();
@@ -330,7 +336,8 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BranchChainNod
         std::vector<uint8_t> temp = (*it)->getGetOperationBytes();
         bytes.insert(bytes.end(), temp.begin(), temp.end());
     }
-    bytes.insert(bytes.end(), elseBlock.begin(), elseBlock.end());
+    std::vector<uint8_t> elseBlockBytes = elseBlock ? elseBlock->getGetOperationBytes() : std::vector<uint8_t>();
+    bytes.insert(bytes.end(), elseBlockBytes.begin(), elseBlockBytes.end());
 
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
@@ -387,7 +394,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode:
             jumpAddress = parseToBytes(condSize + addr);
         }
         std::copy(jumpAddress.begin(), jumpAddress.end(), bytes.begin() + addr + 1 + condSize);
-        //  bytes.insert(bytes.begin() + addr + 1, jumpAddress.begin(), jumpAddress.end());
+        //   bytes.insert(bytes.begin() + addr + 1, jumpAddress.begin(), jumpAddress.end());
         std::cout << std::hex << addr + condSize << std::dec << std::endl;
     }
     return std::make_unique<GeneratedCodeGenValue>(bytes);
@@ -416,7 +423,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BreakNode::gen
 
 std::string GobLang::Codegen::BreakNode::toString()
 {
-    return "\"break\"";
+    return std::string("\"break\"");
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ContinueNode::generateCode(Builder &builder)
@@ -437,7 +444,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ContinueNode::
 
 std::string GobLang::Codegen::ContinueNode::toString()
 {
-    return "\"continue\"";
+    return std::string("\"continue\"");
 }
 
 GobLang::Codegen::ArrayAccessNode::ArrayAccessNode(std::unique_ptr<CodeNode> value, std::unique_ptr<CodeNode> address)
