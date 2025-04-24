@@ -64,6 +64,8 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeNode> parseExpression();
 
+        std::unique_ptr<CodeNode> parseUnary();
+
         std::unique_ptr<CodeNode> parseBreak();
 
         std::unique_ptr<CodeNode> parseContinue();
@@ -126,6 +128,10 @@ namespace GobLang::Codegen
         /// @param keyword
         /// @return False if not that keyword or null
         bool isKeyword(Keyword keyword);
+
+        /// @brief Check if current token is one of the unary operators(+,-,~,!)
+        /// @return 
+        bool isUnaryOperator();
 
         /// @brief Check if the given token is an operator and stores any of the assignment operators in it
         /// @return False if not assignment or null

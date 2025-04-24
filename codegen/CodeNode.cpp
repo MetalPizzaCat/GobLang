@@ -576,3 +576,20 @@ std::string GobLang::Codegen::ArrayLiteralNode::toString()
     }
     return str + "]}";
 }
+
+GobLang::Codegen::UnaryOperationNode::UnaryOperationNode(Operator op, std::unique_ptr<CodeNode> value) : m_op(op), m_value(std::move(value))
+{
+}
+
+std::string GobLang::Codegen::UnaryOperationNode::toString()
+{
+    const char *symb = std::find_if(Operators.begin(), Operators.end(), [this](OperatorData const &op)
+                                    { return op.op == m_op; })
+                           ->symbol;
+    return R"({"type" : "unary", "value":)" + m_value->toString() + R"(, "op":")" + symb + "\"}";
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::UnaryOperationNode::generateCode(Builder &builder)
+{
+    return builder.createUnaryOperator(m_value->generateCode(builder), m_op);
+}

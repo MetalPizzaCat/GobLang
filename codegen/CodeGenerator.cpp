@@ -120,7 +120,6 @@ std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
         {
             error("Unknown character sequence");
         }
-        
     }
     return std::make_unique<SequenceNode>(std::move(seq));
 }
@@ -379,6 +378,10 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parsePrimary()
     {
         return parseGrouped();
     }
+    else if (isUnaryOperator())
+    {
+        return parseUnary();
+    }
     else
     {
         error("Unexpected character sequence");
@@ -417,6 +420,14 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseExpression()
         return nullptr;
     }
     return parseBinaryOperationRightSide(0, std::move(left));
+}
+
+std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseUnary()
+{
+    Operator op = getTokenOrError<OperatorToken>("Expected an operator")->getOperator();
+    advance();
+
+    return std::make_unique<UnaryOperationNode>(op, parseExpression());
 }
 
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseBreak()
@@ -537,6 +548,25 @@ bool GobLang::Codegen::CodeGenerator::isKeyword(Keyword keyword)
         return true;
     }
     return false;
+}
+
+bool GobLang::Codegen::CodeGenerator::isUnaryOperator()
+{
+    if (!isOfType<OperatorToken>())
+    {
+        return false;
+    }
+    OperatorToken const *opTok = getTokenOrError<OperatorToken>("");
+    switch (opTok->getOperator())
+    {
+    case Operator::Sub:
+    case Operator::Not:
+    case Operator::BitNot:
+    case Operator::Add:
+        return true;
+    default:
+        return false;
+    }
 }
 
 bool GobLang::Codegen::CodeGenerator::isAssignment()

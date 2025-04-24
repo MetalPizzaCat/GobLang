@@ -15,7 +15,6 @@ namespace GobLang::Codegen
         virtual std::unique_ptr<CodeGenValue> generateCode(Builder &builder) = 0;
 
         virtual std::string toString() = 0;
-
     };
 
     class IdNode : public CodeNode
@@ -170,6 +169,17 @@ namespace GobLang::Codegen
     private:
         std::unique_ptr<CodeNode> m_left;
         std::unique_ptr<CodeNode> m_right;
+        Operator m_op;
+    };
+
+    class UnaryOperationNode : public CodeNode
+    {
+    public:
+        explicit UnaryOperationNode(Operator op, std::unique_ptr<CodeNode> value);
+        std::string toString() override;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+    private:
+    std::unique_ptr<CodeNode> m_value;
         Operator m_op;
     };
 

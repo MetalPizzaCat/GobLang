@@ -87,6 +87,30 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
 
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createUnaryOperator(
+    std::unique_ptr<CodeGenValue> right,
+    Operator op)
+{
+    std::vector<uint8_t> bytes = right->getGetOperationBytes();
+    switch (op)
+    {
+    case Operator::Sub:
+        bytes.push_back((uint8_t)Operation::Negate);
+        break;
+    case Operator::BitNot:
+        bytes.push_back((uint8_t)Operation::BitNot);
+        break;
+
+    case Operator::Not:
+        bytes.push_back((uint8_t)Operation::Not);
+        break;
+    default:
+        // unary '+' does nothing
+        break;
+    }
+    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+}
+
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createAssignment(
     std::unique_ptr<CodeGenValue> left,
     std::unique_ptr<CodeGenValue> right)

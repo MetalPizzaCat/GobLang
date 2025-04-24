@@ -34,6 +34,8 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeGenValue> createOperation(std::unique_ptr<CodeGenValue> left, std::unique_ptr<CodeGenValue> right, Operator op);
 
+        std::unique_ptr<CodeGenValue> createUnaryOperator(std::unique_ptr<CodeGenValue> right, Operator op);
+
         std::unique_ptr<CodeGenValue> createAssignment(std::unique_ptr<CodeGenValue> left, std::unique_ptr<CodeGenValue> right);
 
         std::unique_ptr<CodeGenValue> createVariableInit(size_t id, std::unique_ptr<CodeGenValue> init);
