@@ -184,3 +184,35 @@ std::vector<uint8_t> GobLang::Codegen::FunctionCodeGenValue::getGetOperationByte
     body.push_back((uint8_t)Operation::Return);
     return body;
 }
+
+GobLang::Codegen::FieldAccessCodeGenValue::FieldAccessCodeGenValue(
+    std::vector<uint8_t> object,
+    std::vector<uint8_t> fieldBytes) : m_objectBytes(std::move(object)),
+                                       m_fieldBytes(std::move(fieldBytes))
+{
+}
+
+std::vector<uint8_t> GobLang::Codegen::FieldAccessCodeGenValue::getGetOperationBytes()
+{
+    std::vector<uint8_t> bytes = m_fieldBytes;
+    bytes.insert(bytes.end(), m_objectBytes.begin(), m_objectBytes.end());
+    bytes.push_back((uint8_t)Operation::GetField);
+    return bytes;
+}
+
+std::vector<uint8_t> GobLang::Codegen::FieldAccessCodeGenValue::getSetOperationBytes()
+{
+    std::vector<uint8_t> bytes = m_fieldBytes;
+    bytes.insert(bytes.end(), m_objectBytes.begin(), m_objectBytes.end());
+    bytes.push_back((uint8_t)Operation::SetField);
+    return bytes;
+}
+
+GobLang::Codegen::TypeCodeGenInfo::TypeCodeGenInfo(
+    size_t nameId,
+    std::vector<size_t> fieldIds,
+    Struct::Structure type) : m_nameId(nameId),
+                              m_fieldIds(fieldIds),
+                              m_type(type)
+{
+}

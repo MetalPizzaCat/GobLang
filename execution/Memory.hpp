@@ -4,15 +4,21 @@
 #include <iostream>
 #include <cstdint>
 #include "Type.hpp"
+#include "Structure.hpp"
 namespace GobLang
 {
+    struct MemoryValue;
     /**
-     * @brief Class used to represent interpreter memory by using a linked list
+     * @brief Represents a complex data object that is stored in the memory via a linked list.
+     *
+     * This is used for handling any type of non plain data like strings, arrays, structures, etc.
      *
      */
     class MemoryNode
     {
     public:
+        explicit MemoryNode() = default;
+        explicit MemoryNode(Struct::Structure const* baseStruct);
         /**
          * @brief Should be deleted by the garbage collector or not
          *
@@ -56,7 +62,18 @@ namespace GobLang
         /// @return true if  this object is being tracked by the garbage collector
         bool isRegistered() const { return m_registered; }
 
+        /// @brief Mark object as registered with garbage collector
         void registerGC() { m_registered = true; }
+
+        /// @brief Set value of the field if that field exists
+        /// @param field Name of the field
+        /// @param value Value to assign
+        virtual void setField(std::string const &field, MemoryValue const &value);
+
+        /// @brief Get value of the field with a given name
+        /// @param field Name of the field
+        /// @return
+        virtual MemoryValue getField(std::string const &field);
 
         /**
          * @brief Size of the memory chain
@@ -80,55 +97,29 @@ namespace GobLang
          * @param pretty If true then this object should be printed with type decorations. Only is relevant for string types
          * @return std::string String representation
          */
-        virtual std::string toString(bool pretty = false, size_t depth = 0) { return "Memory object"; }
+        virtual std::string toString(bool pretty = false, size_t depth = 0);
 
-        virtual ~MemoryNode() = default;
+        virtual ~MemoryNode();
 
     private:
-        /**
-         * @brief Next value in memory
-         *
-         */
+        /// @brief Next value in memory
         MemoryNode *m_next = nullptr;
-        /**
-         * @brief Is marked for deletion by garbage collector?
-         *
-         */
+        /// @brief Is marked for deletion by garbage collector?
         bool m_dead = false;
 
+        /// @brief How many references to this object exist. Once it zero object should be deleted
         int32_t m_refCount = 0;
 
+        /// @brief if true then this object is handled by garbage collector, otherwise it has not yet been added to the list
         bool m_registered = false;
-    };
 
-    class StringNode : public MemoryNode
-    {
-    public:
-        explicit StringNode(std::string const &str) : m_str(str) {}
+        /// @brief Descriptor of the fields that the object has
+        Struct::Structure const *m_struct = nullptr;
 
-        std::string const &getString() { return m_str; }
-
-        std::string toString(bool pretty, size_t depth) override;
-
-        char getCharAt(size_t ind);
-
-        void setCharAt(char ch, size_t ind);
-
-        /**
-         * @brief Compare other memory node and return true if both contain same sequence of characters
-         *
-         * @param other
-         * @return true
-         * @return false
-         */
-        bool equalsTo(MemoryNode *other) override;
-
-        size_t getSize() const { return m_str.size(); }
-
-        virtual ~StringNode() = default;
-
-    private:
-        std::string m_str;
+        /// @brief Storage for the values that an object might have
+        std::vector<MemoryValue> m_fields;
+        /// @brief Name to id mapping of the fields used for access
+        std::map<std::string, size_t> m_fieldNames;
     };
 
 }

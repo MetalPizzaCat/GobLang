@@ -9,7 +9,7 @@
 #include "standard/MachineFunctions.hpp"
 #include "codegen/Disassembly.hpp"
 
-#define INDEV_DEBUG_TREE_ONLY
+//#define INDEV_DEBUG_TREE_ONLY
 #define INDEV_DEBUG_RUN_FULL_CODE
 #define INDEV_DEBUG_SHOW_TREE
 
@@ -96,7 +96,6 @@ int main()
 #ifdef INDEV_DEBUG_TREE_ONLY
     gen.generate();
     gen.printTree();
-    gen.printStructures();
 #else
     GobLang::Codegen::ByteCode bytes = gen.getByteCode();
 #ifdef INDEV_DEBUG_SHOW_TREE
@@ -106,7 +105,7 @@ int main()
 #ifdef INDEV_DEBUG_RUN_FULL_CODE
     GobLang::Machine machine(bytes);
     MachineFunctions::bind(&machine);
-    std::vector<size_t> debugPoints = {};
+    std::vector<size_t> debugPoints = {0x12};
     while (!machine.isAtTheEnd())
     {
         if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())

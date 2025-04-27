@@ -45,6 +45,8 @@ namespace MachineFunctions::File
 
         static void nativeIsFileEnded(GobLang::Machine *m);
 
+        virtual std::string toString(bool pretty = false, size_t depth = 0);
+
         virtual ~FileNode();
 
     private:

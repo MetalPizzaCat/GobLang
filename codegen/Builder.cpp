@@ -64,10 +64,35 @@ GobLang::Function const *GobLang::Codegen::Builder::addFunction(size_t nameId, s
     return m_functions.back().get();
 }
 
+void GobLang::Codegen::Builder::addType(
+    std::string const &name,
+    std::vector<std::string> const &fieldNames,
+    size_t nameId,
+    std::vector<size_t> fieldIds)
+{
+    Struct::Structure type = Struct::Structure{.name = name};
+    for (std::string const &field : fieldNames)
+    {
+        type.fields.push_back(Struct::Field{.name = field});
+    }
+    m_types.push_back(std::make_unique<TypeCodeGenInfo>(nameId, std::move(fieldIds), std::move(type)));
+}
+
 bool GobLang::Codegen::Builder::hasLocalFunctionWithName(size_t nameId)
 {
     return std::find_if(m_functions.begin(), m_functions.end(), [nameId](std::unique_ptr<GobLang::Function> const &func)
                         { return func->nameId == nameId; }) != m_functions.end();
+}
+
+bool GobLang::Codegen::Builder::hasTypeWithName(size_t nameId)
+{
+    return std::find_if(
+               m_types.begin(),
+               m_types.end(),
+               [nameId](std::unique_ptr<TypeCodeGenInfo> const &type)
+               {
+                   return type->getNameId() == nameId;
+               }) != m_types.end();
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createOperation(
@@ -164,6 +189,26 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
 
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstructorCall(
+    size_t typeId,
+    std::vector<std::unique_ptr<CodeGenValue>> args)
+{
+    std::vector<std::unique_ptr<TypeCodeGenInfo>>::const_iterator typeIt =
+        std::find_if(m_types.begin(), m_types.end(), [typeId](std::unique_ptr<TypeCodeGenInfo> const &type)
+                     { return type->getNameId() == typeId; });
+
+    std::vector<uint8_t> bytes;
+
+    for (std::vector<std::unique_ptr<CodeGenValue>>::const_reverse_iterator it = args.rbegin(); it != args.rend(); it++)
+    {
+        std::vector<uint8_t> argBytes = (*it)->getGetOperationBytes();
+        bytes.insert(bytes.begin(), argBytes.begin(), argBytes.end());
+    }
+    bytes.push_back((uint8_t)Operation::New);
+    bytes.push_back((uint8_t)(typeIt - m_types.begin()));
+    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+}
+
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createCallFromValue(
     std::unique_ptr<CodeGenValue> value,
     std::vector<std::unique_ptr<CodeGenValue>> args)
@@ -186,6 +231,13 @@ std::unique_ptr<GobLang::Codegen::ArrayAccessCodeGenValue> GobLang::Codegen::Bui
     std::unique_ptr<CodeGenValue> index)
 {
     return std::make_unique<ArrayAccessCodeGenValue>(array->getGetOperationBytes(), index->getGetOperationBytes());
+}
+
+std::unique_ptr<GobLang::Codegen::FieldAccessCodeGenValue> GobLang::Codegen::Builder::createFieldAccess(
+    std::unique_ptr<CodeGenValue> object,
+    std::unique_ptr<CodeGenValue> field)
+{
+    return std::make_unique<FieldAccessCodeGenValue>(object->getGetOperationBytes(), field->getGetOperationBytes());
 }
 
 std::unique_ptr<GobLang::Codegen::VariableCodeGenValue> GobLang::Codegen::Builder::createVariableAccess(size_t nameId)
@@ -278,4 +330,14 @@ size_t GobLang::Codegen::Builder::insertVariable(size_t nameId)
     }
     m_blocks.back()->insertVariable(nameId);
     return curr;
+}
+
+std::vector<Struct::Structure> GobLang::Codegen::Builder::getTypes() const
+{
+    std::vector<Struct::Structure> types;
+    for (std::unique_ptr<TypeCodeGenInfo> const &type : m_types)
+    {
+        types.push_back(type->getType());
+    }
+    return types;
 }

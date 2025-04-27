@@ -22,7 +22,7 @@ namespace GobLang::Codegen
 
         /// @brief Parse structure data
         /// @return
-        Struct::Structure parseStructureDefinition();
+        std::unique_ptr<TypeDefinitionNode> parseStructureDefinition();
 
         /// @brief Block of code with n expressions separated by ;
         /// @return
@@ -75,6 +75,8 @@ namespace GobLang::Codegen
         std::unique_ptr<CodeNode> parseContinue();
 
         std::unique_ptr<CodeNode> parseReturn();
+
+        std::unique_ptr<ConstructorCallNode> parseConstructor();
 
         /// @brief Advance iterator by one
         inline void advance() { m_it++; }
@@ -151,7 +153,6 @@ namespace GobLang::Codegen
         }
 
         void printTree();
-        void printStructures();
         Token const *getCurrent() { return isAtTheEnd() ? nullptr : m_it->get(); }
 
         bool isAtTheEnd() { return m_it == m_parser.getTokens().end(); }
@@ -164,6 +165,6 @@ namespace GobLang::Codegen
 
         std::vector<std::unique_ptr<FunctionNode>> m_functions;
 
-        std::vector<Struct::Structure> m_structs;
+        std::vector<std::unique_ptr<TypeDefinitionNode>> m_structs;
     };
 } // namespace CodeGen

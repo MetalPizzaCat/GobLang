@@ -159,6 +159,17 @@ namespace GobLang::Codegen
         std::vector<std::unique_ptr<CodeNode>> m_values;
     };
 
+    class FieldAccessNode : public CodeNode
+    {
+    public:
+        explicit FieldAccessNode(std::unique_ptr<CodeNode> left, std::unique_ptr<CodeNode> right);
+        std::string toString() override;
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+
+    private:
+        std::unique_ptr<CodeNode> m_left;
+        std::unique_ptr<CodeNode> m_right;
+    };
     class BinaryOperationNode : public CodeNode
     {
     public:
@@ -178,8 +189,9 @@ namespace GobLang::Codegen
         explicit UnaryOperationNode(Operator op, std::unique_ptr<CodeNode> value);
         std::string toString() override;
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+
     private:
-    std::unique_ptr<CodeNode> m_value;
+        std::unique_ptr<CodeNode> m_value;
         Operator m_op;
     };
 
@@ -219,6 +231,31 @@ namespace GobLang::Codegen
     private:
         size_t m_nameId;
         std::vector<size_t> m_argIds;
+    };
+
+    class TypeDefinitionNode : public CodeNode
+    {
+    public:
+        explicit TypeDefinitionNode(size_t nameId, std::vector<size_t> fields);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
+
+        void generateType(Builder &builder, std::vector<std::string> const &ids);
+        std::string toString() override;
+
+    private:
+        size_t m_nameId;
+        std::vector<size_t> m_fieldIds;
+    };
+
+    class ConstructorCallNode : public CodeNode
+    {
+    public:
+        explicit ConstructorCallNode(size_t nameId, std::vector<std::unique_ptr<CodeNode>> args);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::string toString() override;
+    private:
+        size_t m_typeNameId;
+        std::vector<std::unique_ptr<CodeNode>> m_args;
     };
 
     class FunctionNode : public CodeNode

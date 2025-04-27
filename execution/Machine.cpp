@@ -268,7 +268,7 @@ GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool
     if (node == nullptr)
     {
         node = new StringNode(str);
-        m_memoryRoot.pushBack(node);
+        addObject(node);
     }
     return node;
 }
@@ -277,8 +277,8 @@ void GobLang::Machine::addObject(MemoryNode *obj)
 {
     if (!obj->isRegistered())
     {
-        obj->registerGC();
         m_memoryRoot.pushBack(obj);
+        obj->registerGC();
     }
 }
 
@@ -992,33 +992,28 @@ inline void GobLang::Machine::_getField()
     {
         throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(field.type));
     }
-    if (StructureObjectNode *arrNode = dynamic_cast<StructureObjectNode *>(std::get<MemoryNode *>(object.value)); arrNode != nullptr)
+    MemoryNode *memObj = std::get<MemoryNode *>(object.value);
+    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
     {
-        if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
+        MemoryValue v = memObj->getField(strNode->getString());
+        if (std::holds_alternative<MemoryNode *>(v.value))
         {
-            MemoryValue v = arrNode->getField(strNode->getString());
-            if (std::holds_alternative<MemoryNode *>(v.value))
-            {
-                addObject(std::get<MemoryNode *>(v.value));
-            }
-            pushToStack(v);
+            addObject(std::get<MemoryNode *>(v.value));
         }
-        else
-        {
-            throw RuntimeException("Attempted to get field on a but field name is not a string");
-        }
+        pushToStack(v);
     }
     else
     {
-        throw RuntimeException("Attempted to get field on a non-struct object");
+        throw RuntimeException("Attempted to get field on a but field name is not a string");
     }
 }
 
 inline void GobLang::Machine::_setField()
 {
-    MemoryValue value = _getFromTopAndPop();
     MemoryValue object = _getFromTopAndPop();
     MemoryValue field = _getFromTopAndPop();
+    MemoryValue value = _getFromTopAndPop();
+    
     if (!std::holds_alternative<MemoryNode *>(object.value))
     {
         throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
@@ -1027,12 +1022,9 @@ inline void GobLang::Machine::_setField()
     {
         throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(field.type));
     }
-    if (StructureObjectNode *arrNode = dynamic_cast<StructureObjectNode *>(std::get<MemoryNode *>(object.value)); arrNode != nullptr)
+    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
     {
-        if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
-        {
-            arrNode->setField(strNode->getString(), value);
-        }
+        std::get<MemoryNode *>(object.value)->setField(strNode->getString(), value);
     }
 }
 
@@ -1057,19 +1049,25 @@ inline void GobLang::Machine::_callMethod()
         name = strNode->getString();
     }
 
-    if (StructureObjectNode *objNode = dynamic_cast<StructureObjectNode *>(std::get<MemoryNode *>(object.value)); objNode != nullptr)
+    MemoryNode *objNode = std::get<MemoryNode *>(object.value);
+    // this is to simulate "this" argument
+    // or if comparing to python, passing "self" argument
+    pushToStack(object);
+    MemoryValue funcVal = objNode->getField(name);
+    if (!std::holds_alternative<MemoryNode *>(funcVal.value))
     {
-        // this is to simulate "this" argument
-        // or if comparing to python, passing "self" argument
-        pushToStack(object);
-        if (objNode->hasNativeMethod(name))
+        throw RuntimeException("Attempted to call non-callable object");
+    }
+    if (FunctionRef *func = dynamic_cast<FunctionRef *>(std::get<MemoryNode *>(funcVal.value)); func != nullptr)
+    {
+        if (!func->isLocal())
         {
-            (*objNode->getNativeMethod(name))(this);
+            (*func->getFunction())(this);
         }
-        else
-        {
-            throw RuntimeException(std::string("Attempted to call a goblang method '") + name + "' but only natively binded methods are supported");
-        }
+    }
+    else
+    {
+        throw RuntimeException("Attempted to call non-callable object");
     }
 }
 
@@ -1275,7 +1273,7 @@ inline void GobLang::Machine::_new()
     m_programCounter++;
     size_t structId = m_operations[m_programCounter];
 
-    StructureObjectNode *obj = new StructureObjectNode(m_structures[structId].get());
+    MemoryNode *obj = new MemoryNode(m_structures[structId].get());
     addObject(obj);
     pushToStack(MemoryValue{.type = Type::MemoryObj, .value = obj});
 }

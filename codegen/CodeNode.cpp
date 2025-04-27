@@ -182,7 +182,9 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::FunctionCallNo
     {
         args.push_back((*it)->generateCode(builder));
     }
-    return builder.createCallFromValue(std::make_unique<GeneratedCodeGenValue>(m_value->generateCode(builder)->getGetOperationBytes()), std::move(args));
+    return builder.createCallFromValue(
+        std::make_unique<GeneratedCodeGenValue>(m_value->generateCode(builder)->getGetOperationBytes()),
+        std::move(args));
 }
 
 std::string GobLang::Codegen::FunctionCallNode::toString()
@@ -197,7 +199,6 @@ std::string GobLang::Codegen::FunctionCallNode::toString()
         }
     }
     return base + "]}";
-    return std::string();
 }
 
 GobLang::Codegen::VariableCreationNode::VariableCreationNode(size_t id, std::unique_ptr<CodeNode> body) : m_id(id), m_body(std::move(body))
@@ -454,7 +455,6 @@ std::string GobLang::Codegen::ArrayAccessNode::toString()
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ArrayAccessNode::generateCode(Builder &builder)
 {
-
     return builder.createArrayAccess(m_array->generateCode(builder), m_index->generateCode(builder));
 }
 
@@ -592,4 +592,89 @@ std::string GobLang::Codegen::UnaryOperationNode::toString()
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::UnaryOperationNode::generateCode(Builder &builder)
 {
     return builder.createUnaryOperator(m_value->generateCode(builder), m_op);
+}
+
+GobLang::Codegen::FieldAccessNode::FieldAccessNode(
+    std::unique_ptr<CodeNode> left,
+    std::unique_ptr<CodeNode> right) : m_left(std::move(left)),
+                                       m_right(std::move(right))
+{
+}
+
+std::string GobLang::Codegen::FieldAccessNode::toString()
+{
+    return R"({"type" : "getfield", "left":)" + m_left->toString() + ", \"right\": " + m_right->toString() + "}";
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::FieldAccessNode::generateCode(Builder &builder)
+{
+    return builder.createFieldAccess(m_left->generateCode(builder), m_right->generateCode(builder));
+}
+
+GobLang::Codegen::TypeDefinitionNode::TypeDefinitionNode(
+    size_t nameId,
+    std::vector<size_t> fields) : m_nameId(nameId),
+                                  m_fieldIds(fields)
+{
+}
+
+void GobLang::Codegen::TypeDefinitionNode::generateType(Builder &builder, std::vector<std::string> const &ids)
+{
+    std::vector<std::string> fields;
+    for (size_t field : m_fieldIds)
+    {
+        fields.push_back(ids[field]);
+    }
+    builder.addType(ids[m_nameId], fields, m_nameId, m_fieldIds);
+}
+
+std::string GobLang::Codegen::TypeDefinitionNode::toString()
+{
+    std::string res = R"({"name" : )" + std::to_string(m_nameId) + R"(, "fields" : [)";
+    for (std::vector<size_t>::const_iterator it = m_fieldIds.begin(); it != m_fieldIds.end(); it++)
+    {
+        res += std::to_string(*it);
+        if (it + 1 != m_fieldIds.end())
+        {
+            res += ",";
+        }
+    }
+    return res + "]}";
+}
+
+GobLang::Codegen::ConstructorCallNode::ConstructorCallNode(size_t nameId,
+                                                           std::vector<std::unique_ptr<CodeNode>> args) : m_typeNameId(nameId),
+                                                                                                          m_args(std::move(args))
+{
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ConstructorCallNode::generateCode(Builder &builder)
+{
+    std::vector<std::unique_ptr<CodeGenValue>> args;
+    for (std::vector<std::unique_ptr<CodeNode>>::const_iterator it = m_args.begin(); it != m_args.end(); it++)
+    {
+        args.push_back((*it)->generateCode(builder));
+    }
+    if (builder.hasTypeWithName(m_typeNameId))
+    {
+        return builder.createConstructorCall(m_typeNameId, std::move(args));
+    }
+    else
+    {
+        return builder.createCall(m_typeNameId, std::move(args));
+    }
+}
+
+std::string GobLang::Codegen::ConstructorCallNode::toString()
+{
+    std::string base = R"({ "type" : "constructor", "name":)" + std::to_string(m_typeNameId) + ", \"args\": [";
+    for (std::vector<std::unique_ptr<CodeNode>>::const_iterator it = m_args.begin(); it != m_args.end(); it++)
+    {
+        base += (*it)->toString();
+        if (it + 1 != m_args.end())
+        {
+            base += ',';
+        }
+    }
+    return base + "]}";
 }
