@@ -22,9 +22,7 @@ namespace GobLang
     class Machine
     {
     public:
-        explicit Machine()
-        {
-        }
+        explicit Machine() = default;
 
         explicit Machine(Codegen::ByteCode const &code);
 

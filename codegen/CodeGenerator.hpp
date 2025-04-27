@@ -20,6 +20,10 @@ namespace GobLang::Codegen
 
         std::unique_ptr<FunctionPrototypeNode> parseFunctionPrototype();
 
+        /// @brief Parse structure data
+        /// @return
+        Struct::Structure parseStructureDefinition();
+
         /// @brief Block of code with n expressions separated by ;
         /// @return
         std::unique_ptr<SequenceNode> parseBody();
@@ -130,7 +134,7 @@ namespace GobLang::Codegen
         bool isKeyword(Keyword keyword);
 
         /// @brief Check if current token is one of the unary operators(+,-,~,!)
-        /// @return 
+        /// @return
         bool isUnaryOperator();
 
         /// @brief Check if the given token is an operator and stores any of the assignment operators in it
@@ -143,10 +147,11 @@ namespace GobLang::Codegen
         template <class T>
         inline bool isOfType()
         {
-            return dynamic_cast<T const*>(getCurrent()) != nullptr;
+            return dynamic_cast<T const *>(getCurrent()) != nullptr;
         }
 
         void printTree();
+        void printStructures();
         Token const *getCurrent() { return isAtTheEnd() ? nullptr : m_it->get(); }
 
         bool isAtTheEnd() { return m_it == m_parser.getTokens().end(); }
@@ -158,5 +163,7 @@ namespace GobLang::Codegen
         std::unique_ptr<SequenceNode> m_rootSequence;
 
         std::vector<std::unique_ptr<FunctionNode>> m_functions;
+
+        std::vector<Struct::Structure> m_structs;
     };
 } // namespace CodeGen
