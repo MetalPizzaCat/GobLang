@@ -63,6 +63,16 @@ namespace GobLang::Codegen
         bool m_val;
     };
 
+    class NullNode : public CodeNode
+    {
+    public:
+        explicit NullNode() {}
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::string toString() override;
+
+    private:
+    };
+
     class UnsignedIntNode : public CodeNode
     {
     public:
@@ -253,6 +263,7 @@ namespace GobLang::Codegen
         explicit ConstructorCallNode(size_t nameId, std::vector<std::unique_ptr<CodeNode>> args);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
+
     private:
         size_t m_typeNameId;
         std::vector<std::unique_ptr<CodeNode>> m_args;

@@ -282,6 +282,13 @@ std::unique_ptr<BranchChainNode> GobLang::Codegen::CodeGenerator::parseBranchCha
     return std::make_unique<BranchChainNode>(std::move(ifBlock), std::move(elifs), std::move(elseBlock));
 }
 
+std::unique_ptr<NullNode> GobLang::Codegen::CodeGenerator::parseNull()
+{
+    getTokenOrError<NullConstToken>("Expected a 'null'");
+    advance();
+    return std::make_unique<NullNode>();
+}
+
 std::unique_ptr<FloatNode> GobLang::Codegen::CodeGenerator::parseFloat()
 {
     FloatToken const *t = getTokenOrError<FloatToken>("Expected a number");
@@ -301,6 +308,14 @@ std::unique_ptr<IntNode> GobLang::Codegen::CodeGenerator::parseInt()
     IntToken const *t = getTokenOrError<IntToken>("Expected a number");
     advance();
     return std::make_unique<IntNode>(t->getValue());
+}
+
+std::unique_ptr<UnsignedIntNode> GobLang::Codegen::CodeGenerator::parseUnsignedInt()
+{
+   
+    UnsignedIntToken const *t = getTokenOrError<UnsignedIntToken>("Expected a number");
+    advance();
+    return std::make_unique<UnsignedIntNode>(t->getValue());
 }
 
 std::unique_ptr<BoolNode> GobLang::Codegen::CodeGenerator::parseBool()
@@ -388,7 +403,11 @@ std::vector<std::unique_ptr<CodeNode>> GobLang::Codegen::CodeGenerator::parseFun
 
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parsePrimary()
 {
-    if (isOfType<FloatToken>())
+    if(isOfType<NullConstToken>())
+    {
+        return parseNull();
+    }
+    else if (isOfType<FloatToken>())
     {
         return parseFloat();
     }
@@ -399,6 +418,10 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parsePrimary()
     else if (isOfType<IntToken>())
     {
         return parseInt();
+    }
+    else if (isOfType<UnsignedIntToken>())
+    {
+        return parseUnsignedInt();
     }
     else if (isOfType<StringToken>())
     {
@@ -523,12 +546,8 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseBinaryOperationR
         {
             return left;
         }
-        bool isFieldAccess = isSeparator(Separator::Dot);
         Operator op;
-        // if (!isFieldAccess)
-        //{
         op = getTokenOrError<OperatorToken>("Expected an operator")->getOperator();
-        //}
         advance();
         std::unique_ptr<CodeNode> right = parsePrimary();
         if (!right)
@@ -544,14 +563,7 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseBinaryOperationR
                 return nullptr;
             }
         }
-        if (!isFieldAccess)
-        {
-            left = std::make_unique<BinaryOperationNode>(op, std::move(left), std::move(right));
-        }
-        else
-        {
-            left = std::make_unique<FieldAccessNode>(std::move(right), std::move(left));
-        }
+        left = std::make_unique<BinaryOperationNode>(op, std::move(left), std::move(right));
     }
     return nullptr;
 }

@@ -105,7 +105,7 @@ int main()
 #ifdef INDEV_DEBUG_RUN_FULL_CODE
     GobLang::Machine machine(bytes);
     MachineFunctions::bind(&machine);
-    std::vector<size_t> debugPoints = {0x12};
+    std::vector<size_t> debugPoints = {};
     while (!machine.isAtTheEnd())
     {
         if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())

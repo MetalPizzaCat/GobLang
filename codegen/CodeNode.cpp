@@ -56,7 +56,7 @@ GobLang::Codegen::UnsignedIntNode::UnsignedIntNode(uint32_t val) : m_val(val)
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::UnsignedIntNode::generateCode(Builder &builder)
 {
-    return std::unique_ptr<CodeGenValue>();
+    return builder.createConstUnsignedInt(m_val);
 }
 
 std::string GobLang::Codegen::UnsignedIntNode::toString()
@@ -677,4 +677,14 @@ std::string GobLang::Codegen::ConstructorCallNode::toString()
         }
     }
     return base + "]}";
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::NullNode::generateCode(Builder &builder)
+{
+    return builder.createConstNull();
+}
+
+std::string GobLang::Codegen::NullNode::toString()
+{
+    return "null";
 }

@@ -4,6 +4,11 @@
 #include <algorithm>
 
 using namespace GobLang;
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstNull()
+{
+    return std::make_unique<GeneratedCodeGenValue>( std::vector<uint8_t>{(uint8_t)Operation::PushNull});
+}
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstFloat(float val)
 {
 

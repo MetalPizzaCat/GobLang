@@ -44,11 +44,15 @@ namespace GobLang::Codegen
         /// @return
         std::unique_ptr<BranchChainNode> parseBranchChain();
 
+        std::unique_ptr<NullNode> parseNull();
+
         std::unique_ptr<FloatNode> parseFloat();
 
         std::unique_ptr<StringNode> parseString();
 
         std::unique_ptr<IntNode> parseInt();
+
+        std::unique_ptr<UnsignedIntNode> parseUnsignedInt();
 
         std::unique_ptr<BoolNode> parseBool();
 
