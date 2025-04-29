@@ -22,6 +22,7 @@ namespace GobLang::Codegen
         Continue,
         Break,
         Struct,
+        New,
         FunctionReturnType
     };
 
@@ -124,7 +125,8 @@ namespace GobLang::Codegen
         // this is kinda cheating but it's also less clunky than whole special parser
         {"->", Keyword::FunctionReturnType},
         {"let", Keyword::Let},
-        {"type", Keyword::Struct}};
+        {"type", Keyword::Struct},
+        {"new", Keyword::New}};
 
     static const std::map<std::string, bool,  std::less<>> Booleans = {
         {"true", true},
@@ -202,7 +204,7 @@ namespace GobLang::Codegen
         SeparatorData{.symbol = '}', .separator = Separator::BlockClose, .priority = 2},
         SeparatorData{.symbol = '[', .separator = Separator::ArrayOpen, .priority = -1},
         SeparatorData{.symbol = ']', .separator = Separator::ArrayClose, .priority = -1},
-        SeparatorData{.symbol = '.', .separator = Separator::Dot, .priority = -1},
+        SeparatorData{.symbol = '.', .separator = Separator::Dot, .priority = 2},
         SeparatorData{.symbol = ',', .separator = Separator::Comma, .priority = -1},
         SeparatorData{.symbol = ';', .separator = Separator::End, .priority = -1},
         SeparatorData{.symbol = ':', .separator = Separator::Colon, .priority = -1}

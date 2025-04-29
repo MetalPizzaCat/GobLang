@@ -1,17 +1,23 @@
+# simple linked list example
+# it has a pointer to next object
+# and a field for data
+# This exists to showcase the type functionality and test possibilities of the language
 type LinkedList{
     next,
     data
 }
 
+# traverse the loop to the last object
 func push_back(root, data){
     let curr = root;
     while(curr.next != null){
         curr = curr.next;
     }
-    curr.next = LinkedList();
+    curr.next = new LinkedList();
     curr.next.data = data;
 }
 
+# remove next object from the loop
 func erase(root){
     if(root.next != null){
         root.next = root.next.next;
@@ -65,8 +71,8 @@ func print_seq(root){
     }
     print_line("");
 }
-let root = LinkedList();
-
+let root = new LinkedList();
+root.data = "this is a root node";
 print_line(root);
 push_back(root, u3);
 print_line(root);
@@ -80,5 +86,7 @@ print_seq(root);
 print_line(at(root, 4));
 print_line(length(root));
 remove(root, u6);
+print_seq(root);
+erase(root);
 print_seq(root);
 print_line("experiment over");

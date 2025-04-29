@@ -34,8 +34,9 @@ std::string MachineFunctions::File::FileNode::readLine()
 
 void MachineFunctions::File::FileNode::constructor(GobLang::Machine *m)
 {
-    std::unique_ptr<MemoryValue> read = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+
     std::unique_ptr<MemoryValue> path = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
+    std::unique_ptr<MemoryValue> read = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
     if (path == nullptr)
     {
         throw RuntimeException("Missing file name for file open operation");
@@ -166,4 +167,9 @@ void MachineFunctions::File::FileNode::nativeIsFileEnded(GobLang::Machine *m)
     {
         throw RuntimeException("Expected file handle object");
     }
+}
+
+std::string MachineFunctions::File::FileNode::toString(bool pretty, size_t depth)
+{
+    return "{NativeFileAccess}";
 }

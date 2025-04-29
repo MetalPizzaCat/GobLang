@@ -4,6 +4,7 @@
 #include "Type.hpp"
 #include "Value.hpp"
 #include "Structure.hpp"
+#include "Memory.hpp"
 namespace GobLang::Struct
 {
     struct NativeStructureInfo
@@ -13,17 +14,15 @@ namespace GobLang::Struct
         std::map<std::string, FunctionValue> methods;
     };
 
-    class NativeStructureObjectNode : public StructureObjectNode
+    class NativeStructureObjectNode : public MemoryNode
     {
     public:
         explicit NativeStructureObjectNode(
             NativeStructureInfo const *info,
-            Structure const *baseInfo = nullptr) : StructureObjectNode(baseInfo), m_nativeStruct(info) {}
+            Structure const *baseInfo = nullptr) : MemoryNode(baseInfo), m_nativeStruct(info) {}
 
-        bool hasNativeMethod(std::string const &name) override;
         MemoryValue getField(std::string const &field) override;
 
-        FunctionValue const *getNativeMethod(std::string const &name) const override;
 
     private:
         NativeStructureInfo const *m_nativeStruct;

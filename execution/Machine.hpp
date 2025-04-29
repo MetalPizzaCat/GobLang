@@ -11,6 +11,7 @@
 #include "Operations.hpp"
 #include "Value.hpp"
 #include "Array.hpp"
+#include "String.hpp"
 #include "Exception.hpp"
 #include "Structure.hpp"
 #include "../codegen/ByteCode.hpp"
@@ -22,9 +23,7 @@ namespace GobLang
     class Machine
     {
     public:
-        explicit Machine()
-        {
-        }
+        explicit Machine() = default;
 
         explicit Machine(Codegen::ByteCode const &code);
 

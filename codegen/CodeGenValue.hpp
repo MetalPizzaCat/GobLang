@@ -5,6 +5,7 @@
 #include <memory>
 #include <algorithm>
 #include <bit>
+#include "../execution/Structure.hpp"
 #include "../execution/Function.hpp"
 
 namespace GobLang::Codegen
@@ -12,7 +13,7 @@ namespace GobLang::Codegen
     template <typename T>
     std::vector<uint8_t> parseToBytes(T val)
     {
-        uint32_t const v =  std::bit_cast<uint32_t>(val);
+        uint32_t const v = std::bit_cast<uint32_t>(val);
         std::vector<uint8_t> res;
         for (int32_t i = sizeof(T) - 1; i >= 0; i--)
         {
@@ -73,6 +74,19 @@ namespace GobLang::Codegen
         bool m_loopBlock;
     };
 
+    class TypeCodeGenInfo
+    {
+    public:
+        explicit TypeCodeGenInfo(size_t nameId, std::vector<size_t> fieldIds, Struct::Structure type);
+
+        Struct::Structure const &getType() const { return m_type; }
+        size_t getNameId() const { return m_nameId; }
+
+    private:
+        size_t m_nameId;
+        std::vector<size_t> m_fieldIds;
+        Struct::Structure m_type;
+    };
     class CodeGenValue
     {
     public:
@@ -193,5 +207,18 @@ namespace GobLang::Codegen
     private:
         std::vector<uint8_t> m_valueBytes;
         std::vector<uint8_t> m_addressBytes;
+    };
+
+    class FieldAccessCodeGenValue : public CodeGenValue
+    {
+    public:
+        explicit FieldAccessCodeGenValue(std::vector<uint8_t> object, std::vector<uint8_t> fieldBytes);
+        std::vector<uint8_t> getGetOperationBytes() override;
+
+        std::vector<uint8_t> getSetOperationBytes() override;
+
+    private:
+        std::vector<uint8_t> m_objectBytes;
+        std::vector<uint8_t> m_fieldBytes;
     };
 } // namespace GobLang::Codegen

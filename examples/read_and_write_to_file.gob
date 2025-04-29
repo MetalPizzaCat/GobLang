@@ -17,5 +17,5 @@ else{
     {
         print_line(file.read_line());
     }
-    file.close()
+    file.close();
 }

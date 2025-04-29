@@ -20,6 +20,10 @@ namespace GobLang::Codegen
 
         std::unique_ptr<FunctionPrototypeNode> parseFunctionPrototype();
 
+        /// @brief Parse structure data
+        /// @return
+        std::unique_ptr<TypeDefinitionNode> parseStructureDefinition();
+
         /// @brief Block of code with n expressions separated by ;
         /// @return
         std::unique_ptr<SequenceNode> parseBody();
@@ -40,11 +44,15 @@ namespace GobLang::Codegen
         /// @return
         std::unique_ptr<BranchChainNode> parseBranchChain();
 
+        std::unique_ptr<NullNode> parseNull();
+
         std::unique_ptr<FloatNode> parseFloat();
 
         std::unique_ptr<StringNode> parseString();
 
         std::unique_ptr<IntNode> parseInt();
+
+        std::unique_ptr<UnsignedIntNode> parseUnsignedInt();
 
         std::unique_ptr<BoolNode> parseBool();
 
@@ -71,6 +79,8 @@ namespace GobLang::Codegen
         std::unique_ptr<CodeNode> parseContinue();
 
         std::unique_ptr<CodeNode> parseReturn();
+
+        std::unique_ptr<ConstructorCallNode> parseConstructor();
 
         /// @brief Advance iterator by one
         inline void advance() { m_it++; }
@@ -130,7 +140,7 @@ namespace GobLang::Codegen
         bool isKeyword(Keyword keyword);
 
         /// @brief Check if current token is one of the unary operators(+,-,~,!)
-        /// @return 
+        /// @return
         bool isUnaryOperator();
 
         /// @brief Check if the given token is an operator and stores any of the assignment operators in it
@@ -143,7 +153,7 @@ namespace GobLang::Codegen
         template <class T>
         inline bool isOfType()
         {
-            return dynamic_cast<T const*>(getCurrent()) != nullptr;
+            return dynamic_cast<T const *>(getCurrent()) != nullptr;
         }
 
         void printTree();
@@ -158,5 +168,7 @@ namespace GobLang::Codegen
         std::unique_ptr<SequenceNode> m_rootSequence;
 
         std::vector<std::unique_ptr<FunctionNode>> m_functions;
+
+        std::vector<std::unique_ptr<TypeDefinitionNode>> m_structs;
     };
 } // namespace CodeGen
