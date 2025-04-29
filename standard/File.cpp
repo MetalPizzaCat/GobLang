@@ -35,25 +35,16 @@ std::string MachineFunctions::File::FileNode::readLine()
 void MachineFunctions::File::FileNode::constructor(GobLang::Machine *m)
 {
 
-    std::unique_ptr<MemoryValue> path = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-    std::unique_ptr<MemoryValue> read = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-    if (path == nullptr)
+    if (StringNode *path = m->popObjectFromStack<StringNode>(); path != nullptr)
     {
-        throw RuntimeException("Missing file name for file open operation");
-    }
-    if (read == nullptr || read->type != Type::Bool)
-    {
-        throw RuntimeException("Missing value for file read mode. Requires true for read and false for write");
-    }
-    if (StringNode *str = dynamic_cast<StringNode *>(std::get<MemoryNode *>(path->value)); str != nullptr)
-    {
-        FileNode *f = new FileNode(str->getString(), std::get<bool>(read->value), m->getNativeStructure("File"));
+
+        FileNode *f = new FileNode(path->getString(), m->popFromStack<bool>(), m->getNativeStructure("File"));
         m->addObject(f);
-        m->pushToStack(MemoryValue{.type = Type::MemoryObj, .value = f});
+        m->pushToStack(Value(f));
     }
     else
     {
-        throw RuntimeException("File open argument is not a string");
+        throw RuntimeException("Missing file name for file open operation");
     }
 }
 
@@ -66,14 +57,9 @@ MachineFunctions::File::FileNode::~FileNode()
 }
 void MachineFunctions::File::FileNode::nativeCloseFile(GobLang::Machine *m)
 {
-    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-    if (file->type != Type::MemoryObj)
+    if (FileNode *file = m->popObjectFromStack<FileNode>(); file != nullptr)
     {
-        throw RuntimeException("Expected file handle object");
-    }
-    if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
-    {
-        fileNode->close();
+        file->close();
     }
     else
     {
@@ -83,14 +69,9 @@ void MachineFunctions::File::FileNode::nativeCloseFile(GobLang::Machine *m)
 
 void MachineFunctions::File::FileNode::nativeIsFileOpen(GobLang::Machine *m)
 {
-    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-    if (file->type != Type::MemoryObj)
+    if (FileNode *file = m->popObjectFromStack<FileNode>(); file != nullptr)
     {
-        throw RuntimeException("Expected file handle object");
-    }
-    if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
-    {
-        m->pushToStack(MemoryValue{.type = Type::Bool, .value = fileNode->isOpen()});
+        m->pushToStack(Value(file->isOpen()));
     }
     else
     {
@@ -101,26 +82,13 @@ void MachineFunctions::File::FileNode::nativeIsFileOpen(GobLang::Machine *m)
 void MachineFunctions::File::FileNode::nativeWriteToFile(GobLang::Machine *m)
 {
     using namespace GobLang;
-    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-    std::unique_ptr<MemoryValue> text = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-    if (file == nullptr)
+    if (FileNode *file = m->popObjectFromStack<FileNode>(); file != nullptr)
     {
-        throw RuntimeException("Expected file handle object");
-    }
-    if (text.get() == nullptr)
-    {
-        throw RuntimeException("Expected string argument");
-    }
-    if (file->type != Type::MemoryObj)
-    {
-        throw RuntimeException("Expected file handle object");
-    }
-    if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
-    {
-        fileNode->writeToFile(valueToString(*text, false, 0));
+        file->writeToFile(valueToString(m->getStackTopAndPop(), false, 0));
     }
     else
     {
+
         throw RuntimeException("Expected file handle object");
     }
 }
@@ -128,43 +96,35 @@ void MachineFunctions::File::FileNode::nativeWriteToFile(GobLang::Machine *m)
 void MachineFunctions::File::FileNode::nativeReadLineFromFile(GobLang::Machine *m)
 {
     using namespace GobLang;
-    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-    if (file->type != Type::MemoryObj)
+    if (FileNode *file = m->popObjectFromStack<FileNode>(); file != nullptr)
     {
-        throw RuntimeException("Expected file handle object");
-    }
-    if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
-    {
-
         std::string str;
-        if (std::getline(fileNode->getFile(), str))
+        if (std::getline(file->getFile(), str))
         {
-            m->pushToStack(MemoryValue{.type = Type::MemoryObj, .value = m->createString(str)});
+            m->pushToStack(Value(m->createString(str)));
         }
         else
         {
-            m->pushToStack(MemoryValue{.type = Type::Null, .value = 0});
+            m->pushToStack(Value(nullptr));
         }
     }
     else
     {
+
         throw RuntimeException("Expected file handle object");
     }
 }
 
 void MachineFunctions::File::FileNode::nativeIsFileEnded(GobLang::Machine *m)
 {
-    std::unique_ptr<MemoryValue> file = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-    if (file->type != Type::MemoryObj)
+    using namespace GobLang;
+    if (FileNode *file = m->popObjectFromStack<FileNode>(); file != nullptr)
     {
-        throw RuntimeException("Expected file handle object");
-    }
-    if (FileNode *fileNode = dynamic_cast<FileNode *>(std::get<MemoryNode *>(file->value)))
-    {
-        m->pushToStack(MemoryValue{.type = Type::Bool, .value = fileNode->isEof()});
+        m->pushToStack(Value(file->isEof()));
     }
     else
     {
+
         throw RuntimeException("Expected file handle object");
     }
 }

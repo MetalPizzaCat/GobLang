@@ -3,24 +3,23 @@
 
 namespace GobLang
 {
-    struct MemoryValue;
     class ArrayNode : public MemoryNode
     {
     public:
         explicit ArrayNode(size_t size);
 
-        void setItem(size_t i, MemoryValue const &item);
-        MemoryValue *getItem(size_t i);
+        void setItem(size_t i, Value const &item);
+        Value *getItem(size_t i);
 
         std::string toString(bool pretty, size_t depth) override;
 
         size_t getSize() const { return m_data.size(); }
 
-        void append(MemoryValue const& item);
+        void append(Value const& item);
 
         virtual ~ArrayNode();
 
     private:
-        std::vector<MemoryValue> m_data;
+        std::vector<Value> m_data;
     };
 } // namespace SimpleLang

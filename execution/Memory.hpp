@@ -7,7 +7,6 @@
 #include "Structure.hpp"
 namespace GobLang
 {
-    struct MemoryValue;
     /**
      * @brief Represents a complex data object that is stored in the memory via a linked list.
      *
@@ -68,12 +67,12 @@ namespace GobLang
         /// @brief Set value of the field if that field exists
         /// @param field Name of the field
         /// @param value Value to assign
-        virtual void setField(std::string const &field, MemoryValue const &value);
+        virtual void setField(std::string const &field, Value const &value);
 
         /// @brief Get value of the field with a given name
         /// @param field Name of the field
         /// @return
-        virtual MemoryValue getField(std::string const &field);
+        virtual Value getField(std::string const &field);
 
         /**
          * @brief Size of the memory chain
@@ -117,7 +116,7 @@ namespace GobLang
         Struct::Structure const *m_struct = nullptr;
 
         /// @brief Storage for the values that an object might have
-        std::vector<MemoryValue> m_fields;
+        std::vector<Value> m_fields;
         /// @brief Name to id mapping of the fields used for access
         std::map<std::string, size_t> m_fieldNames;
     };

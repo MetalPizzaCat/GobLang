@@ -1,4 +1,4 @@
-let file = File("./text.txt", false);
+let file = new File("./text.txt", false);
 if(!file.is_open()){
     print_line("Unable to open file");
 }
@@ -7,7 +7,7 @@ else{
     file.write("new way!");
     file.close();
 }
-file = File("./text.txt", true);
+file = new File("./text.txt", true);
 if(!file.is_open()){
     print_line("Unable to open file");
 }

@@ -9,7 +9,7 @@ func read_all_lines(file)
 }
 
 
-file = File("./text.txt", true);
+file = new File("./text.txt", true);
 if(!file.is_open()){
     print_line("Unable to open file");
 }

@@ -3,9 +3,9 @@
 #include "Exception.hpp"
 GobLang::ArrayNode::ArrayNode(size_t size)
 {
-    m_data = std::vector<MemoryValue>(size);
+    m_data = std::vector<Value>(size);
 }
-void GobLang::ArrayNode::setItem(size_t i, MemoryValue const &item)
+void GobLang::ArrayNode::setItem(size_t i, Value const &item)
 {
     if (i >= m_data.size())
     {
@@ -16,18 +16,18 @@ void GobLang::ArrayNode::setItem(size_t i, MemoryValue const &item)
             std::to_string(m_data.size()));
     }
     // check if object that we are setting is itself to avoid creating a ref cycle
-    if (item.type == Type::MemoryObj && std::get<MemoryNode *>(item.value) != this)
+    if ((Type)item.index() == Type::MemoryObj && std::get<MemoryNode *>(item) != this)
     {
-        std::get<MemoryNode *>(item.value)->increaseRefCount();
+        std::get<MemoryNode *>(item)->increaseRefCount();
     }
-    if (m_data[i].type == Type::MemoryObj && std::get<MemoryNode *>(m_data[i].value) != this)
+    if ((Type)m_data[i].index() == Type::MemoryObj && std::get<MemoryNode *>(m_data[i]) != this)
     {
-        std::get<MemoryNode *>(m_data[i].value)->decreaseRefCount();
+        std::get<MemoryNode *>(m_data[i])->decreaseRefCount();
     }
     m_data[i] = item;
 }
 
-GobLang::MemoryValue *GobLang::ArrayNode::getItem(size_t i)
+GobLang::Value *GobLang::ArrayNode::getItem(size_t i)
 {
 
     if (i < m_data.size())
@@ -59,23 +59,23 @@ std::string GobLang::ArrayNode::toString(bool pretty, size_t depth)
     return text + "]";
 }
 
-void GobLang::ArrayNode::append(MemoryValue const &item)
+void GobLang::ArrayNode::append(Value const &item)
 {
     // check if object that we are setting is itself to avoid creating a ref cycle
-    if (item.type == Type::MemoryObj && std::get<MemoryNode *>(item.value) != this)
+    if ((Type)item.index() == Type::MemoryObj && std::get<MemoryNode *>(item) != this)
     {
-        std::get<MemoryNode *>(item.value)->increaseRefCount();
+        std::get<MemoryNode *>(item)->increaseRefCount();
     }
     m_data.push_back(item);
 }
 
 GobLang::ArrayNode::~ArrayNode()
 {
-    for (std::vector<MemoryValue>::iterator it = m_data.begin(); it != m_data.end(); it++)
+    for (std::vector<Value>::iterator it = m_data.begin(); it != m_data.end(); it++)
     {
-        if (it->type == Type::MemoryObj)
+        if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(it->value)->decreaseRefCount();
+            std::get<MemoryNode *>((*it))->decreaseRefCount();
         }
     }
 }
