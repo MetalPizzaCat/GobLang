@@ -247,7 +247,7 @@ GobLang::MemoryValue *GobLang::Machine::getStackTopAndPop()
 GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
 {
     ArrayNode *node = new ArrayNode(size);
-    m_memoryRoot.pushBack(node);
+    addObject(node);
     return node;
 }
 
