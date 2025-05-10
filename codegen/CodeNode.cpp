@@ -164,9 +164,94 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
     // handle assignment first
     case Operator::Assign:
         return builder.createAssignment(m_left->generateCode(builder), m_right->generateCode(builder));
+    case Operator::Or:
+        return generateOrCode(builder);
+    case Operator::And:
+        return generateAndCode(builder);
     default:
         return builder.createOperation(m_left->generateCode(builder), m_right->generateCode(builder), m_op);
     }
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperationNode::generateOrCode(Builder &builder)
+{
+ /*
+        End block is:
+                push_false
+                jmp 1
+        done:   push_true
+
+        all blocks that evaluate to true should go to done, otherwise they will keep falling down
+        until push_false is reached, which then skips push_true
+        this is just AND but with values inverted
+    */
+    std::vector<uint8_t> endBlockBytes;
+    endBlockBytes.push_back((uint8_t)Operation::PushFalse);
+    endBlockBytes.push_back((uint8_t)Operation::Jump);
+    // two bytes here because self *and* push_false
+    std::vector<uint8_t> oneBytes = parseToBytes((ProgramAddressType)(2 + sizeof(ProgramAddressType)));
+    endBlockBytes.insert(endBlockBytes.end(), oneBytes.begin(), oneBytes.end());
+    endBlockBytes.push_back((uint8_t)Operation::PushTrue);
+
+    std::vector<uint8_t> bytes = m_left->generateCode(builder)->getGetOperationBytes();
+    bytes.push_back((uint8_t)Operation::JumpIf);
+    // generate code for the other side
+    std::vector<uint8_t> right = m_right->generateCode(builder)->getGetOperationBytes();
+    // jump by the right side plus size of this address and size of the address for the last block
+    std::vector<uint8_t> sizeBytes = parseToBytes((ProgramAddressType)(right.size() + sizeof(ProgramAddressType) * 2 + endBlockBytes.size() + 1));
+
+    bytes.insert(bytes.end(), sizeBytes.begin(), sizeBytes.end());
+
+    bytes.insert(bytes.end(), right.begin(), right.end());
+    // and the final push_true skip
+    bytes.push_back((uint8_t)Operation::JumpIf);
+    // account for the size of it's own address and push_true + jump + address inside the final block
+    std::vector<uint8_t> lastJumpBytes = parseToBytes((ProgramAddressType)(sizeof(ProgramAddressType) * 2 + 2 + 1));
+
+    bytes.insert(bytes.end(), lastJumpBytes.begin(), lastJumpBytes.end());
+    bytes.insert(bytes.end(), endBlockBytes.begin(), endBlockBytes.end());
+
+    return std::make_unique<GeneratedCodeGenValue>(bytes);
+}
+
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperationNode::generateAndCode(Builder &builder)
+{
+    /*
+        End block is:
+                push_true
+                jmp 1
+        done:   push_false  
+
+        all blocks that evaluate to false should go to done, otherwise they will keep falling down
+        until push_true is reached, which then skips push_false
+    */
+    std::vector<uint8_t> endBlockBytes;
+    endBlockBytes.push_back((uint8_t)Operation::PushTrue);
+    endBlockBytes.push_back((uint8_t)Operation::Jump);
+    // two bytes here because self *and* push_false
+    std::vector<uint8_t> oneBytes = parseToBytes((ProgramAddressType)(2 + sizeof(ProgramAddressType)));
+    endBlockBytes.insert(endBlockBytes.end(), oneBytes.begin(), oneBytes.end());
+    endBlockBytes.push_back((uint8_t)Operation::PushFalse);
+
+    std::vector<uint8_t> bytes = m_left->generateCode(builder)->getGetOperationBytes();
+    bytes.push_back((uint8_t)Operation::JumpIfNot);
+    // generate code for the other side
+    std::vector<uint8_t> right = m_right->generateCode(builder)->getGetOperationBytes();
+    // jump by the right side plus size of this address and size of the address for the last block
+    std::vector<uint8_t> sizeBytes = parseToBytes((ProgramAddressType)(right.size() + sizeof(ProgramAddressType) * 2 + endBlockBytes.size() + 1));
+
+    bytes.insert(bytes.end(), sizeBytes.begin(), sizeBytes.end());
+
+    bytes.insert(bytes.end(), right.begin(), right.end());
+    // and the final push_true skip
+    bytes.push_back((uint8_t)Operation::JumpIfNot);
+    // account for the size of it's own address and push_true + jump + address inside the final block
+    std::vector<uint8_t> lastJumpBytes = parseToBytes((ProgramAddressType)(sizeof(ProgramAddressType) * 2 + 2 + 1));
+
+    bytes.insert(bytes.end(), lastJumpBytes.begin(), lastJumpBytes.end());
+    bytes.insert(bytes.end(), endBlockBytes.begin(), endBlockBytes.end());
+
+    return std::make_unique<GeneratedCodeGenValue>(bytes);
 }
 
 GobLang::Codegen::FunctionCallNode::FunctionCallNode(std::unique_ptr<CodeNode> value,

@@ -119,6 +119,9 @@ void GobLang::Machine::step()
         _jumpBack();
         return;
     case Operation::JumpIfNot:
+        _jumpIfNot();
+        return;
+    case Operation::JumpIf:
         _jumpIf();
         return;
     case Operation::PushTrue:
@@ -467,10 +470,10 @@ GobLang::ProgramAddressType GobLang::Machine::_getAddressFromByteCode(size_t sta
 void GobLang::Machine::_jump()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
-    m_programCounter = dest + m_programCounter;
+    m_programCounter += dest;
 }
 
-void GobLang::Machine::_jumpIf()
+void GobLang::Machine::_jumpIfNot()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
 
@@ -478,6 +481,28 @@ void GobLang::Machine::_jumpIf()
     if ((Type)a.index() == Type::Bool)
     {
         if (!std::get<bool>(a))
+        {
+            m_programCounter = dest + m_programCounter;
+        }
+        else
+        {
+            m_programCounter += sizeof(ProgramAddressType) + 1;
+        }
+    }
+    else
+    {
+        throw RuntimeException(std::string("Invalid data type passed to condition check. Expected bool got: ") + typeToString((Type)a.index()));
+    }
+}
+
+inline void GobLang::Machine::_jumpIf()
+{
+    ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
+
+    Value a = _getFromTopAndPop();
+    if ((Type)a.index() == Type::Bool)
+    {
+        if (std::get<bool>(a))
         {
             m_programCounter = dest + m_programCounter;
         }

@@ -44,6 +44,8 @@ namespace GobLang::Codegen
         /// @return
         std::unique_ptr<BranchChainNode> parseBranchChain();
 
+        std::unique_ptr<CodeNode> parseLogicalExpressionChain();
+
         std::unique_ptr<NullNode> parseNull();
 
         std::unique_ptr<FloatNode> parseFloat();

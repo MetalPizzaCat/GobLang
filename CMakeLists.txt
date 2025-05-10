@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20.0)
-project(goblang VERSION 0.7.0 LANGUAGES C CXX)
+project(goblang VERSION 0.7.1 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -9,7 +9,7 @@ set(USE_STATIC_BUILD ON CACHE BOOL "Build static executable")
 
 add_compile_definitions(GOB_LANG_VERSION_MAJOR=0)
 add_compile_definitions(GOB_LANG_VERSION_MINOR=7)
-add_compile_definitions(GOB_LANG_VERSION_PATCH=0)
+add_compile_definitions(GOB_LANG_VERSION_PATCH=1)
 
 add_compile_definitions(MAX_PRINT_DEPTH=1000)
 

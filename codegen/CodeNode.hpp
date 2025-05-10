@@ -186,6 +186,8 @@ namespace GobLang::Codegen
         explicit BinaryOperationNode(Operator op, std::unique_ptr<CodeNode> left, std::unique_ptr<CodeNode> right);
         std::string toString() override;
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
+        std::unique_ptr<CodeGenValue> generateOrCode(Builder &builder);
+         std::unique_ptr<CodeGenValue> generateAndCode(Builder &builder);
 
     private:
         std::unique_ptr<CodeNode> m_left;

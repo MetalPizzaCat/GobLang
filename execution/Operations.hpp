@@ -60,10 +60,10 @@ namespace GobLang
         Jump,
         /// @brief  Unconditionally jump to PC + n bytes backward
         JumpBack,
-        /**
-         * @brief Jump only if the last operation on stack is false. Uses sizeof(size_t) bytes to get the address to jump to
-         */
+        /// @brief Jump by n bytes, but only if the last value on stack is false
         JumpIfNot,
+        /// @brief Jump by n bytes, but only if the last value on stack is true
+        JumpIf,
         /**
          * @brief Shrink local variable array by n variables
          */
@@ -81,7 +81,7 @@ namespace GobLang
          */
         CreateArray,
         /**
-         * @brief Create a new object from a structure. Uses 
+         * @brief Create a new object from a structure. Uses
          */
         New,
         /**
@@ -154,6 +154,7 @@ namespace GobLang
         OperationData{.op = Operation::Jump, .text = "jmp_by", .argType = OperatorArgType::Address},
         OperationData{.op = Operation::JumpBack, .text = "jump_back_by", .argType = OperatorArgType::Address},
         OperationData{.op = Operation::JumpIfNot, .text = "jmp_by_if_not", .argType = OperatorArgType::Address},
+        OperationData{.op = Operation::JumpIf, .text = "jmp_by_if", .argType = OperatorArgType::Address},
         OperationData{.op = Operation::ShrinkLocal, .text = "local_free", .argType = OperatorArgType::Byte},
         OperationData{.op = Operation::Return, .text = "ret", .argType = OperatorArgType::None},
         OperationData{.op = Operation::ReturnValue, .text = "ret_val", .argType = OperatorArgType::None},

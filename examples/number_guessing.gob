@@ -1,11 +1,10 @@
 # simple game where you guess the number
-
 let end = false;
 let guess = -1;
 let number = rand_range(0, 25);
 print_line("Guess the number from 0 to 25! White your input: ");
 while(guess != number){
-    guess = to_int(input());
+    guess = int(input());
     if(guess > number){
         print_line("Too big!");
     }

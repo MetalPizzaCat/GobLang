@@ -184,7 +184,9 @@ namespace GobLang
 
         inline void _jump();
 
-        inline void _jumpIf();
+        inline void _jumpIfNot();
+
+         inline void _jumpIf();
 
         inline void _jumpBack();
 
