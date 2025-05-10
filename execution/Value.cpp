@@ -1,28 +1,28 @@
 #include "Value.hpp"
 #include "Memory.hpp"
 #include <iostream>
-bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
+bool GobLang::areEqual(Value const &a, Value const &b)
 {
-    if (a.type != b.type)
+    if (a.index() != b.index())
     {
         return false;
     }
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Null:
         return true;
     case Type::Bool:
-        return std::get<bool>(a.value) == std::get<bool>(b.value);
+        return std::get<bool>(a) == std::get<bool>(b);
     case Type::Float:
-        return std::get<float>(a.value) == std::get<float>(b.value);
+        return std::get<float>(a) == std::get<float>(b);
     case Type::Int:
-        return std::get<int32_t>(a.value) == std::get<int32_t>(b.value);
+        return std::get<int32_t>(a) == std::get<int32_t>(b);
     case Type::UnsignedInt:
-        return std::get<uint32_t>(a.value) == std::get<uint32_t>(b.value);
+        return std::get<uint32_t>(a) == std::get<uint32_t>(b);
     case Type::Char:
-        return std::get<char>(a.value) == std::get<char>(b.value);
+        return std::get<char>(a) == std::get<char>(b);
     case Type::MemoryObj:
-        return std::get<MemoryNode *>(a.value)->equalsTo(std::get<MemoryNode *>(b.value));
+        return std::get<MemoryNode *>(a)->equalsTo(std::get<MemoryNode *>(b));
     case Type::NativeFunction:
         // c++ has no equality check for std::function
         return false;
@@ -30,28 +30,28 @@ bool GobLang::areEqual(MemoryValue const &a, MemoryValue const &b)
     return false;
 }
 
-std::string GobLang::valueToString(MemoryValue const &val, bool pretty, size_t depth)
-{   
-    if(depth > MAX_PRINT_RECURSION_DEPTH)
+std::string GobLang::valueToString(Value const &val, bool pretty, size_t depth)
+{
+    if (depth > MAX_PRINT_RECURSION_DEPTH)
     {
         return "...";
     }
-    switch (val.type)
+    switch ((Type)val.index())
     {
     case Type::Null:
         return "null";
     case Type::Bool:
-        return std::get<bool>(val.value) ? "true" : "false";
+        return std::get<bool>(val) ? "true" : "false";
     case Type::Float:
-        return std::to_string(std::get<float>(val.value));
+        return std::to_string(std::get<float>(val));
     case Type::Int:
-        return std::to_string(std::get<int32_t>(val.value));
+        return std::to_string(std::get<int32_t>(val));
     case Type::UnsignedInt:
-        return std::to_string(std::get<uint32_t>(val.value));
+        return std::to_string(std::get<uint32_t>(val));
     case Type::MemoryObj:
-        return std::get<MemoryNode *>(val.value)->toString(pretty, depth + 1);
+        return std::get<MemoryNode *>(val)->toString(pretty, depth + 1);
     case Type::Char:
-        return std::string{std::get<char>(val.value)};
+        return std::string{std::get<char>(val)};
     case Type::NativeFunction:
         // c++ has no equality check for std::function
         return "Native function";

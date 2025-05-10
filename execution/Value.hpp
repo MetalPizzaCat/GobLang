@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <cstdint>
+#include <cstddef>
 #include <functional>
 #include <variant>
 #include <string>
@@ -17,13 +18,9 @@ namespace GobLang
     class Machine;
     class MemoryNode;
     using FunctionValue = void (*)(Machine *);
-    using Value = std::variant<bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>;
+    using Value = std::variant<nullptr_t, bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>;
 
-    struct MemoryValue
-    {
-        Type type;
-        Value value;
-    };
+
 
     /**
      * @brief Compare two memory values and validate that both are equal
@@ -33,7 +30,7 @@ namespace GobLang
      * @return true
      * @return false
      */
-    bool areEqual(MemoryValue const &a, MemoryValue const &b);
+    bool areEqual(Value const &a, Value const &b);
 
     /**
      * @brief Create a string representation of a given value
@@ -42,5 +39,5 @@ namespace GobLang
      * @param pretty Whether to add decorators. Only is relevant for strings during printing
      * @return std::string
      */
-    std::string valueToString(MemoryValue const &val, bool pretty, size_t depth);
+    std::string valueToString(Value const &val, bool pretty, size_t depth);
 }

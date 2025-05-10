@@ -9,7 +9,7 @@
 #include "standard/MachineFunctions.hpp"
 #include "codegen/Disassembly.hpp"
 
-//#define INDEV_DEBUG_TREE_ONLY
+// #define INDEV_DEBUG_TREE_ONLY
 #define INDEV_DEBUG_RUN_FULL_CODE
 #define INDEV_DEBUG_SHOW_TREE
 
@@ -27,38 +27,33 @@ public:
 
     static void nativeDoAThing(GobLang::Machine *m)
     {
-        std::unique_ptr<MemoryValue> selfObj = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-        std::unique_ptr<MemoryValue> p3 = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-        std::unique_ptr<MemoryValue> p2 = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-        std::unique_ptr<MemoryValue> p1 = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-
-        if (selfObj->type == Type::MemoryObj)
+        if (NativeNode *self = m->popObjectFromStack<NativeNode>(); self != nullptr)
         {
-            if (NativeNode *self = dynamic_cast<NativeNode *>(std::get<MemoryNode *>(selfObj->value)); self != nullptr)
-            {
-                self->doAThing(std::get<int32_t>(p1->value), std::get<int32_t>(p2->value), std::get<int32_t>(p3->value));
-                return;
-            }
+            int32_t p3 = m->popFromStack<int32_t>();
+            int32_t p2 = m->popFromStack<int32_t>();
+            int32_t p1 = m->popFromStack<int32_t>();
+
+            self->doAThing(p1, p2, p3);
         }
-        throw RuntimeException("Invalid parameter");
+        else
+        {
+            throw RuntimeException("Invalid parameter");
+        }
     }
 
     static void constructor(GobLang::Machine *m)
     {
         using namespace GobLang;
-        std::unique_ptr<MemoryValue> strParam = std::unique_ptr<MemoryValue>(m->getStackTopAndPop());
-
-        if (strParam->type == Type::MemoryObj)
+        if (StringNode *str = m->popObjectFromStack<StringNode>(); str != nullptr)
         {
-            if (StringNode *str = dynamic_cast<StringNode *>(std::get<MemoryNode *>(strParam->value)); str != nullptr)
-            {
-                NativeNode *native = new NativeNode(str->getString(), m->getNativeStructure(NativeNode::ClassName));
-                m->addObject(native);
-                m->pushObjectToStack(native);
-                return;
-            }
+            NativeNode *native = new NativeNode(str->getString(), m->getNativeStructure(NativeNode::ClassName));
+            m->addObject(native);
+            m->pushObjectToStack(native);
         }
-        throw RuntimeException("Invalid parameter");
+        else
+        {
+            throw RuntimeException("Invalid parameter");
+        }
     }
 
     std::string toString(bool pretty = false, size_t depth = 0) override { return NativeNode::ClassName + "(" + m_path + ")"; }
@@ -69,9 +64,17 @@ private:
     void _secret() {}
 };
 
+static void testOrder(GobLang::Machine *m)
+{
+    int32_t p3 = m->popFromStack<int32_t>();
+    int32_t p2 = m->popFromStack<int32_t>();
+    int32_t p1 = m->popFromStack<int32_t>();
+
+    std::cout << "Order is : " << p1 << ',' << p2 << ',' << p3 << std::endl;
+}
 int main()
 {
-    size_t s = sizeof(std::variant<bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>);
+    size_t s = sizeof(Value);
     size_t s1 = sizeof(uint32_t);
     std::string file = "./code.gob";
     std::vector<std::string> lines;
@@ -105,6 +108,8 @@ int main()
 #ifdef INDEV_DEBUG_RUN_FULL_CODE
     GobLang::Machine machine(bytes);
     MachineFunctions::bind(&machine);
+    machine.createType(NativeNode::ClassName, NativeNode::constructor, {{"do_a_thing", NativeNode::nativeDoAThing}});
+    machine.addFunction(testOrder, "testOrder");
     std::vector<size_t> debugPoints = {};
     while (!machine.isAtTheEnd())
     {

@@ -21,7 +21,7 @@ namespace GobLang::Struct
             NativeStructureInfo const *info,
             Structure const *baseInfo = nullptr) : MemoryNode(baseInfo), m_nativeStruct(info) {}
 
-        MemoryValue getField(std::string const &field) override;
+        Value getField(std::string const &field) override;
 
 
     private:

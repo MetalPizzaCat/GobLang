@@ -15,10 +15,10 @@ GobLang::Machine::Machine(Codegen::ByteCode const &code)
     }
 }
 void GobLang::Machine::addFunction(FunctionValue const &func, std::string const &name)
-
 {
-    m_globals[name] = MemoryValue{.type = Type::NativeFunction, .value = func};
+    m_globals[name] = Value(func);
 }
+
 void GobLang::Machine::step()
 {
     if (m_programCounter >= m_operations.size())
@@ -122,10 +122,10 @@ void GobLang::Machine::step()
         _jumpIf();
         return;
     case Operation::PushTrue:
-        pushToStack(MemoryValue{.type = Type::Bool, .value = true});
+        pushToStack(Value(true));
         break;
     case Operation::PushFalse:
-        pushToStack(MemoryValue{.type = Type::Bool, .value = false});
+        pushToStack(Value(false));
         break;
     case Operation::PushNull:
         _pushConstNull();
@@ -189,21 +189,21 @@ void GobLang::Machine::step()
 
 void GobLang::Machine::printGlobalsInfo()
 {
-    for (std::map<std::string, MemoryValue>::iterator it = m_globals.begin(); it != m_globals.end(); it++)
+    for (std::map<std::string, Value>::iterator it = m_globals.begin(); it != m_globals.end(); it++)
     {
-        std::cout << it->first << "(" << typeToString(it->second.type) << ")" << " = " << valueToString(it->second, true, 0) << std::endl;
+        std::cout << it->first << "(" << typeToString((Type)it->second.index()) << ")" << " = " << valueToString(it->second, true, 0) << std::endl;
     }
 }
 
 void GobLang::Machine::printVariablesInfo()
 {
     std::cout << "Local(" << m_variables.size() << "):" << std::endl;
-    for (std::vector<std::vector<MemoryValue>>::iterator layerIt = m_variables.begin(); layerIt != m_variables.end(); layerIt++)
+    for (std::vector<std::vector<Value>>::iterator layerIt = m_variables.begin(); layerIt != m_variables.end(); layerIt++)
     {
         std::cout << "Frame: " << layerIt - m_variables.begin() << std::endl;
-        for (std::vector<MemoryValue>::iterator it = layerIt->begin(); it != layerIt->end(); it++)
+        for (std::vector<Value>::iterator it = layerIt->begin(); it != layerIt->end(); it++)
         {
-            std::cout << it - layerIt->begin() << ": " << typeToString(it->type) << " = " << valueToString(*it, true, 0) << std::endl;
+            std::cout << it - layerIt->begin() << ": " << typeToString((Type)it->index()) << " = " << valueToString(*it, true, 0) << std::endl;
         }
     }
 }
@@ -211,17 +211,17 @@ void GobLang::Machine::printVariablesInfo()
 void GobLang::Machine::printStack()
 {
     std::cout << "Stack(" << m_operationStack.size() << "):" << std::endl;
-    for (std::vector<std::vector<MemoryValue>>::iterator layerIt = m_operationStack.begin(); layerIt != m_operationStack.end(); layerIt++)
+    for (std::vector<std::vector<Value>>::iterator layerIt = m_operationStack.begin(); layerIt != m_operationStack.end(); layerIt++)
     {
         std::cout << "Frame: " << layerIt - m_operationStack.begin() << std::endl;
-        for (std::vector<MemoryValue>::reverse_iterator it = layerIt->rbegin(); it != layerIt->rend(); it++)
+        for (std::vector<Value>::reverse_iterator it = layerIt->rbegin(); it != layerIt->rend(); it++)
         {
-            std::cout << it - layerIt->rbegin() << ": " << typeToString(it->type) << " = " << valueToString(*it, true, 0) << std::endl;
+            std::cout << it - layerIt->rbegin() << ": " << typeToString((Type)it->index()) << " = " << valueToString(*it, true, 0) << std::endl;
         }
     }
 }
 
-GobLang::MemoryValue *GobLang::Machine::getStackTop()
+GobLang::Value *GobLang::Machine::getStackTop()
 
 {
     if (m_operationStack.back().empty())
@@ -234,14 +234,13 @@ GobLang::MemoryValue *GobLang::Machine::getStackTop()
     }
 }
 
-GobLang::MemoryValue *GobLang::Machine::getStackTopAndPop()
+GobLang::Value GobLang::Machine::getStackTopAndPop()
 {
     if (m_operationStack.back().empty())
     {
         throw RuntimeException("Unable to get value from the stack because stack is empty");
     }
-    MemoryValue *m = new MemoryValue(_getFromTopAndPop());
-    return m;
+    return _getFromTopAndPop();
 }
 
 GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
@@ -287,45 +286,45 @@ void GobLang::Machine::popStack()
     m_operationStack.back().pop_back();
 }
 
-void GobLang::Machine::pushToStack(MemoryValue const &val)
+void GobLang::Machine::pushToStack(Value const &val)
 {
     m_operationStack.back().push_back(val);
 }
 
 void GobLang::Machine::pushIntToStack(int32_t val)
 {
-    m_operationStack.back().push_back(MemoryValue{.type = Type::Int, .value = val});
+    m_operationStack.back().push_back(Value(val));
 }
 
 void GobLang::Machine::pushFloatToStack(float val)
 {
-    m_operationStack.back().push_back(MemoryValue{.type = Type::Float, .value = val});
+    m_operationStack.back().push_back(Value(val));
 }
 
 void GobLang::Machine::pushObjectToStack(MemoryNode *obj)
 {
-    m_operationStack.back().push_back(MemoryValue{.type = Type::MemoryObj, .value = obj});
+    m_operationStack.back().push_back(Value(obj));
 }
 
-void GobLang::Machine::setLocalVariableValue(size_t id, MemoryValue const &val)
+void GobLang::Machine::setLocalVariableValue(size_t id, Value const &val)
 {
-    std::vector<MemoryValue> &varFrame = m_variables.back();
+    std::vector<Value> &varFrame = m_variables.back();
     if (id >= varFrame.size())
     {
         varFrame.resize(id + 1);
     }
-    if (val.type == Type::MemoryObj)
+    if ((Type)val.index() == Type::MemoryObj)
     {
-        std::get<MemoryNode *>(val.value)->increaseRefCount();
+        std::get<MemoryNode *>(val)->increaseRefCount();
     }
-    if (varFrame[id].type == Type::MemoryObj)
+    if ((Type)varFrame[id].index() == Type::MemoryObj)
     {
-        std::get<MemoryNode *>(varFrame[id].value)->decreaseRefCount();
+        std::get<MemoryNode *>(varFrame[id])->decreaseRefCount();
     }
     varFrame[id] = val;
 }
 
-GobLang::MemoryValue *GobLang::Machine::getLocalVariableValue(size_t id)
+GobLang::Value *GobLang::Machine::getLocalVariableValue(size_t id)
 {
     if (m_variables.back().size() < id)
     {
@@ -337,11 +336,11 @@ GobLang::MemoryValue *GobLang::Machine::getLocalVariableValue(size_t id)
 void GobLang::Machine::shrinkLocalVariableStackBy(size_t size)
 {
     size_t i = 0;
-    for (std::vector<MemoryValue>::reverse_iterator it = m_variables.back().rbegin(); it != m_variables.back().rend() && i < size; it++, i++)
+    for (std::vector<Value>::reverse_iterator it = m_variables.back().rbegin(); it != m_variables.back().rend() && i < size; it++, i++)
     {
-        if (it->type == Type::MemoryObj)
+        if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(it->value)->decreaseRefCount();
+            std::get<MemoryNode *>((*it))->decreaseRefCount();
         }
     }
     m_variables.back().resize(m_variables.back().size() - size);
@@ -353,21 +352,21 @@ void GobLang::Machine::removeFunctionFrame()
     {
         throw RuntimeException("Attempted to remove root variable stack frame");
     }
-    std::vector<MemoryValue> &frame = m_variables.back();
-    for (std::vector<MemoryValue>::const_iterator it = frame.begin(); it != frame.end(); it++)
+    std::vector<Value> &frame = m_variables.back();
+    for (std::vector<Value>::const_iterator it = frame.begin(); it != frame.end(); it++)
     {
-        if (it->type == Type::MemoryObj)
+        if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(it->value)->decreaseRefCount();
+            std::get<MemoryNode *>((*it))->decreaseRefCount();
         }
     }
     m_variables.pop_back();
-    std::vector<MemoryValue> &stackFrame = m_operationStack.back();
-    for (std::vector<MemoryValue>::const_iterator it = stackFrame.begin(); it != stackFrame.end(); it++)
+    std::vector<Value> &stackFrame = m_operationStack.back();
+    for (std::vector<Value>::const_iterator it = stackFrame.begin(); it != stackFrame.end(); it++)
     {
-        if (it->type == Type::MemoryObj)
+        if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(it->value)->decreaseRefCount();
+            std::get<MemoryNode *>((*it))->decreaseRefCount();
         }
     }
     m_operationStack.pop_back();
@@ -381,24 +380,24 @@ void GobLang::Machine::callLocalFunction(size_t funcId)
     }
     m_callStack.push_back(m_programCounter);
     m_programCounter = m_functions[funcId].start - 1;
-    std::vector<MemoryValue> args = std::vector<MemoryValue>(m_functions[funcId].arguments.size());
+    std::vector<Value> args = std::vector<Value>(m_functions[funcId].arguments.size());
 
-    std::vector<MemoryValue> &variableFrame = m_variables.back();
+    std::vector<Value> &variableFrame = m_variables.back();
 
-    for (std::vector<MemoryValue>::reverse_iterator it = args.rbegin(); it != args.rend(); it++)
+    for (std::vector<Value>::reverse_iterator it = args.rbegin(); it != args.rend(); it++)
     {
         *it = _getFromTopAndPop();
         // for the entirety of the value being in the function we assume that it is in use so we can not delete it
-        if (it->type == Type::MemoryObj)
+        if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(it->value)->increaseRefCount();
+            std::get<MemoryNode *>((*it))->increaseRefCount();
         }
     }
     m_variables.push_back(args);
     m_operationStack.push_back({});
 }
 
-void GobLang::Machine::createVariable(std::string const &name, MemoryValue const &value)
+void GobLang::Machine::createVariable(std::string const &name, Value const &value)
 {
     m_globals[name] = value;
 }
@@ -475,10 +474,10 @@ void GobLang::Machine::_jumpIf()
 {
     ProgramAddressType dest = _getAddressFromByteCode(m_programCounter + 1);
 
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type == Type::Bool)
+    Value a = _getFromTopAndPop();
+    if ((Type)a.index() == Type::Bool)
     {
-        if (!std::get<bool>(a.value))
+        if (!std::get<bool>(a))
         {
             m_programCounter = dest + m_programCounter;
         }
@@ -489,7 +488,7 @@ void GobLang::Machine::_jumpIf()
     }
     else
     {
-        throw RuntimeException(std::string("Invalid data type passed to condition check. Expected bool got: ") + typeToString(a.type));
+        throw RuntimeException(std::string("Invalid data type passed to condition check. Expected bool got: ") + typeToString((Type)a.index()));
     }
 }
 
@@ -505,162 +504,158 @@ inline void GobLang::Machine::_jumpBack()
 
 void GobLang::Machine::_add()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
-        throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to add values of ") + typeToString((Type)a.index()) + " and " + typeToString((Type)b.index()));
     }
     Value c;
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        c = std::get<int32_t>(a.value) + std::get<int32_t>(b.value);
+        c = std::get<int32_t>(a) + std::get<int32_t>(b);
         break;
     case Type::UnsignedInt:
-        c = std::get<uint32_t>(a.value) + std::get<uint32_t>(b.value);
+        c = std::get<uint32_t>(a) + std::get<uint32_t>(b);
         break;
     case Type::Float:
-        c = std::get<float>(a.value) + std::get<float>(b.value);
+        c = std::get<float>(a) + std::get<float>(b);
         break;
     case Type::MemoryObj:
     {
-        StringNode *str1 = dynamic_cast<StringNode *>(std::get<MemoryNode *>(a.value));
-        StringNode *str2 = dynamic_cast<StringNode *>(std::get<MemoryNode *>(b.value));
+        StringNode *str1 = dynamic_cast<StringNode *>(std::get<MemoryNode *>(a));
+        StringNode *str2 = dynamic_cast<StringNode *>(std::get<MemoryNode *>(b));
         if (str1 != nullptr && str2 != nullptr)
         {
             c = createString(str1->getString() + str2->getString());
         }
         else
         {
-            throw RuntimeException(std::string("Invalid type used for math operation: ") + typeToString(a.type));
+            throw RuntimeException(std::string("Invalid type used for math operation: ") + typeToString((Type)a.index()));
         }
     }
     break;
     default:
-        throw RuntimeException(std::string("Invalid type used for math operation: ") + typeToString(a.type));
+        throw RuntimeException(std::string("Invalid type used for math operation: ") + typeToString((Type)a.index()));
     }
-    pushToStack(MemoryValue{.type = a.type, .value = c});
+    pushToStack(c);
 }
 
 void GobLang::Machine::_sub()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
-        throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to add values of ") + typeToString((Type)a.index()) + " and " + typeToString((Type)b.index()));
     }
     Value c;
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        c = std::get<int32_t>(b.value) - std::get<int32_t>(a.value);
+        c = std::get<int32_t>(b) - std::get<int32_t>(a);
         break;
     case Type::UnsignedInt:
-        c = std::get<uint32_t>(b.value) - std::get<uint32_t>(a.value);
+        c = std::get<uint32_t>(b) - std::get<uint32_t>(a);
         break;
     case Type::Float:
-        c = std::get<float>(b.value) - std::get<float>(a.value);
+        c = std::get<float>(b) - std::get<float>(a);
         break;
     default:
-        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
+        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString((Type)a.index()));
     }
-    pushToStack(MemoryValue{.type = a.type, .value = c});
+    pushToStack(c);
 }
 
 void GobLang::Machine::_mul()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
-        throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to add values of ") + typeToString((Type)a.index()) + " and " + typeToString((Type)b.index()));
     }
     Value c;
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        c = std::get<int32_t>(b.value) * std::get<int32_t>(a.value);
+        c = std::get<int32_t>(b) * std::get<int32_t>(a);
         break;
     case Type::UnsignedInt:
-        c = std::get<uint32_t>(b.value) * std::get<uint32_t>(a.value);
+        c = std::get<uint32_t>(b) * std::get<uint32_t>(a);
         break;
     case Type::Float:
-        c = std::get<float>(b.value) * std::get<float>(a.value);
+        c = std::get<float>(b) * std::get<float>(a);
         break;
     default:
-        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
+        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString((Type)a.index()));
     }
-    pushToStack(MemoryValue{.type = a.type, .value = c});
+    pushToStack(c);
 }
 
 void GobLang::Machine::_div()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
-        throw RuntimeException(std::string("Attempted to add values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to add values of ") + typeToString((Type)a.index()) + " and " + typeToString((Type)b.index()));
     }
     Value c;
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        c = std::get<int32_t>(b.value) / std::get<int32_t>(a.value);
+        c = std::get<int32_t>(b) / std::get<int32_t>(a);
         break;
     case Type::UnsignedInt:
-        c = std::get<uint32_t>(b.value) / std::get<uint32_t>(a.value);
+        c = std::get<uint32_t>(b) / std::get<uint32_t>(a);
         break;
     case Type::Float:
-        c = std::get<float>(b.value) / std::get<float>(a.value);
+        c = std::get<float>(b) / std::get<float>(a);
         break;
     default:
-        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString(a.type));
+        throw RuntimeException(std::string("Invalid type used for math operation") + typeToString((Type)a.index()));
     }
-    pushToStack(MemoryValue{.type = a.type, .value = c});
+    pushToStack(c);
 }
 
 inline void GobLang::Machine::_mod()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
         throw RuntimeException("Type mismatch in modulo operation");
     }
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) % std::get<int32_t>(a.value)});
+        pushToStack(Value(std::get<int32_t>(b) % std::get<int32_t>(a)));
         break;
     case Type::UnsignedInt:
-        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) % std::get<uint32_t>(a.value)});
+        pushToStack(Value(std::get<uint32_t>(b) % std::get<uint32_t>(a)));
         break;
     default:
         throw RuntimeException("Modulo can only be used on int or unsigned int");
-    }
-    if (a.type != b.type && a.type != Type::Int)
-    {
-        throw RuntimeException("Modulo can only be used on Ints");
     }
 }
 
 void GobLang::Machine::_set()
 {
     // (name val =)
-    MemoryValue name = _getFromTopAndPop();
-    MemoryValue val = _getFromTopAndPop();
-    StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
+    Value name = _getFromTopAndPop();
+    Value val = _getFromTopAndPop();
+    StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name));
     if (memStr != nullptr)
     {
-        if (val.type == Type::MemoryObj)
+        if ((Type)val.index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(val.value)->increaseRefCount();
+            std::get<MemoryNode *>(val)->increaseRefCount();
         }
-        if (m_globals.count(memStr->getString()) > 0 && m_globals[memStr->getString()].type == Type::MemoryObj)
+        if (m_globals.count(memStr->getString()) > 0 && (Type)m_globals[memStr->getString()].index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>(m_globals[memStr->getString()].value)->decreaseRefCount();
+            std::get<MemoryNode *>(m_globals[memStr->getString()])->decreaseRefCount();
         }
         m_globals[memStr->getString()] = val;
     }
@@ -668,9 +663,9 @@ void GobLang::Machine::_set()
 
 void GobLang::Machine::_get()
 {
-    MemoryValue name = _getFromTopAndPop();
-    assert(std::holds_alternative<MemoryNode *>(name.value));
-    StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name.value));
+    Value name = _getFromTopAndPop();
+    assert(std::holds_alternative<MemoryNode *>(name));
+    StringNode *memStr = dynamic_cast<StringNode *>(std::get<MemoryNode *>(name));
     if (memStr != nullptr)
     {
         if (m_globals.count(memStr->getString()) < 1)
@@ -683,19 +678,23 @@ void GobLang::Machine::_get()
 
 inline void GobLang::Machine::_bitAnd()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index() || ((Type)a.index() != Type::Int && (Type)a.index() != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit AND values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
+        throw RuntimeException(std::string("Attempted to bit AND values of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()) +
+                               ". Only int or unsigned int is allowed");
     }
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) & std::get<int32_t>(a.value)});
+        pushToStack(Value(std::get<int32_t>(b) & std::get<int32_t>(a)));
         break;
     case Type::UnsignedInt:
-        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) & std::get<uint32_t>(a.value)});
+        pushToStack(Value(std::get<uint32_t>(b) & std::get<uint32_t>(a)));
         break;
     default:
         throw RuntimeException("Modulo can only be used on int or unsigned int");
@@ -704,19 +703,23 @@ inline void GobLang::Machine::_bitAnd()
 
 inline void GobLang::Machine::_bitOr()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index() || ((Type)a.index() != Type::Int && (Type)a.index() != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit OR values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
+        throw RuntimeException(std::string("Attempted to bit OR values of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()) +
+                               ". Only int or unsigned int is allowed");
     }
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) | std::get<int32_t>(a.value)});
+        pushToStack(Value(std::get<int32_t>(b) | std::get<int32_t>(a)));
         break;
     case Type::UnsignedInt:
-        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) | std::get<uint32_t>(a.value)});
+        pushToStack(Value(std::get<uint32_t>(b) | std::get<uint32_t>(a)));
         break;
     default:
         throw RuntimeException("Modulo can only be used on int or unsigned int");
@@ -725,19 +728,23 @@ inline void GobLang::Machine::_bitOr()
 
 inline void GobLang::Machine::_bitXor()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index() || ((Type)a.index() != Type::Int && (Type)a.index() != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit XOR values of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
+        throw RuntimeException(std::string("Attempted to bit XOR values of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()) +
+                               ". Only int or unsigned int is allowed");
     }
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) ^ std::get<int32_t>(a.value)});
+        pushToStack(Value(std::get<int32_t>(b) ^ std::get<int32_t>(a)));
         break;
     case Type::UnsignedInt:
-        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) ^ std::get<uint32_t>(a.value)});
+        pushToStack(Value(std::get<uint32_t>(b) ^ std::get<uint32_t>(a)));
         break;
     default:
         throw RuntimeException("Modulo can only be used on int or unsigned int");
@@ -746,35 +753,39 @@ inline void GobLang::Machine::_bitXor()
 
 inline void GobLang::Machine::_bitNot()
 {
-    MemoryValue a = _getFromTopAndPop();
-    switch (a.type)
+    Value a = _getFromTopAndPop();
+    switch ((Type)a.index())
     {
     case Type::Int:
-        pushToStack(MemoryValue{.type = Type::Int, .value = ~std::get<int32_t>(a.value)});
+        pushToStack(Value(~std::get<int32_t>(a)));
         break;
     case Type::UnsignedInt:
-        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = ~std::get<uint32_t>(a.value)});
+        pushToStack(Value(~std::get<uint32_t>(a)));
         break;
     default:
-        throw RuntimeException(std::string("Attempted to bit NOT value of  ") + typeToString(a.type) + ". Only int or unsigned int is allowed");
+        throw RuntimeException(std::string("Attempted to bit NOT value of  ") + typeToString((Type)a.index()) + ". Only int or unsigned int is allowed");
     }
 }
 
 inline void GobLang::Machine::_shiftLeft()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index() || ((Type)a.index() != Type::Int && (Type)a.index() != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit  bit shift leftvalues of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
+        throw RuntimeException(std::string("Attempted to bit  bit shift leftvalues of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()) +
+                               ". Only int or unsigned int is allowed");
     }
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) << std::get<int32_t>(a.value)});
+        pushToStack(Value(std::get<int32_t>(b) << std::get<int32_t>(a)));
         break;
     case Type::UnsignedInt:
-        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) << std::get<uint32_t>(a.value)});
+        pushToStack(Value(std::get<uint32_t>(b) << std::get<uint32_t>(a)));
         break;
     default:
         throw RuntimeException("Modulo can only be used on int or unsigned int");
@@ -783,19 +794,23 @@ inline void GobLang::Machine::_shiftLeft()
 
 inline void GobLang::Machine::_shiftRight()
 {
-    MemoryValue a = _getFromTopAndPop();
-    MemoryValue b = _getFromTopAndPop();
-    if (a.type != b.type || (a.type != Type::Int && a.type != Type::UnsignedInt))
+    Value a = _getFromTopAndPop();
+    Value b = _getFromTopAndPop();
+    if (a.index() != b.index() || ((Type)a.index() != Type::Int && (Type)a.index() != Type::UnsignedInt))
     {
-        throw RuntimeException(std::string("Attempted to bit  bit right leftvalues of ") + typeToString(a.type) + " and " + typeToString(b.type) + ". Only int or unsigned int is allowed");
+        throw RuntimeException(std::string("Attempted to bit  bit right leftvalues of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()) +
+                               ". Only int or unsigned int is allowed");
     }
-    switch (a.type)
+    switch ((Type)a.index())
     {
     case Type::Int:
-        pushToStack(MemoryValue{.type = Type::Int, .value = std::get<int32_t>(b.value) >> std::get<int32_t>(a.value)});
+        pushToStack(Value(std::get<int32_t>(b) >> std::get<int32_t>(a)));
         break;
     case Type::UnsignedInt:
-        pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = std::get<uint32_t>(b.value) >> std::get<uint32_t>(a.value)});
+        pushToStack(Value(std::get<uint32_t>(b) >> std::get<uint32_t>(a)));
         break;
     default:
         throw RuntimeException("Modulo can only be used on int or unsigned int");
@@ -804,7 +819,7 @@ inline void GobLang::Machine::_shiftRight()
 
 void GobLang::Machine::_setLocal()
 {
-    MemoryValue val = _getFromTopAndPop();
+    Value val = _getFromTopAndPop();
     m_programCounter++;
     uint8_t id = m_operations[m_programCounter];
     setLocalVariableValue(id, val);
@@ -814,7 +829,7 @@ void GobLang::Machine::_getLocal()
 {
     m_programCounter++;
     uint8_t id = m_operations[m_programCounter];
-    if (MemoryValue *val = getLocalVariableValue(id); val != nullptr)
+    if (Value *val = getLocalVariableValue(id); val != nullptr)
     {
         pushToStack(*val);
     }
@@ -826,14 +841,14 @@ void GobLang::Machine::_getLocal()
 
 void GobLang::Machine::_call()
 {
-    MemoryValue func = _getFromTopAndPop();
-    switch (func.type)
+    Value func = _getFromTopAndPop();
+    switch ((Type)func.index())
     {
     case Type::NativeFunction:
-        std::get<FunctionValue>(func.value)(this);
+        std::get<FunctionValue>(func)(this);
         break;
     case Type::MemoryObj:
-        if (FunctionRef *f = dynamic_cast<FunctionRef *>(std::get<MemoryNode *>(func.value)); f != nullptr)
+        if (FunctionRef *f = dynamic_cast<FunctionRef *>(std::get<MemoryNode *>(func)); f != nullptr)
         {
             if (f->isLocal())
             {
@@ -844,7 +859,7 @@ void GobLang::Machine::_call()
             {
                 if (f->hasOwner())
                 {
-                    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = f->getOwner()});
+                    pushToStack(Value(f->getOwner()));
                     (*f->getFunction())(this);
                 }
                 else
@@ -855,11 +870,11 @@ void GobLang::Machine::_call()
         }
         else
         {
-            throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString(func.type));
+            throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString((Type)func.index()));
         }
         break;
     default:
-        throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString(func.type));
+        throw RuntimeException(std::string("Attempted to call a non-function object of type: ") + typeToString((Type)func.index()));
     }
 }
 
@@ -886,7 +901,7 @@ void GobLang::Machine::_returnWithValue()
     m_callStack.pop_back();
     m_programCounter = pos;
     // we have to remove it manually to avoid it getting grabbed by the garbage collector
-    MemoryValue returnVal = _getFromTopAndPop();
+    Value returnVal = _getFromTopAndPop();
     removeFunctionFrame();
     pushToStack(returnVal);
 }
@@ -895,26 +910,26 @@ void GobLang::Machine::_pushConstInt()
 {
     int32_t val = _parseOperationConstant<int32_t>(m_programCounter + 1);
     m_programCounter += sizeof(int32_t);
-    pushToStack(MemoryValue{.type = Type::Int, .value = val});
+    pushToStack(Value(val));
 }
 
 inline void GobLang::Machine::_pushConstUnsignedInt()
 {
     uint32_t val = _parseOperationConstant<uint32_t>(m_programCounter + 1);
     m_programCounter += sizeof(uint32_t);
-    pushToStack(MemoryValue{.type = Type::UnsignedInt, .value = val});
+    pushToStack(Value(val));
 }
 
 void GobLang::Machine::_pushConstFloat()
 {
     float val = _parseOperationConstant<float>(m_programCounter + 1);
     m_programCounter += sizeof(float);
-    pushToStack(MemoryValue{.type = Type::Float, .value = val});
+    pushToStack(Value(val));
 }
 
 void GobLang::Machine::_pushConstChar()
 {
-    pushToStack(MemoryValue{.type = Type::Char, .value = (char)m_operations[m_programCounter + 1]});
+    pushToStack(Value((char)m_operations[m_programCounter + 1]));
     m_programCounter++;
 }
 
@@ -925,80 +940,80 @@ void GobLang::Machine::_pushConstString()
     StringNode *node = createString(str, true);
 
     m_programCounter++;
-    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = node});
+    pushToStack(Value(node));
 }
 
 void GobLang::Machine::_pushConstNull()
 {
-    pushToStack(MemoryValue{.type = Type::Null, .value = 0});
+    pushToStack(Value(nullptr));
 }
 
 void GobLang::Machine::_getArray()
 {
-    MemoryValue array = _getFromTopAndPop();
-    MemoryValue index = _getFromTopAndPop();
-    if (!std::holds_alternative<MemoryNode *>(array.value))
+    Value array = _getFromTopAndPop();
+    Value index = _getFromTopAndPop();
+    if (!std::holds_alternative<MemoryNode *>(array))
     {
-        throw RuntimeException(std::string("Attempted to get array value, but array has instead type: ") + typeToString(array.type));
+        throw RuntimeException(std::string("Attempted to get array value, but array has instead type: ") + typeToString((Type)array.index()));
     }
-    if (!std::holds_alternative<int32_t>(index.value))
+    if (!std::holds_alternative<int32_t>(index))
     {
-        throw RuntimeException(std::string("Attempted to get array value, but index has instead type: ") + typeToString(array.type));
+        throw RuntimeException(std::string("Attempted to get array value, but index has instead type: ") + typeToString((Type)array.index()));
     }
-    if (ArrayNode *arrNode = dynamic_cast<ArrayNode *>(std::get<MemoryNode *>(array.value)); arrNode != nullptr)
+    if (ArrayNode *arrNode = dynamic_cast<ArrayNode *>(std::get<MemoryNode *>(array)); arrNode != nullptr)
     {
-        pushToStack(*arrNode->getItem(std::get<int32_t>(index.value)));
+        pushToStack(*arrNode->getItem(std::get<int32_t>(index)));
     }
-    else if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(array.value)); strNode != nullptr)
+    else if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(array)); strNode != nullptr)
     {
-        pushToStack(MemoryValue{.type = Type::Char, .value = strNode->getCharAt(std::get<int32_t>(index.value))});
+        pushToStack(Value(strNode->getCharAt(std::get<int32_t>(index))));
     }
 }
 
 void GobLang::Machine::_setArray()
 {
-    MemoryValue array = _getFromTopAndPop();
-    MemoryValue index = _getFromTopAndPop();
-    MemoryValue value = _getFromTopAndPop();
+    Value array = _getFromTopAndPop();
+    Value index = _getFromTopAndPop();
+    Value value = _getFromTopAndPop();
 
-    if (!std::holds_alternative<MemoryNode *>(array.value))
+    if (!std::holds_alternative<MemoryNode *>(array))
     {
-        throw RuntimeException(std::string("Attempted to set array value, but array has instead type: ") + typeToString(array.type));
+        throw RuntimeException(std::string("Attempted to set array value, but array has instead type: ") + typeToString((Type)array.index()));
     }
-    if (!std::holds_alternative<int32_t>(index.value))
+    if (!std::holds_alternative<int32_t>(index))
     {
-        throw RuntimeException(std::string("Attempted to set array value, but index has instead type: ") + typeToString(array.type));
+        throw RuntimeException(std::string("Attempted to set array value, but index has instead type: ") + typeToString((Type)array.index()));
     }
-    MemoryNode *m = std::get<MemoryNode *>(array.value);
+    MemoryNode *m = std::get<MemoryNode *>(array);
     if (ArrayNode *arrNode = dynamic_cast<ArrayNode *>(m); arrNode != nullptr)
     {
-        arrNode->setItem(std::get<int32_t>(index.value), value);
+        arrNode->setItem(std::get<int32_t>(index), value);
     }
-    else if (StringNode *strNode = dynamic_cast<StringNode *>(m); strNode != nullptr && value.type == Type::Char)
+    else if (StringNode *strNode = dynamic_cast<StringNode *>(m); strNode != nullptr && (Type)value.index() == Type::Char)
     {
-        strNode->setCharAt(std::get<char>(value.value), std::get<int32_t>(index.value));
+        strNode->setCharAt(std::get<char>(value), std::get<int32_t>(index));
     }
 }
 
 inline void GobLang::Machine::_getField()
 {
-    MemoryValue object = _getFromTopAndPop();
-    MemoryValue field = _getFromTopAndPop();
-    if (!std::holds_alternative<MemoryNode *>(object.value))
+    Value object = _getFromTopAndPop();
+    Value field = _getFromTopAndPop();
+    if (!std::holds_alternative<MemoryNode *>(object))
     {
-        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
+        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString((Type)object.index()));
     }
-    if (!std::holds_alternative<MemoryNode *>(field.value))
+    if (!std::holds_alternative<MemoryNode *>(field))
     {
-        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(field.type));
+        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString((Type)field.index()));
     }
-    MemoryNode *memObj = std::get<MemoryNode *>(object.value);
-    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
+    MemoryNode *memObj = std::get<MemoryNode *>(object);
+    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field)); strNode != nullptr)
     {
-        MemoryValue v = memObj->getField(strNode->getString());
-        if (std::holds_alternative<MemoryNode *>(v.value))
+        Value v = memObj->getField(strNode->getString());
+        if (std::holds_alternative<MemoryNode *>(v))
         {
-            addObject(std::get<MemoryNode *>(v.value));
+            addObject(std::get<MemoryNode *>(v));
         }
         pushToStack(v);
     }
@@ -1010,55 +1025,55 @@ inline void GobLang::Machine::_getField()
 
 inline void GobLang::Machine::_setField()
 {
-    MemoryValue object = _getFromTopAndPop();
-    MemoryValue field = _getFromTopAndPop();
-    MemoryValue value = _getFromTopAndPop();
-    
-    if (!std::holds_alternative<MemoryNode *>(object.value))
+    Value object = _getFromTopAndPop();
+    Value field = _getFromTopAndPop();
+    Value value = _getFromTopAndPop();
+
+    if (!std::holds_alternative<MemoryNode *>(object))
     {
-        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
+        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString((Type)object.index()));
     }
-    if (!std::holds_alternative<MemoryNode *>(field.value))
+    if (!std::holds_alternative<MemoryNode *>(field))
     {
-        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(field.type));
+        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString((Type)field.index()));
     }
-    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field.value)); strNode != nullptr)
+    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(field)); strNode != nullptr)
     {
-        std::get<MemoryNode *>(object.value)->setField(strNode->getString(), value);
+        std::get<MemoryNode *>(object)->setField(strNode->getString(), value);
     }
 }
 
 inline void GobLang::Machine::_callMethod()
 {
-    MemoryValue methodName = _getFromTopAndPop();
-    MemoryValue object = _getFromTopAndPop();
+    Value methodName = _getFromTopAndPop();
+    Value object = _getFromTopAndPop();
 
-    if (!std::holds_alternative<MemoryNode *>(object.value))
+    if (!std::holds_alternative<MemoryNode *>(object))
     {
-        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString(object.type));
+        throw RuntimeException(std::string("Attempted to getfield, but object has instead type: ") + typeToString((Type)object.index()));
     }
-    if (!std::holds_alternative<MemoryNode *>(methodName.value))
+    if (!std::holds_alternative<MemoryNode *>(methodName))
     {
-        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString(methodName.type));
+        throw RuntimeException(std::string("Attempted to get field, but field name has instead type: ") + typeToString((Type)methodName.index()));
     }
 
     std::string name;
 
-    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(methodName.value)); strNode != nullptr)
+    if (StringNode *strNode = dynamic_cast<StringNode *>(std::get<MemoryNode *>(methodName)); strNode != nullptr)
     {
         name = strNode->getString();
     }
 
-    MemoryNode *objNode = std::get<MemoryNode *>(object.value);
+    MemoryNode *objNode = std::get<MemoryNode *>(object);
     // this is to simulate "this" argument
     // or if comparing to python, passing "self" argument
     pushToStack(object);
-    MemoryValue funcVal = objNode->getField(name);
-    if (!std::holds_alternative<MemoryNode *>(funcVal.value))
+    Value funcVal = objNode->getField(name);
+    if (!std::holds_alternative<MemoryNode *>(funcVal))
     {
         throw RuntimeException("Attempted to call non-callable object");
     }
-    if (FunctionRef *func = dynamic_cast<FunctionRef *>(std::get<MemoryNode *>(funcVal.value)); func != nullptr)
+    if (FunctionRef *func = dynamic_cast<FunctionRef *>(std::get<MemoryNode *>(funcVal)); func != nullptr)
     {
         if (!func->isLocal())
         {
@@ -1073,166 +1088,192 @@ inline void GobLang::Machine::_callMethod()
 
 void GobLang::Machine::_eq()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type == b.type || a.type == Type::Null || b.type == Type::Null)
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() == b.index() || (Type)a.index() == Type::Null || (Type)b.index() == Type::Null)
     {
-        pushToStack(MemoryValue{.type = Type::Bool, .value = areEqual(a, b)});
+        pushToStack(Value(areEqual(a, b)));
     }
     else
     {
-        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString((Type)a.index()) + " and " + typeToString((Type)b.index()));
     }
 }
 
 void GobLang::Machine::_neq()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type && !(a.type == Type::Null || b.type == Type::Null))
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() != b.index() && !((Type)a.index() == Type::Null || (Type)b.index() == Type::Null))
     {
-        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to compare value of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()));
     }
     else
     {
-        pushToStack(MemoryValue{.type = Type::Bool, .value = !areEqual(a, b)});
+        pushToStack(Value(!areEqual(a, b)));
     }
 }
 
 void GobLang::Machine::_and()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type && a.type != Type::Bool)
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() != b.index() && (Type)a.index() != Type::Bool)
     {
-        throw RuntimeException(std::string("Attempted to 'and' values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to 'and' values of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()));
     }
     else
     {
-        pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<bool>(a.value) && std::get<bool>(b.value)});
+        pushToStack(Value(std::get<bool>(a) && std::get<bool>(b)));
     }
 }
 
 void GobLang::Machine::_or()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type && a.type != Type::Bool)
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() != b.index() && (Type)a.index() != Type::Bool)
     {
-        throw RuntimeException(std::string("Attempted to 'or' values of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to 'or' values of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()));
     }
     else
     {
-        pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<bool>(a.value) || std::get<bool>(b.value)});
+        pushToStack(Value(std::get<bool>(a) || std::get<bool>(b)));
     }
 }
 
 void GobLang::Machine::_less()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
-        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to compare value of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()));
     }
     else
     {
-        switch (a.type)
+        switch ((Type)a.index())
         {
         case Type::Int:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) < std::get<int32_t>(b.value)});
+            pushToStack(Value(std::get<int32_t>(a) < std::get<int32_t>(b)));
             break;
         case Type::Float:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) < std::get<float>(b.value)});
+            pushToStack(Value(std::get<float>(a) < std::get<float>(b)));
             break;
         default:
-            throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");
+            throw RuntimeException(std::string("Attempted to compare value of type ") +
+                                   typeToString((Type)a.index()) +
+                                   ". Only numeric types can be compared using >,<, <=, >=");
         }
     }
 }
 
 void GobLang::Machine::_more()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
-        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to compare value of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()));
     }
     else
     {
-        switch (a.type)
+        switch ((Type)a.index())
         {
         case Type::Int:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) > std::get<int32_t>(b.value)});
+            pushToStack(Value(std::get<int32_t>(a) > std::get<int32_t>(b)));
             break;
         case Type::Float:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) > std::get<float>(b.value)});
+            pushToStack(Value(std::get<float>(a) > std::get<float>(b)));
             break;
         default:
-            throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");
+            throw RuntimeException(std::string("Attempted to compare value of type ") +
+                                   typeToString((Type)a.index()) +
+                                   ". Only numeric types can be compared using >,<, <=, >=");
         }
     }
 }
 
 void GobLang::Machine::_lessOrEq()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
-        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString((Type)a.index()) + " and " + typeToString((Type)b.index()));
     }
     else
     {
-        switch (a.type)
+        switch ((Type)a.index())
         {
         case Type::Int:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) <= std::get<int32_t>(b.value)});
+            pushToStack(Value(std::get<int32_t>(a) <= std::get<int32_t>(b)));
             break;
         case Type::Float:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) <= std::get<float>(b.value)});
+            pushToStack(Value(std::get<float>(a) <= std::get<float>(b)));
             break;
         default:
-            throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");
+            throw RuntimeException(std::string("Attempted to compare value of type ") +
+                                   typeToString((Type)a.index()) +
+                                   ". Only numeric types can be compared using >,<, <=, >=");
         }
     }
 }
 
 void GobLang::Machine::_moreOrEq()
 {
-    MemoryValue b = _getFromTopAndPop();
-    MemoryValue a = _getFromTopAndPop();
-    if (a.type != b.type)
+    Value b = _getFromTopAndPop();
+    Value a = _getFromTopAndPop();
+    if (a.index() != b.index())
     {
-        throw RuntimeException(std::string("Attempted to compare value of ") + typeToString(a.type) + " and " + typeToString(b.type));
+        throw RuntimeException(std::string("Attempted to compare value of ") +
+                               typeToString((Type)a.index()) +
+                               " and " +
+                               typeToString((Type)b.index()));
     }
     else
     {
-        switch (a.type)
+        switch ((Type)a.index())
         {
         case Type::Int:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<int32_t>(a.value) >= std::get<int32_t>(b.value)});
+            pushToStack(Value(std::get<int32_t>(a) >= std::get<int32_t>(b)));
             break;
         case Type::Float:
-            pushToStack(MemoryValue{.type = Type::Bool, .value = std::get<float>(a.value) >= std::get<float>(b.value)});
+            pushToStack(Value(std::get<float>(a) >= std::get<float>(b)));
             break;
         default:
-            throw RuntimeException(std::string("Attempted to compare value of type ") + typeToString(a.type) + ". Only numeric types can be compared using >,<, <=, >=");
+            throw RuntimeException(std::string("Attempted to compare value of type ") +
+                                   typeToString((Type)a.index()) +
+                                   ". Only numeric types can be compared using >,<, <=, >=");
         }
     }
 }
 
 void GobLang::Machine::_negate()
 {
-    MemoryValue val = _getFromTopAndPop();
-    switch (val.type)
+    Value val = _getFromTopAndPop();
+    switch ((Type)val.index())
     {
     case Type::Int:
-        pushToStack(MemoryValue{.type = Type::Int, .value = -std::get<int32_t>(val.value)});
+        pushToStack(Value(-std::get<int32_t>(val)));
         break;
     case Type::Float:
-        pushToStack(MemoryValue{.type = Type::Float, .value = -std::get<float>(val.value)});
+        pushToStack(Value(-std::get<float>(val)));
         break;
     default:
         throw RuntimeException("Attempted to apply negate operation on a non numeric value");
@@ -1241,12 +1282,12 @@ void GobLang::Machine::_negate()
 
 void GobLang::Machine::_not()
 {
-    MemoryValue val = _getFromTopAndPop();
-    if (val.type != Type::Bool)
+    Value val = _getFromTopAndPop();
+    if ((Type)val.index() != Type::Bool)
     {
         throw RuntimeException("Attempted to negate non boolean value");
     }
-    pushToStack(MemoryValue{.type = Type::Bool, .value = !std::get<bool>(val.value)});
+    pushToStack(Value(!std::get<bool>(val)));
 }
 
 void GobLang::Machine::_shrink()
@@ -1265,7 +1306,7 @@ void GobLang::Machine::_createArray()
     {
         array->setItem(i, _getFromTopAndPop());
     }
-    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = array});
+    pushToStack(Value(array));
 }
 
 inline void GobLang::Machine::_new()
@@ -1275,5 +1316,5 @@ inline void GobLang::Machine::_new()
 
     MemoryNode *obj = new MemoryNode(m_structures[structId].get());
     addObject(obj);
-    pushToStack(MemoryValue{.type = Type::MemoryObj, .value = obj});
+    pushToStack(Value(obj));
 }

@@ -60,9 +60,9 @@ namespace GobLang
 
         void printStack();
 
-        MemoryValue *getStackTop();
+        Value *getStackTop();
 
-        MemoryValue *getStackTopAndPop();
+        Value getStackTopAndPop();
 
         ArrayNode *createArrayOfSize(int32_t size);
 
@@ -85,13 +85,30 @@ namespace GobLang
 
         void popStack();
 
-        void pushToStack(MemoryValue const &val);
+        void pushToStack(Value const &val);
 
         void pushIntToStack(int32_t val);
         void pushFloatToStack(float val);
         void pushObjectToStack(MemoryNode *obj);
 
-        MemoryValue getVariableValue(std::string const &name) { return m_globals[name]; }
+        template <class T>
+        T popFromStack()
+        {
+            Value top = _getFromTopAndPop();
+            if (!std::holds_alternative<T>(top))
+            {
+                return 0;
+            }
+            return std::get<T>(top);
+        }
+
+        template <class T>
+        T *popObjectFromStack()
+        {
+            return dynamic_cast<T*>(popFromStack<MemoryNode *>());
+        }
+
+        Value getVariableValue(std::string const &name) { return m_globals[name]; }
 
         /**
          * @brief Set local variable value using id. If id is larger than current amount of variables the array will be expanded to match the id
@@ -99,15 +116,15 @@ namespace GobLang
          * @param id id of the variable
          * @param val Value of the variable
          */
-        void setLocalVariableValue(size_t id, MemoryValue const &val);
+        void setLocalVariableValue(size_t id, Value const &val);
 
         /**
          * @brief Get value of a local variable. Beware that addressing id that is no longer in use by the block that created it is undefined behaviour
          *
          * @param id Id of the local variable
-         * @return MemoryValue* Value of the local variable or nullptr if no value uses this id
+         * @return Value* Value of the local variable or nullptr if no value uses this id
          */
-        MemoryValue *getLocalVariableValue(size_t id);
+        Value *getLocalVariableValue(size_t id);
 
         void shrinkLocalVariableStackBy(size_t size);
 
@@ -123,7 +140,7 @@ namespace GobLang
          * @param name Name of the variable
          * @param value Value of the variable
          */
-        void createVariable(std::string const &name, MemoryValue const &value);
+        void createVariable(std::string const &name, Value const &value);
 
         void createType(std::string const &name, FunctionValue const &constructor, std::map<std::string, FunctionValue> const &methods = {});
 
@@ -134,15 +151,15 @@ namespace GobLang
         ~Machine();
 
     private:
-        inline MemoryValue _operationTop() { return m_operationStack.back().back(); }
+        inline Value _operationTop() { return m_operationStack.back().back(); }
 
-        MemoryValue _getFromTopAndPop()
+        Value _getFromTopAndPop()
         {
             if (m_operationStack.back().empty())
             {
                 throw RuntimeException("Can not pop from stack because stack is empty");
             }
-            MemoryValue v = _operationTop();
+            Value v = _operationTop();
             popStack();
             return v;
         }
@@ -262,19 +279,19 @@ namespace GobLang
         MemoryNode m_memoryRoot;
         size_t m_programCounter = 0;
         std::vector<uint8_t> m_operations;
-        std::vector<std::vector<MemoryValue>> m_operationStack = {{}};
+        std::vector<std::vector<Value>> m_operationStack = {{}};
         /**
          * @brief Special dictionary that can be written externally and internally which uses strings to identify variables.
          *
          * Any variable that doesn't have a valid local variable attached will attempt to read a global variable value
          */
-        std::map<std::string, MemoryValue> m_globals;
+        std::map<std::string, Value> m_globals;
         /**
          * @brief Array of currently present local variables.
          *  These variables can only be addressed by their index and will be overriden once the id is used in a different block
          *
          */
-        std::vector<std::vector<MemoryValue>> m_variables = {{}};
+        std::vector<std::vector<Value>> m_variables = {{}};
         std::vector<std::string> m_constStrings;
         std::vector<Function> m_functions;
         std::vector<std::unique_ptr<Struct::Structure>> m_structures;
