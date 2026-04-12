@@ -16,8 +16,10 @@ const char *GobLang::typeToString(Type type)
         return "UnsignedInt";
     case Type::MemoryObj:
         return "Object";
-    case Type::NativeFunction:
-        return "NativeFunction";
+    case Type::Closure:
+        return "Closure";
+    case Type::Prototype:
+        return "Prototype";
     case Type::Char:
         return "Char";
     }

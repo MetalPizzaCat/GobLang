@@ -1,5 +1,6 @@
 #include "Value.hpp"
 #include "Memory.hpp"
+#include "Closure.hpp"
 #include <iostream>
 bool GobLang::areEqual(Value const &a, Value const &b)
 {
@@ -22,20 +23,17 @@ bool GobLang::areEqual(Value const &a, Value const &b)
     case Type::Char:
         return std::get<char>(a) == std::get<char>(b);
     case Type::MemoryObj:
-        return std::get<MemoryNode *>(a)->equalsTo(std::get<MemoryNode *>(b));
-    case Type::NativeFunction:
-        // c++ has no equality check for std::function
+        return std::get<Object *>(a)->equalsTo(std::get<Object *>(b));
+    default:
+        // c++ has no equality check for std::function and it is easier to just assume things can't be comparef
+        // TODO: Consider adding equality checkes to memory based objects to compare their pointers
         return false;
     }
     return false;
 }
 
-std::string GobLang::valueToString(Value const &val, bool pretty, size_t depth)
+std::string GobLang::valueToString(Value const &val)
 {
-    if (depth > MAX_PRINT_RECURSION_DEPTH)
-    {
-        return "...";
-    }
     switch ((Type)val.index())
     {
     case Type::Null:
@@ -49,12 +47,11 @@ std::string GobLang::valueToString(Value const &val, bool pretty, size_t depth)
     case Type::UnsignedInt:
         return std::to_string(std::get<uint32_t>(val));
     case Type::MemoryObj:
-        return std::get<MemoryNode *>(val)->toString(pretty, depth + 1);
+        return std::get<Object *>(val)->toString();
     case Type::Char:
         return std::string{std::get<char>(val)};
-    case Type::NativeFunction:
-        // c++ has no equality check for std::function
-        return "Native function";
+    case Type::Closure:
+        return std::get<Closure const *>(val)->toString();
     }
     return "Invalid datatype";
 }

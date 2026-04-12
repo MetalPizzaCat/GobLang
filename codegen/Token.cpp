@@ -30,7 +30,7 @@ bool GobLang::Codegen::OperatorToken::isAssignment() const
     return m_data->op == Operator::Assign || m_data->isCombinedAssignment;
 }
 
-GobLang::Operation GobLang::Codegen::OperatorToken::getOperation() const
+GobLang::Instruction GobLang::Codegen::OperatorToken::getOperation() const
 {
     if (!isUnary())
     {
@@ -39,7 +39,7 @@ GobLang::Operation GobLang::Codegen::OperatorToken::getOperation() const
     switch (getOperator())
     {
     case Operator::Sub:
-        return Operation::Negate;
+        return Instruction::Negate;
     default:
         return m_data->operation;
     }

@@ -5,14 +5,14 @@
 namespace GobLang
 {
 
-    class StringNode : public MemoryNode
+    class StringObject : public Object
     {
     public:
-        explicit StringNode(std::string const &str) : m_str(str) {}
+        explicit StringObject(std::string const &str) : m_str(str) {}
 
-        std::string const &getString() { return m_str; }
+        std::string const &getString() const { return m_str; }
 
-        std::string toString(bool pretty, size_t depth) override;
+        std::string toString() const override;
 
         char getCharAt(size_t ind);
 
@@ -25,11 +25,11 @@ namespace GobLang
          * @return true
          * @return false
          */
-        bool equalsTo(MemoryNode *other) override;
+        bool equalsTo(Object *other) override;
 
         size_t getSize() const { return m_str.size(); }
 
-        virtual ~StringNode() = default;
+        virtual ~StringObject() = default;
 
     private:
         std::string m_str;

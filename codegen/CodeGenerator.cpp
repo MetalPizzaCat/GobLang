@@ -1,5 +1,5 @@
 #include "CodeGenerator.hpp"
-
+#include <iostream>
 using namespace GobLang::Codegen;
 
 GobLang::Codegen::CodeGenerator::CodeGenerator(Parser const &parser) : m_parser(parser)
@@ -46,7 +46,7 @@ ByteCode GobLang::Codegen::CodeGenerator::getByteCode()
     }
 
     result.operations = m_rootSequence->generateCode(builder)->getGetOperationBytes();
-    result.operations.push_back((uint8_t)Operation::End);
+    result.operations.push_back((uint8_t)Instruction::End);
 
     for (std::vector<Function>::iterator it = result.functions.begin(); it != result.functions.end(); it++)
     {

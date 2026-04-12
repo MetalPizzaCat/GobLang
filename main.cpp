@@ -13,9 +13,8 @@
 #include "codegen/Parser.hpp"
 #include "codegen/CodeGenerator.hpp"
 #include "codegen/ByteCode.hpp"
-#include "execution/Machine.hpp"
+#include "execution/State.hpp"
 
-#include "standard/MachineFunctions.hpp"
 
 #include "codegen/Disassembly.hpp"
 
@@ -62,7 +61,7 @@ int main(int argc, char **argv)
         }
         try
         {
-            GobLang::MAX_PRINT_RECURSION_DEPTH = std::stoul(*(verIt + 1));
+            
         }
         catch (std::invalid_argument const &e)
         {
@@ -114,20 +113,20 @@ int main(int argc, char **argv)
         {
             GobLang::Codegen::byteCodeToText(byteCode.operations);
         }
-        GobLang::Machine machine(byteCode);
-        MachineFunctions::bind(&machine);
-        std::vector<size_t> debugPoints = {};
-        while (!machine.isAtTheEnd())
-        {
-            if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
-            {
-                std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << std::endl;
-                machine.printGlobalsInfo();
-                machine.printVariablesInfo();
-                machine.printStack();
-            }
-            machine.step();
-        }
+        // GobLang::Machine machine(byteCode);
+        // MachineFunctions::bind(&machine);
+        // std::vector<size_t> debugPoints = {};
+        // while (!machine.isAtTheEnd())
+        // {
+        //     if (std::find(debugPoints.begin(), debugPoints.end(), machine.getProgramCounter()) != debugPoints.end())
+        //     {
+        //         std::cout << "Debugging at " << std::hex << machine.getProgramCounter() << std::dec << std::endl;
+        //         machine.printGlobalsInfo();
+        //         machine.printVariablesInfo();
+        //         machine.printStack();
+        //     }
+        //     machine.step();
+        // }
     }
     catch (GobLang::Codegen::ParsingError e)
     {
@@ -149,7 +148,7 @@ int main(int argc, char **argv)
         }
         std::cout << e.what() << std::endl;
     }
-    catch (GobLang::RuntimeException e)
+    catch (GobLang::Errors::RuntimeError e)
     {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;

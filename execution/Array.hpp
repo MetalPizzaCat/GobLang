@@ -3,7 +3,7 @@
 
 namespace GobLang
 {
-    class ArrayNode : public MemoryNode
+    class ArrayNode : public Object
     {
     public:
         explicit ArrayNode(size_t size);
@@ -11,11 +11,11 @@ namespace GobLang
         void setItem(size_t i, Value const &item);
         Value *getItem(size_t i);
 
-        std::string toString(bool pretty, size_t depth) override;
+        std::string toString() const override;
 
         size_t getSize() const { return m_data.size(); }
 
-        void append(Value const& item);
+        void append(Value const &item);
 
         virtual ~ArrayNode();
 

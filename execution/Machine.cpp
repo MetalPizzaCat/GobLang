@@ -25,162 +25,162 @@ void GobLang::Machine::step()
     {
         return;
     }
-    switch ((Operation)m_operations[m_programCounter])
+    switch ((Instruction)m_operations[m_programCounter])
     {
-    case Operation::Add:
+    case Instruction::Add:
         _add();
         break;
-    case Operation::Sub:
+    case Instruction::Sub:
         _sub();
         break;
-    case Operation::Mul:
+    case Instruction::Mul:
         _mul();
         break;
-    case Operation::Div:
+    case Instruction::Div:
         _div();
         break;
-    case Operation::Modulo:
+    case Instruction::Modulo:
         _mod();
         break;
-    case Operation::Call:
+    case Instruction::Call:
         _call();
         break;
-    case Operation::GetLocalFunction:
+    case Instruction::GetLocalFunction:
         _getLocalFunc();
         break;
-    case Operation::Set:
+    case Instruction::SetGlobal:
         _set();
         collectGarbage();
         break;
-    case Operation::Get:
+    case Instruction::GetGlobal:
         _get();
         break;
-    case Operation::GetLocal:
+    case Instruction::GetLocal:
         _getLocal();
         break;
-    case Operation::BitAnd:
+    case Instruction::BitAnd:
         _bitAnd();
         break;
-    case Operation::BitOr:
+    case Instruction::BitOr:
         _bitOr();
         break;
-    case Operation::BitXor:
+    case Instruction::BitXor:
         _bitXor();
         break;
-    case Operation::BitNot:
+    case Instruction::BitNot:
         _bitNot();
         break;
-    case Operation::ShiftLeft:
+    case Instruction::ShiftLeft:
         _shiftLeft();
         break;
-    case Operation::ShiftRight:
+    case Instruction::ShiftRight:
         _shiftRight();
         break;
-    case Operation::SetLocal:
+    case Instruction::SetLocal:
         _setLocal();
         collectGarbage();
         break;
-    case Operation::PushConstInt:
+    case Instruction::PushConstInt:
         _pushConstInt();
         break;
-    case Operation::PushConstUnsignedInt:
+    case Instruction::PushConstUnsignedInt:
         _pushConstUnsignedInt();
         break;
-    case Operation::PushConstFloat:
+    case Instruction::PushConstFloat:
         _pushConstFloat();
         break;
-    case Operation::PushConstChar:
+    case Instruction::PushConstChar:
         _pushConstChar();
         break;
-    case Operation::PushConstString:
+    case Instruction::PushConstString:
         _pushConstString();
         break;
-    case Operation::GetArray:
+    case Instruction::GetArray:
         _getArray();
         break;
-    case Operation::SetArray:
+    case Instruction::SetArray:
         _setArray();
         collectGarbage();
         break;
-    case Operation::GetField:
+    case Instruction::GetField:
         _getField();
         break;
-    case Operation::SetField:
+    case Instruction::SetField:
         _setField();
         collectGarbage();
         break;
-    case Operation::CallMethod:
+    case Instruction::CallMethod:
         _callMethod();
         break;
-    case Operation::Jump:
+    case Instruction::Jump:
         _jump();
         return; // this uses return because we want to avoid advancing the counter after jmp
-    case Operation::JumpBack:
+    case Instruction::JumpBack:
         _jumpBack();
         return;
-    case Operation::JumpIfNot:
+    case Instruction::JumpIfNot:
         _jumpIfNot();
         return;
-    case Operation::JumpIf:
+    case Instruction::JumpIf:
         _jumpIf();
         return;
-    case Operation::PushTrue:
+    case Instruction::PushTrue:
         pushToStack(Value(true));
         break;
-    case Operation::PushFalse:
+    case Instruction::PushFalse:
         pushToStack(Value(false));
         break;
-    case Operation::PushNull:
+    case Instruction::PushNull:
         _pushConstNull();
         break;
-    case Operation::Equals:
+    case Instruction::Equals:
         _eq();
         break;
-    case Operation::NotEq:
+    case Instruction::NotEq:
         _neq();
         break;
-    case Operation::Less:
+    case Instruction::Less:
         _less();
         break;
-    case Operation::More:
+    case Instruction::More:
         _more();
         break;
-    case Operation::Not:
+    case Instruction::Not:
         _not();
         break;
-    case Operation::And:
+    case Instruction::And:
         _and();
         break;
-    case Operation::Or:
+    case Instruction::Or:
         _or();
         break;
-    case Operation::LessOrEq:
+    case Instruction::LessOrEq:
         _lessOrEq();
         break;
-    case Operation::MoreOrEq:
+    case Instruction::MoreOrEq:
         _moreOrEq();
         break;
-    case Operation::Negate:
+    case Instruction::Negate:
         _negate();
         break;
-    case Operation::ShrinkLocal:
+    case Instruction::ShrinkLocal:
         _shrink();
         collectGarbage();
         break;
-    case Operation::Return:
+    case Instruction::Return:
         _return();
         collectGarbage();
         break;
-    case Operation::ReturnValue:
+    case Instruction::ReturnValue:
         _returnWithValue();
         break;
-    case Operation::CreateArray:
+    case Instruction::CreateArray:
         _createArray();
         break;
-    case Operation::New:
+    case Instruction::New:
         _new();
         break;
-    case Operation::End:
+    case Instruction::End:
         m_forcedEnd = true;
         break;
     default:
@@ -253,14 +253,14 @@ GobLang::ArrayNode *GobLang::Machine::createArrayOfSize(int32_t size)
     return node;
 }
 
-GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool alwaysNew)
+GobLang::StringObject *GobLang::Machine::createString(std::string const &str, bool alwaysNew)
 {
-    MemoryNode *root = &m_memoryRoot;
-    StringNode *node = nullptr;
+    Object *root = &m_memoryRoot;
+    StringObject *node = nullptr;
     // avoid making instance for each call, check if there is anything that uses this already
     while (root != nullptr && !alwaysNew)
     {
-        if (StringNode *strNode = dynamic_cast<StringNode *>(root); strNode != nullptr && strNode->getString() == str)
+        if (StringObject *strNode = dynamic_cast<StringObject *>(root); strNode != nullptr && strNode->getString() == str)
         {
             node = strNode;
             break;
@@ -269,13 +269,13 @@ GobLang::StringNode *GobLang::Machine::createString(std::string const &str, bool
     }
     if (node == nullptr)
     {
-        node = new StringNode(str);
+        node = new StringObject(str);
         addObject(node);
     }
     return node;
 }
 
-void GobLang::Machine::addObject(MemoryNode *obj)
+void GobLang::Machine::addObject(Object *obj)
 {
     if (!obj->isRegistered())
     {
@@ -304,7 +304,7 @@ void GobLang::Machine::pushFloatToStack(float val)
     m_operationStack.back().push_back(Value(val));
 }
 
-void GobLang::Machine::pushObjectToStack(MemoryNode *obj)
+void GobLang::Machine::pushObjectToStack(Object *obj)
 {
     m_operationStack.back().push_back(Value(obj));
 }
@@ -318,11 +318,11 @@ void GobLang::Machine::setLocalVariableValue(size_t id, Value const &val)
     }
     if ((Type)val.index() == Type::MemoryObj)
     {
-        std::get<MemoryNode *>(val)->increaseRefCount();
+        std::get<Object *>(val)->increaseRefCount();
     }
     if ((Type)varFrame[id].index() == Type::MemoryObj)
     {
-        std::get<MemoryNode *>(varFrame[id])->decreaseRefCount();
+        std::get<Object *>(varFrame[id])->decreaseRefCount();
     }
     varFrame[id] = val;
 }
@@ -343,7 +343,7 @@ void GobLang::Machine::shrinkLocalVariableStackBy(size_t size)
     {
         if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>((*it))->decreaseRefCount();
+            std::get<Object *>((*it))->decreaseRefCount();
         }
     }
     m_variables.back().resize(m_variables.back().size() - size);
@@ -360,7 +360,7 @@ void GobLang::Machine::removeFunctionFrame()
     {
         if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>((*it))->decreaseRefCount();
+            std::get<Object *>((*it))->decreaseRefCount();
         }
     }
     m_variables.pop_back();
@@ -369,7 +369,7 @@ void GobLang::Machine::removeFunctionFrame()
     {
         if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>((*it))->decreaseRefCount();
+            std::get<Object *>((*it))->decreaseRefCount();
         }
     }
     m_operationStack.pop_back();
@@ -393,7 +393,7 @@ void GobLang::Machine::callLocalFunction(size_t funcId)
         // for the entirety of the value being in the function we assume that it is in use so we can not delete it
         if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>((*it))->increaseRefCount();
+            std::get<Object *>((*it))->increaseRefCount();
         }
     }
     m_variables.push_back(args);
@@ -425,8 +425,8 @@ NativeStructureInfo const *GobLang::Machine::getNativeStructure(std::string cons
 
 void GobLang::Machine::collectGarbage()
 {
-    MemoryNode *prev = &m_memoryRoot;
-    MemoryNode *curr = m_memoryRoot.getNext();
+    Object *prev = &m_memoryRoot;
+    Object *curr = m_memoryRoot.getNext();
     while (curr != nullptr)
     {
         if (!curr->isDead())

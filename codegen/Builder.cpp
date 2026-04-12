@@ -1,5 +1,5 @@
 #include "Builder.hpp"
-#include "../execution/Operations.hpp"
+#include "../execution/Instruction.hpp"
 #include "Lexems.hpp"
 #include <algorithm>
 
@@ -7,12 +7,12 @@ using namespace GobLang;
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstNull()
 {
-    return std::make_unique<GeneratedCodeGenValue>( std::vector<uint8_t>{(uint8_t)Operation::PushNull});
+    return std::make_unique<GeneratedCodeGenValue>( std::vector<uint8_t>{(uint8_t)Instruction::PushNull});
 }
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstFloat(float val)
 {
 
-    std::vector<uint8_t> res{(uint8_t)Operation::PushConstFloat};
+    std::vector<uint8_t> res{(uint8_t)Instruction::PushConstFloat};
     std::vector<uint8_t> num = parseToBytes(val);
     res.insert(res.end(), num.begin(), num.end());
 
@@ -21,7 +21,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstInt(int32_t val)
 {
-    std::vector<uint8_t> res{(uint8_t)Operation::PushConstInt};
+    std::vector<uint8_t> res{(uint8_t)Instruction::PushConstInt};
     std::vector<uint8_t> num = parseToBytes(val);
     res.insert(res.end(), num.begin(), num.end());
 
@@ -30,7 +30,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstUnsignedInt(uint32_t val)
 {
-    std::vector<uint8_t> res{(uint8_t)Operation::PushConstUnsignedInt};
+    std::vector<uint8_t> res{(uint8_t)Instruction::PushConstUnsignedInt};
     std::vector<uint8_t> num = parseToBytes(val);
     res.insert(res.end(), num.begin(), num.end());
 
@@ -39,20 +39,20 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstString(size_t strId)
 {
-    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Operation::PushConstString, (uint8_t)strId});
+    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Instruction::PushConstString, (uint8_t)strId});
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstBool(bool val)
 {
     return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{
-        (val ? (uint8_t)Operation::PushTrue : (uint8_t)Operation::PushFalse)});
+        (val ? (uint8_t)Instruction::PushTrue : (uint8_t)Instruction::PushFalse)});
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstChar(char ch)
 {
     return std::make_unique<GeneratedCodeGenValue>(
         std::vector<uint8_t>{
-            (uint8_t)Operation::PushConstChar,
+            (uint8_t)Instruction::PushConstChar,
             (uint8_t)ch});
 }
 
@@ -125,14 +125,14 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     switch (op)
     {
     case Operator::Sub:
-        bytes.push_back((uint8_t)Operation::Negate);
+        bytes.push_back((uint8_t)Instruction::Negate);
         break;
     case Operator::BitNot:
-        bytes.push_back((uint8_t)Operation::BitNot);
+        bytes.push_back((uint8_t)Instruction::BitNot);
         break;
 
     case Operator::Not:
-        bytes.push_back((uint8_t)Operation::Not);
+        bytes.push_back((uint8_t)Instruction::Not);
         break;
     default:
         // unary '+' does nothing
@@ -160,7 +160,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     std::vector<uint8_t> bytes;
     std::vector<uint8_t> initBytes = init->getGetOperationBytes();
     bytes.insert(bytes.end(), initBytes.begin(), initBytes.end());
-    bytes.push_back((uint8_t)Operation::SetLocal);
+    bytes.push_back((uint8_t)Instruction::SetLocal);
     bytes.push_back((uint8_t)id);
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
@@ -181,16 +181,16 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     // call
     if (funcIt != m_functions.end())
     {
-        bytes.push_back((uint8_t)Operation::GetLocalFunction);
+        bytes.push_back((uint8_t)Instruction::GetLocalFunction);
         bytes.push_back((uint8_t)(funcIt - m_functions.begin()));
     }
     else
     {
-        bytes.push_back((uint8_t)GobLang::Operation::PushConstString);
+        bytes.push_back((uint8_t)GobLang::Instruction::PushConstString);
         bytes.push_back((uint8_t)nameId);
-        bytes.push_back((uint8_t)GobLang::Operation::Get);
+        bytes.push_back((uint8_t)GobLang::Instruction::GetGlobal);
     }
-    bytes.push_back((uint8_t)Operation::Call);
+    bytes.push_back((uint8_t)Instruction::Call);
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
 
@@ -209,7 +209,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
         std::vector<uint8_t> argBytes = (*it)->getGetOperationBytes();
         bytes.insert(bytes.begin(), argBytes.begin(), argBytes.end());
     }
-    bytes.push_back((uint8_t)Operation::New);
+    bytes.push_back((uint8_t)Instruction::New);
     bytes.push_back((uint8_t)(typeIt - m_types.begin()));
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
@@ -227,7 +227,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     }
     std::vector<uint8_t> valBytes = value->getGetOperationBytes();
     bytes.insert(bytes.end(), valBytes.begin(), valBytes.end());
-    bytes.push_back((uint8_t)Operation::Call);
+    bytes.push_back((uint8_t)Instruction::Call);
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
 
@@ -260,7 +260,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
             [nameId](std::unique_ptr<GobLang::Function> const &func)
             { return func->nameId == nameId; });
     return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{
-        (uint8_t)Operation::GetLocalFunction,
+        (uint8_t)Instruction::GetLocalFunction,
         (uint8_t)(funcIt - m_functions.begin())});
 }
 

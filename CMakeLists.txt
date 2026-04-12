@@ -38,11 +38,11 @@ list(APPEND CODEGEN_FILES codegen/CodeGenerator.hpp
 
 list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Type.cpp
-    execution/Operations.hpp
+    execution/Instruction.hpp
     execution/Value.hpp
     execution/Value.cpp
-    execution/Machine.hpp
-    execution/Machine.cpp
+    execution/State.hpp
+    execution/State.cpp
     execution/Memory.hpp
     execution/Memory.cpp
     execution/Array.hpp
@@ -52,20 +52,13 @@ list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
     execution/Exception.hpp
     execution/Exception.cpp
     execution/Function.hpp
-    execution/Structure.hpp
-    execution/Structure.cpp
-    execution/NativeStructure.hpp
-    execution/NativeStructure.cpp
-    execution/FunctionRef.hpp
-    execution/FunctionRef.cpp
+    execution/Closure.cpp
+    execution/Error.cpp
 )
 
 
 list(APPEND STD_SOURCE_FILES execution/Type.hpp
-    standard/MachineFunctions.hpp
-    standard/MachineFunctions.cpp
-    standard/File.hpp
-    standard/File.cpp
+
 )
 
 

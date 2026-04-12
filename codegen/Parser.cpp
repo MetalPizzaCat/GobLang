@@ -4,6 +4,9 @@
 #include <sstream>
 #include <iostream>
 #include <limits>
+#include <iostream>
+#include <functional>
+
 #include "Parser.hpp"
 
 void GobLang::Codegen::Parser::skipWhitespace()

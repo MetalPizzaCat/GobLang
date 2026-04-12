@@ -9,18 +9,19 @@
 
 namespace GobLang
 {
-     /**
+    /**
      * @brief Type used to store jump addresses in the code
      *
      */
     using ProgramAddressType = uint32_t;
-    static size_t MAX_PRINT_RECURSION_DEPTH = MAX_PRINT_DEPTH;
-    class Machine;
-    class MemoryNode;
-    using FunctionValue = void (*)(Machine *);
-    using Value = std::variant<nullptr_t, bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>;
-
-
+    class State;
+    class Object;
+    using FunctionValue = void (*)(State &);
+    class Closure;
+    class GobFunction;
+    using NilType = std::monostate;
+    static const NilType NilValue = NilType();
+    using Value = std::variant<NilType, bool, char, float, int32_t, uint32_t, Object *, Closure const *, GobFunction const *>;
 
     /**
      * @brief Compare two memory values and validate that both are equal
@@ -39,5 +40,5 @@ namespace GobLang
      * @param pretty Whether to add decorators. Only is relevant for strings during printing
      * @return std::string
      */
-    std::string valueToString(Value const &val, bool pretty, size_t depth);
+    std::string valueToString(Value const &val);
 }

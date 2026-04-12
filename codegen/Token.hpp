@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <vector>
 #include <cstdint>
-#include "../execution/Machine.hpp"
 #include "Lexems.hpp"
 
 namespace GobLang::Codegen
@@ -44,7 +43,7 @@ namespace GobLang::Codegen
         explicit OperatorToken(size_t row, size_t column, OperatorData const *data);
         Operator getOperator() const { return m_data->op; }
         bool isAssignment() const;
-        Operation getOperation() const;
+        Instruction getOperation() const;
         virtual int32_t getPriority() const override;
         std::string toString() override;
 

@@ -8,15 +8,13 @@
 #include <memory>
 #include "Type.hpp"
 #include "Memory.hpp"
-#include "Operations.hpp"
+#include "Instruction.hpp"
 #include "Value.hpp"
 #include "Array.hpp"
 #include "String.hpp"
 #include "Exception.hpp"
 #include "Structure.hpp"
 #include "../codegen/ByteCode.hpp"
-#include "NativeStructure.hpp"
-
 using namespace GobLang::Struct;
 namespace GobLang
 {
@@ -27,7 +25,7 @@ namespace GobLang
 
         explicit Machine(Codegen::ByteCode const &code);
 
-        void addOperation(Operation op)
+        void addOperation(Instruction op)
         {
             m_operations.push_back((uint8_t)op);
         }
@@ -74,14 +72,14 @@ namespace GobLang
          * This is useful to avoid messing variables that were set from constants
          * @return StringNode* Pointer to new string object or other string object that was found in memory
          */
-        StringNode *createString(std::string const &str, bool alwaysNew = false);
+        StringObject *createString(std::string const &str, bool alwaysNew = false);
 
         /**
          * @brief Register object to be handled by the garbage collector. This object will be ref counted and deleted once it is no longer in use
          *
          * @param obj Object to register
          */
-        void addObject(MemoryNode *obj);
+        void addObject(Object *obj);
 
         void popStack();
 
@@ -89,7 +87,7 @@ namespace GobLang
 
         void pushIntToStack(int32_t val);
         void pushFloatToStack(float val);
-        void pushObjectToStack(MemoryNode *obj);
+        void pushObjectToStack(Object *obj);
 
         template <class T>
         T popFromStack()
@@ -105,7 +103,7 @@ namespace GobLang
         template <class T>
         T *popObjectFromStack()
         {
-            return dynamic_cast<T*>(popFromStack<MemoryNode *>());
+            return dynamic_cast<T*>(popFromStack<Object *>());
         }
 
         Value getVariableValue(std::string const &name) { return m_globals[name]; }
@@ -278,7 +276,7 @@ namespace GobLang
 
         bool m_forcedEnd = false;
 
-        MemoryNode m_memoryRoot;
+        Object m_memoryRoot;
         size_t m_programCounter = 0;
         std::vector<uint8_t> m_operations;
         std::vector<std::vector<Value>> m_operationStack = {{}};

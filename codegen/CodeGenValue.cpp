@@ -1,5 +1,5 @@
 #include "CodeGenValue.hpp"
-#include "../execution/Operations.hpp"
+#include "../execution/Instruction.hpp"
 #include "Builder.hpp"
 #include "../execution/Value.hpp"
 
@@ -15,22 +15,22 @@ std::vector<uint8_t> GobLang::Codegen::VariableCodeGenValue::getGetOperationByte
 {
     if (!m_local)
     {
-        return {(uint8_t)Operation::PushConstString,
+        return {(uint8_t)Instruction::PushConstString,
                 (uint8_t)m_id,
-                (uint8_t)Operation::Get};
+                (uint8_t)Instruction::GetGlobal};
     }
-    return {(uint8_t)Operation::GetLocal, (uint8_t)m_id};
+    return {(uint8_t)Instruction::GetLocal, (uint8_t)m_id};
 }
 
 std::vector<uint8_t> GobLang::Codegen::VariableCodeGenValue::getSetOperationBytes()
 {
     if (!m_local)
     {
-        return {(uint8_t)Operation::PushConstString,
+        return {(uint8_t)Instruction::PushConstString,
                 (uint8_t)m_id,
-                (uint8_t)Operation::Set};
+                (uint8_t)Instruction::SetGlobal};
     }
-    return {(uint8_t)Operation::SetLocal, (uint8_t)m_id};
+    return {(uint8_t)Instruction::SetLocal, (uint8_t)m_id};
 }
 
 GobLang::Codegen::GeneratedCodeGenValue::GeneratedCodeGenValue(std::vector<uint8_t> val) : m_bytes(std::move(val))
@@ -75,7 +75,7 @@ void GobLang::Codegen::BlockContext::appendMemoryClear()
 {
     if (!m_variables.empty())
     {
-        m_bytes.push_back((uint8_t)Operation::ShrinkLocal);
+        m_bytes.push_back((uint8_t)Instruction::ShrinkLocal);
         m_bytes.push_back((uint8_t)m_variables.size());
     }
 }
@@ -117,7 +117,7 @@ std::vector<uint8_t> GobLang::Codegen::BranchCodeGenValue::getGetOperationBytes(
     bytes.insert(bytes.end(), m_bodyBytes.begin(), m_bodyBytes.end());
     if (m_jumpAfter != -1)
     {
-        bytes.push_back(m_backwards ? (uint8_t)Operation::JumpBack : (uint8_t)Operation::Jump);
+        bytes.push_back(m_backwards ? (uint8_t)Instruction::JumpBack : (uint8_t)Instruction::Jump);
         std::vector<uint8_t> num = parseToBytes((uint32_t)m_jumpAfter);
         bytes.insert(bytes.end(), num.begin(), num.end());
     }
@@ -155,7 +155,7 @@ std::vector<uint8_t> GobLang::Codegen::ArrayAccessCodeGenValue::getGetOperationB
 {
     std::vector<uint8_t> bytes = m_addressBytes;
     bytes.insert(bytes.end(), m_valueBytes.begin(), m_valueBytes.end());
-    bytes.push_back((uint8_t)Operation::GetArray);
+    bytes.push_back((uint8_t)Instruction::GetArray);
     return bytes;
 }
 
@@ -163,7 +163,7 @@ std::vector<uint8_t> GobLang::Codegen::ArrayAccessCodeGenValue::getSetOperationB
 {
     std::vector<uint8_t> bytes = m_addressBytes;
     bytes.insert(bytes.end(), m_valueBytes.begin(), m_valueBytes.end());
-    bytes.push_back((uint8_t)Operation::SetArray);
+    bytes.push_back((uint8_t)Instruction::SetArray);
     return bytes;
 }
 
@@ -181,7 +181,7 @@ std::vector<uint8_t> GobLang::Codegen::FunctionCodeGenValue::getGetOperationByte
 {
     std::vector<uint8_t> body = m_body->getBytes();
     // in case we are in a situation where no return happened
-    body.push_back((uint8_t)Operation::Return);
+    body.push_back((uint8_t)Instruction::Return);
     return body;
 }
 
@@ -196,7 +196,7 @@ std::vector<uint8_t> GobLang::Codegen::FieldAccessCodeGenValue::getGetOperationB
 {
     std::vector<uint8_t> bytes = m_fieldBytes;
     bytes.insert(bytes.end(), m_objectBytes.begin(), m_objectBytes.end());
-    bytes.push_back((uint8_t)Operation::GetField);
+    bytes.push_back((uint8_t)Instruction::GetField);
     return bytes;
 }
 
@@ -204,7 +204,7 @@ std::vector<uint8_t> GobLang::Codegen::FieldAccessCodeGenValue::getSetOperationB
 {
     std::vector<uint8_t> bytes = m_fieldBytes;
     bytes.insert(bytes.end(), m_objectBytes.begin(), m_objectBytes.end());
-    bytes.push_back((uint8_t)Operation::SetField);
+    bytes.push_back((uint8_t)Instruction::SetField);
     return bytes;
 }
 

@@ -16,13 +16,13 @@ void GobLang::ArrayNode::setItem(size_t i, Value const &item)
             std::to_string(m_data.size()));
     }
     // check if object that we are setting is itself to avoid creating a ref cycle
-    if ((Type)item.index() == Type::MemoryObj && std::get<MemoryNode *>(item) != this)
+    if ((Type)item.index() == Type::MemoryObj && std::get<Object *>(item) != this)
     {
-        std::get<MemoryNode *>(item)->increaseRefCount();
+        std::get<Object *>(item)->increaseRefCount();
     }
-    if ((Type)m_data[i].index() == Type::MemoryObj && std::get<MemoryNode *>(m_data[i]) != this)
+    if ((Type)m_data[i].index() == Type::MemoryObj && std::get<Object *>(m_data[i]) != this)
     {
-        std::get<MemoryNode *>(m_data[i])->decreaseRefCount();
+        std::get<Object *>(m_data[i])->decreaseRefCount();
     }
     m_data[i] = item;
 }
@@ -45,12 +45,12 @@ GobLang::Value *GobLang::ArrayNode::getItem(size_t i)
     }
 }
 
-std::string GobLang::ArrayNode::toString(bool pretty, size_t depth)
+std::string GobLang::ArrayNode::toString() const
 {
     std::string text = "[";
     for (size_t i = 0; i < m_data.size(); i++)
     {
-        text += valueToString(m_data[i], pretty, depth);
+        text += valueToString(m_data[i]);
         if (i != m_data.size() - 1)
         {
             text += ",";
@@ -62,9 +62,9 @@ std::string GobLang::ArrayNode::toString(bool pretty, size_t depth)
 void GobLang::ArrayNode::append(Value const &item)
 {
     // check if object that we are setting is itself to avoid creating a ref cycle
-    if ((Type)item.index() == Type::MemoryObj && std::get<MemoryNode *>(item) != this)
+    if ((Type)item.index() == Type::MemoryObj && std::get<Object *>(item) != this)
     {
-        std::get<MemoryNode *>(item)->increaseRefCount();
+        std::get<Object *>(item)->increaseRefCount();
     }
     m_data.push_back(item);
 }
@@ -75,7 +75,7 @@ GobLang::ArrayNode::~ArrayNode()
     {
         if ((Type)it->index() == Type::MemoryObj)
         {
-            std::get<MemoryNode *>((*it))->decreaseRefCount();
+            std::get<Object *>((*it))->decreaseRefCount();
         }
     }
 }

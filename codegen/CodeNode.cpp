@@ -1,5 +1,6 @@
 #include "CodeNode.hpp"
 #include <algorithm>
+#include <iostream>
 
 #include "Lexems.hpp"
 #include "../execution/Value.hpp"
@@ -186,15 +187,15 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
         this is just AND but with values inverted
     */
     std::vector<uint8_t> endBlockBytes;
-    endBlockBytes.push_back((uint8_t)Operation::PushFalse);
-    endBlockBytes.push_back((uint8_t)Operation::Jump);
+    endBlockBytes.push_back((uint8_t)Instruction::PushFalse);
+    endBlockBytes.push_back((uint8_t)Instruction::Jump);
     // two bytes here because self *and* push_false
     std::vector<uint8_t> oneBytes = parseToBytes((ProgramAddressType)(2 + sizeof(ProgramAddressType)));
     endBlockBytes.insert(endBlockBytes.end(), oneBytes.begin(), oneBytes.end());
-    endBlockBytes.push_back((uint8_t)Operation::PushTrue);
+    endBlockBytes.push_back((uint8_t)Instruction::PushTrue);
 
     std::vector<uint8_t> bytes = m_left->generateCode(builder)->getGetOperationBytes();
-    bytes.push_back((uint8_t)Operation::JumpIf);
+    bytes.push_back((uint8_t)Instruction::JumpIf);
     // generate code for the other side
     std::vector<uint8_t> right = m_right->generateCode(builder)->getGetOperationBytes();
     // jump by the right side plus size of this address and size of the address for the last block
@@ -204,7 +205,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
 
     bytes.insert(bytes.end(), right.begin(), right.end());
     // and the final push_true skip
-    bytes.push_back((uint8_t)Operation::JumpIf);
+    bytes.push_back((uint8_t)Instruction::JumpIf);
     // account for the size of it's own address and push_true + jump + address inside the final block
     std::vector<uint8_t> lastJumpBytes = parseToBytes((ProgramAddressType)(sizeof(ProgramAddressType) * 2 + 2 + 1));
 
@@ -226,15 +227,15 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
         until push_true is reached, which then skips push_false
     */
     std::vector<uint8_t> endBlockBytes;
-    endBlockBytes.push_back((uint8_t)Operation::PushTrue);
-    endBlockBytes.push_back((uint8_t)Operation::Jump);
+    endBlockBytes.push_back((uint8_t)Instruction::PushTrue);
+    endBlockBytes.push_back((uint8_t)Instruction::Jump);
     // two bytes here because self *and* push_false
     std::vector<uint8_t> oneBytes = parseToBytes((ProgramAddressType)(2 + sizeof(ProgramAddressType)));
     endBlockBytes.insert(endBlockBytes.end(), oneBytes.begin(), oneBytes.end());
-    endBlockBytes.push_back((uint8_t)Operation::PushFalse);
+    endBlockBytes.push_back((uint8_t)Instruction::PushFalse);
 
     std::vector<uint8_t> bytes = m_left->generateCode(builder)->getGetOperationBytes();
-    bytes.push_back((uint8_t)Operation::JumpIfNot);
+    bytes.push_back((uint8_t)Instruction::JumpIfNot);
     // generate code for the other side
     std::vector<uint8_t> right = m_right->generateCode(builder)->getGetOperationBytes();
     // jump by the right side plus size of this address and size of the address for the last block
@@ -244,7 +245,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
 
     bytes.insert(bytes.end(), right.begin(), right.end());
     // and the final push_true skip
-    bytes.push_back((uint8_t)Operation::JumpIfNot);
+    bytes.push_back((uint8_t)Instruction::JumpIfNot);
     // account for the size of it's own address and push_true + jump + address inside the final block
     std::vector<uint8_t> lastJumpBytes = parseToBytes((ProgramAddressType)(sizeof(ProgramAddressType) * 2 + 2 + 1));
 
@@ -312,7 +313,7 @@ std::unique_ptr<GobLang::Codegen::BranchCodeGenValue> GobLang::Codegen::BranchNo
     size_t prevBranchOffset)
 {
     std::vector<uint8_t> bytes = m_cond->generateCode(builder)->getGetOperationBytes();
-    bytes.push_back((uint8_t)Operation::JumpIfNot);
+    bytes.push_back((uint8_t)Instruction::JumpIfNot);
     // pad the space to allocate space for future offset
     for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
     {
@@ -445,7 +446,7 @@ GobLang::Codegen::WhileLoopNode::WhileLoopNode(std::unique_ptr<CodeNode> cond,
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode::generateCode(Builder &builder)
 {
     std::vector<uint8_t> bytes = getCond()->generateCode(builder)->getGetOperationBytes();
-    bytes.push_back((uint8_t)Operation::JumpIfNot);
+    bytes.push_back((uint8_t)Instruction::JumpIfNot);
     // don't pad cause we can just insert value later
 
     std::unique_ptr<BlockCodeGenValue> bodyContext = getBody()->generateBlockContext(builder, 0, true);
@@ -453,7 +454,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::WhileLoopNode:
     std::vector<uint8_t> body = bodyContext->getGetOperationBytes();
     std::vector<uint8_t> retNum = parseToBytes<ProgramAddressType>(body.size() + bytes.size() + sizeof(ProgramAddressType));
     // body always has a return, but it goes backwards and is equal to sizeof(body)
-    body.push_back((uint8_t)Operation::JumpBack);
+    body.push_back((uint8_t)Instruction::JumpBack);
 
     body.insert(body.end(), retNum.begin(), retNum.end());
 
@@ -494,7 +495,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BreakNode::gen
         throw ParsingError(0, 0, "Break used outside of a loop");
     }
     block->addJump(true);
-    std::vector<uint8_t> bytes = {(uint8_t)Operation::Jump};
+    std::vector<uint8_t> bytes = {(uint8_t)Instruction::Jump};
     for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
     {
         bytes.push_back(0);
@@ -515,7 +516,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ContinueNode::
         throw ParsingError(0, 0, "Break used outside of a loop");
     }
     block->addJump(false);
-    std::vector<uint8_t> bytes = {(uint8_t)Operation::JumpBack};
+    std::vector<uint8_t> bytes = {(uint8_t)Instruction::JumpBack};
     for (size_t i = 0; i < sizeof(ProgramAddressType); i++)
     {
         bytes.push_back(0);
@@ -590,9 +591,9 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ReturnEmptyNod
 {
     if (builder.isCurrentlyInFunction())
     {
-        return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Operation::Return});
+        return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Instruction::Return});
     }
-    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Operation::End});
+    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Instruction::End});
 }
 
 std::string GobLang::Codegen::ReturnEmptyNode::toString()
@@ -607,7 +608,7 @@ GobLang::Codegen::ReturnNode::ReturnNode(std::unique_ptr<CodeNode> val) : m_val(
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ReturnNode::generateCode(Builder &builder)
 {
     std::vector<uint8_t> bytes = m_val->generateCode(builder)->getGetOperationBytes();
-    bytes.push_back((uint8_t)Operation::ReturnValue);
+    bytes.push_back((uint8_t)Instruction::ReturnValue);
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
 
@@ -643,7 +644,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ArrayLiteralNo
         std::vector<uint8_t> temp = (*it)->generateCode(builder)->getGetOperationBytes();
         bytes.insert(bytes.end(), temp.begin(), temp.end());
     }
-    bytes.push_back((uint8_t)Operation::CreateArray);
+    bytes.push_back((uint8_t)Instruction::CreateArray);
     bytes.push_back((uint8_t)m_values.size());
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }

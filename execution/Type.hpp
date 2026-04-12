@@ -12,7 +12,8 @@ namespace GobLang
         Int,
         UnsignedInt,
         MemoryObj,
-        NativeFunction,
+        Closure,
+        Prototype
     };
 
     /**
