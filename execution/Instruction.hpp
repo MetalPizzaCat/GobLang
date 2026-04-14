@@ -4,6 +4,7 @@
 #include <cstdint>
 namespace GobLang
 {
+    // TODO: Cleanup instruction set
     enum class Instruction
     {
         None,

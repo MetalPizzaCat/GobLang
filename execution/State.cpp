@@ -51,6 +51,15 @@ void GobLang::State::runBytes(GobFunction const *func)
             break;
         }
 
+        case Instruction::SetGlobal:
+        {
+            size_t typeId = parseOperationConstant<int64_t>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter += sizeof(size_t);
+            setGlobalVariable(func->getConstantStringByidOrError(typeId), popFromStackOrError());
+
+            break;
+        }
+
         case Instruction::GetGlobal:
         {
             size_t typeId = parseOperationConstant<int64_t>(byteCode.begin() + (programCounter + 1), byteCode.end());

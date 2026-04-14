@@ -74,6 +74,6 @@ int main()
                                             },
                                             {"print", "hello world"}, "f1");
     // state.setGlobalVariable("f1", f1);
-    state.executeClosure(*state.loadString("print(\"hello world\");"));
+    state.executeClosure(*state.loadString("a = print; a(\"hello world, this is awesome\");"));
     return EXIT_SUCCESS;
 }
