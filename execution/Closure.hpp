@@ -13,15 +13,26 @@ namespace GobLang
     public:
         explicit GobFunction(std::vector<uint8_t> const &bytes, std::vector<std::string> const &strings, std::string const &name = "?");
 
+        explicit GobFunction() = default;
+
         std::optional<std::string> getConstantString(size_t id) const;
 
         std::string const &getConstantStringByidOrError(size_t id, std::string const &errorMessage = "No string under given id") const;
 
         std::vector<uint8_t> const &getByteCode() const { return m_byteCode; }
 
+        size_t getArgumentCount() const { return m_argumentCount; }
+
+        void setByteCode(std::vector<uint8_t> const& bytes);
+
+        void setStrings(std::vector<std::string> const& strings);
+
+        void setArgumentCount(size_t count);
+
     private:
         std::vector<uint8_t> m_byteCode;
         std::vector<std::string> m_strings;
+        size_t m_argumentCount;
 
         std::string m_name;
     };
@@ -41,7 +52,6 @@ namespace GobLang
         std::string toString() const override;
 
     private:
-        size_t m_argumentCount;
         Object *m_owner = nullptr;
         GobFunction const *m_func;
         FunctionValue m_nativeFunc;

@@ -7,9 +7,9 @@ using namespace GobLang;
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstNull()
 {
-    return std::make_unique<GeneratedCodeGenValue>( std::vector<uint8_t>{(uint8_t)Instruction::PushNull});
+    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Instruction::PushNull});
 }
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstFloat(float val)
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstFloat(double val)
 {
 
     std::vector<uint8_t> res{(uint8_t)Instruction::PushConstFloat};
@@ -19,7 +19,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     return std::make_unique<GeneratedCodeGenValue>(std::move(res));
 }
 
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstInt(int32_t val)
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstInt(int64_t val)
 {
     std::vector<uint8_t> res{(uint8_t)Instruction::PushConstInt};
     std::vector<uint8_t> num = parseToBytes(val);
@@ -28,7 +28,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     return std::make_unique<GeneratedCodeGenValue>(std::move(res));
 }
 
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstUnsignedInt(uint32_t val)
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstUnsignedInt(uint64_t val)
 {
     std::vector<uint8_t> res{(uint8_t)Instruction::PushConstUnsignedInt};
     std::vector<uint8_t> num = parseToBytes(val);
@@ -39,7 +39,9 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstString(size_t strId)
 {
-    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Instruction::PushConstString, (uint8_t)strId});
+    std::vector<uint8_t> bytes = parseToBytes(strId);
+    bytes.insert(bytes.begin(), (uint8_t)Instruction::PushConstString);
+    return std::make_unique<GeneratedCodeGenValue>(bytes);
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstBool(bool val)
@@ -56,18 +58,19 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
             (uint8_t)ch});
 }
 
-GobLang::Function const *GobLang::Codegen::Builder::addFunction(size_t nameId, std::vector<size_t> argIds)
-{
-    Function *func = new Function{.nameId = nameId};
-    for (std::vector<size_t>::const_iterator it = argIds.begin(); it != argIds.end(); it++)
-    {
-        func->arguments.push_back(FunctionArgInfo{
-            .nameId = *it,
-        });
-    }
-    m_functions.push_back(std::unique_ptr<Function>(func));
-    return m_functions.back().get();
-}
+// TODO: Remove of update this function
+//  GobLang::Function const *GobLang::Codegen::Builder::addFunction(size_t nameId, std::vector<size_t> argIds)
+//  {
+//      Function *func = new Function{.nameId = nameId};
+//      for (std::vector<size_t>::const_iterator it = argIds.begin(); it != argIds.end(); it++)
+//      {
+//          func->arguments.push_back(FunctionArgInfo{
+//              .nameId = *it,
+//          });
+//      }
+//      m_functions.push_back(std::unique_ptr<Function>(func));
+//      return m_functions.back().get();
+//  }
 
 void GobLang::Codegen::Builder::addType(
     std::string const &name,
@@ -81,12 +84,6 @@ void GobLang::Codegen::Builder::addType(
         type.fields.push_back(Struct::Field{.name = field});
     }
     m_types.push_back(std::make_unique<TypeCodeGenInfo>(nameId, std::move(fieldIds), std::move(type)));
-}
-
-bool GobLang::Codegen::Builder::hasLocalFunctionWithName(size_t nameId)
-{
-    return std::find_if(m_functions.begin(), m_functions.end(), [nameId](std::unique_ptr<GobLang::Function> const &func)
-                        { return func->nameId == nameId; }) != m_functions.end();
 }
 
 bool GobLang::Codegen::Builder::hasTypeWithName(size_t nameId)
@@ -167,31 +164,32 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createCall(size_t nameId, std::vector<std::unique_ptr<CodeGenValue>> args)
 {
-    std::vector<std::unique_ptr<GobLang::Function>>::const_iterator funcIt =
-        std::find_if(m_functions.begin(), m_functions.end(), [nameId](std::unique_ptr<GobLang::Function> const &func)
-                     { return func->nameId == nameId; });
+    // std::vector<std::unique_ptr<GobLang::Function>>::const_iterator funcIt =
+    //     std::find_if(m_functions.begin(), m_functions.end(), [nameId](std::unique_ptr<GobLang::Function> const &func)
+    //                  { return func->nameId == nameId; });
 
-    std::vector<uint8_t> bytes;
+    // std::vector<uint8_t> bytes;
 
-    for (std::vector<std::unique_ptr<CodeGenValue>>::const_iterator it = args.begin(); it != args.end(); it++)
-    {
-        std::vector<uint8_t> argBytes = (*it)->getGetOperationBytes();
-        bytes.insert(bytes.begin(), argBytes.begin(), argBytes.end());
-    }
-    // call
-    if (funcIt != m_functions.end())
-    {
-        bytes.push_back((uint8_t)Instruction::GetLocalFunction);
-        bytes.push_back((uint8_t)(funcIt - m_functions.begin()));
-    }
-    else
-    {
-        bytes.push_back((uint8_t)GobLang::Instruction::PushConstString);
-        bytes.push_back((uint8_t)nameId);
-        bytes.push_back((uint8_t)GobLang::Instruction::GetGlobal);
-    }
-    bytes.push_back((uint8_t)Instruction::Call);
-    return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
+    // for (std::vector<std::unique_ptr<CodeGenValue>>::const_iterator it = args.begin(); it != args.end(); it++)
+    // {
+    //     std::vector<uint8_t> argBytes = (*it)->getGetOperationBytes();
+    //     bytes.insert(bytes.begin(), argBytes.begin(), argBytes.end());
+    // }
+    // // call
+    // if (funcIt != m_functions.end())
+    // {
+    //     bytes.push_back((uint8_t)Instruction::GetLocalFunction);
+    //     bytes.push_back((uint8_t)(funcIt - m_functions.begin()));
+    // }
+    // else
+    // {
+    //     bytes.push_back((uint8_t)GobLang::Instruction::PushConstString);
+    //     bytes.push_back((uint8_t)nameId);
+    //     bytes.push_back((uint8_t)GobLang::Instruction::GetGlobal);
+    // }
+    // bytes.push_back((uint8_t)Instruction::Call);
+    // return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));'
+    return nullptr;
 }
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstructorCall(
@@ -251,18 +249,18 @@ std::unique_ptr<GobLang::Codegen::VariableCodeGenValue> GobLang::Codegen::Builde
     return std::make_unique<VariableCodeGenValue>(localId == -1 ? nameId : localId, localId != -1);
 }
 
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createLocalFunctionAccess(size_t nameId)
-{
-    std::vector<std::unique_ptr<GobLang::Function>>::const_iterator funcIt =
-        std::find_if(
-            m_functions.begin(),
-            m_functions.end(),
-            [nameId](std::unique_ptr<GobLang::Function> const &func)
-            { return func->nameId == nameId; });
-    return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{
-        (uint8_t)Instruction::GetLocalFunction,
-        (uint8_t)(funcIt - m_functions.begin())});
-}
+// std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createLocalFunctionAccess(size_t nameId)
+// {
+//     std::vector<std::unique_ptr<GobLang::Function>>::const_iterator funcIt =
+//         std::find_if(
+//             m_functions.begin(),
+//             m_functions.end(),
+//             [nameId](std::unique_ptr<GobLang::Function> const &func)
+//             { return func->nameId == nameId; });
+//     return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{
+//         (uint8_t)Instruction::GetLocalFunction,
+//         (uint8_t)(funcIt - m_functions.begin())});
+// }
 
 GobLang::Codegen::BlockContext *GobLang::Codegen::Builder::getCurrentBlock()
 {
@@ -309,14 +307,9 @@ void GobLang::Codegen::Builder::pushEmptyBlock()
     m_blocks.push_back(std::make_unique<BlockContext>());
 }
 
-void GobLang::Codegen::Builder::pushBlockForFunction(Function const *func)
+void GobLang::Codegen::Builder::pushBlockForFunction(std::vector<size_t> const &argNameIds)
 {
-    std::vector<size_t> args;
-    for (std::vector<FunctionArgInfo>::const_iterator it = func->arguments.begin(); it != func->arguments.end(); it++)
-    {
-        args.push_back(it->nameId);
-    }
-    m_blocks.push_back(std::make_unique<BlockContext>(func->nameId, args));
+    m_blocks.push_back(std::make_unique<BlockContext>(true, argNameIds));
 }
 
 std::unique_ptr<GobLang::Codegen::BlockContext> GobLang::Codegen::Builder::popBlock()

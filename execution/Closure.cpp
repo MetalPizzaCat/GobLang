@@ -40,3 +40,18 @@ std::string const &GobLang::GobFunction::getConstantStringByidOrError(size_t id,
     }
     return m_strings.at(id);
 }
+
+void GobLang::GobFunction::setByteCode(std::vector<uint8_t> const &bytes)
+{
+    m_byteCode = bytes;
+}
+
+void GobLang::GobFunction::setStrings(std::vector<std::string> const &strings)
+{
+    m_strings = strings;
+}
+
+void GobLang::GobFunction::setArgumentCount(size_t count)
+{
+    m_argumentCount = count;
+}

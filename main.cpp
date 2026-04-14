@@ -106,13 +106,13 @@ int main(int argc, char **argv)
         GobLang::Codegen::Parser comp(lines);
         comp.parse();
         GobLang::Codegen::CodeGenerator gen(comp);
-        GobLang::Codegen::ByteCode byteCode = gen.getByteCode();
+        // GobLang::Codegen::ByteCode byteCode = gen.getByteCode();
 
-        verIt = std::find_first_of(args.begin(), args.end(), DecompArgs.begin(), DecompArgs.end());
-        if (verIt != args.end())
-        {
-            GobLang::Codegen::byteCodeToText(byteCode.operations);
-        }
+        // verIt = std::find_first_of(args.begin(), args.end(), DecompArgs.begin(), DecompArgs.end());
+        // if (verIt != args.end())
+        // {
+        //     GobLang::Codegen::byteCodeToText(byteCode.operations);
+        // }
         // GobLang::Machine machine(byteCode);
         // MachineFunctions::bind(&machine);
         // std::vector<size_t> debugPoints = {};

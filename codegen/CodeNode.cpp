@@ -4,6 +4,8 @@
 
 #include "Lexems.hpp"
 #include "../execution/Value.hpp"
+
+#include "../execution/State.hpp"
 #include "Parser.hpp"
 GobLang::Codegen::IdNode::IdNode(size_t id) : m_id(id)
 {
@@ -11,10 +13,6 @@ GobLang::Codegen::IdNode::IdNode(size_t id) : m_id(id)
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::IdNode::generateCode(Builder &builder)
 {
-    if (builder.hasLocalFunctionWithName(m_id))
-    {
-        return builder.createLocalFunctionAccess(m_id);
-    }
     return builder.createVariableAccess(m_id);
 }
 
@@ -176,16 +174,16 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
 
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperationNode::generateOrCode(Builder &builder)
 {
- /*
-        End block is:
-                push_false
-                jmp 1
-        done:   push_true
+    /*
+           End block is:
+                   push_false
+                   jmp 1
+           done:   push_true
 
-        all blocks that evaluate to true should go to done, otherwise they will keep falling down
-        until push_false is reached, which then skips push_true
-        this is just AND but with values inverted
-    */
+           all blocks that evaluate to true should go to done, otherwise they will keep falling down
+           until push_false is reached, which then skips push_true
+           this is just AND but with values inverted
+       */
     std::vector<uint8_t> endBlockBytes;
     endBlockBytes.push_back((uint8_t)Instruction::PushFalse);
     endBlockBytes.push_back((uint8_t)Instruction::Jump);
@@ -221,7 +219,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::BinaryOperatio
         End block is:
                 push_true
                 jmp 1
-        done:   push_false  
+        done:   push_false
 
         all blocks that evaluate to false should go to done, otherwise they will keep falling down
         until push_true is reached, which then skips push_false
@@ -544,18 +542,18 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::ArrayAccessNod
     return builder.createArrayAccess(m_array->generateCode(builder), m_index->generateCode(builder));
 }
 
-GobLang::Codegen::FunctionPrototypeNode::FunctionPrototypeNode(size_t nameId, std::vector<size_t> args) : m_nameId(nameId), m_argIds(std::move(args))
+GobLang::Codegen::FunctionPrototypeNode::FunctionPrototypeNode(std::string const &name, std::vector<size_t> args) : m_name(name), m_argIds(std::move(args))
 {
 }
 
 std::unique_ptr<GobLang::Codegen::FunctionPrototypeCodeGenValue> GobLang::Codegen::FunctionPrototypeNode::generateFunction(Builder &builder)
 {
-    return std::make_unique<FunctionPrototypeCodeGenValue>(builder.addFunction(m_nameId, m_argIds));
+    return nullptr;
 }
 
 std::string GobLang::Codegen::FunctionPrototypeNode::toString()
 {
-    std::string str = R"({"type": "proto", "name" : )" + std::to_string(m_nameId) + ", \"args\" : [";
+    std::string str = R"({"type": "proto", "name" : )" + m_name + ", \"args\" : [";
     for (std::vector<size_t>::const_iterator it = m_argIds.begin(); it != m_argIds.end(); it++)
     {
         str += std::to_string(*it);
@@ -567,19 +565,29 @@ std::string GobLang::Codegen::FunctionPrototypeNode::toString()
     return str + "]}";
 }
 
-GobLang::Codegen::FunctionNode::FunctionNode(std::unique_ptr<FunctionPrototypeNode> proto,
-                                             std::unique_ptr<CodeNode> body) : m_proto(std::move(proto)), m_body(std::move(body))
+GobLang::Codegen::FunctionNode::FunctionNode(FunctionContext context,
+                                             std::unique_ptr<FunctionPrototypeNode> proto,
+                                             std::unique_ptr<CodeNode> body) : m_context(context),
+                                                                               m_proto(std::move(proto)),
+                                                                               m_body(std::move(body))
 {
 }
 
-std::unique_ptr<GobLang::Codegen::FunctionCodeGenValue> GobLang::Codegen::FunctionNode::generateFunction(Builder &builder)
+GobLang::GobFunction const *GobLang::Codegen::FunctionNode::generateFunction(Builder &builder, State &state)
 {
-    std::unique_ptr<FunctionPrototypeCodeGenValue> func = m_proto->generateFunction(builder);
-    builder.pushBlockForFunction(func->getFunc());
+
+    m_proto->getArgumentNameStringIds();
+    // std::unique_ptr<FunctionPrototypeCodeGenValue> func = m_proto->generateFunction(builder);
+    builder.pushBlockForFunction(m_proto->getArgumentNameStringIds());
     BlockContext *body = builder.getCurrentBlock();
     std::vector<uint8_t> bodyBytes = m_body->generateCode(builder)->getGetOperationBytes();
     body->insert(bodyBytes);
-    return std::make_unique<FunctionCodeGenValue>(func->getFunc(), builder.popBlock());
+    GobFunction *f = state.createFunction();
+    f->setArgumentCount(m_proto->getArgumentNameStringIds().size());
+    f->setStrings(m_context.getStrings());
+    f->setByteCode(body->getBytes());
+    return f;
+    // return std::make_unique<FunctionCodeGenValue>(func->getFunc(), builder.popBlock());
 }
 
 std::string GobLang::Codegen::FunctionNode::toString()

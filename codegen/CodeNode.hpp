@@ -4,6 +4,7 @@
 #include <memory>
 #include "Lexems.hpp"
 #include "Builder.hpp"
+#include "FunctionContext.hpp"
 
 namespace GobLang::Codegen
 {
@@ -187,7 +188,7 @@ namespace GobLang::Codegen
         std::string toString() override;
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::unique_ptr<CodeGenValue> generateOrCode(Builder &builder);
-         std::unique_ptr<CodeGenValue> generateAndCode(Builder &builder);
+        std::unique_ptr<CodeGenValue> generateAndCode(Builder &builder);
 
     private:
         std::unique_ptr<CodeNode> m_left;
@@ -222,6 +223,12 @@ namespace GobLang::Codegen
     class FunctionCallNode : public CodeNode
     {
     public:
+        /**
+         * @brief Construct a new Function Call Node object
+         *
+         * @param value Code block that returns callable object
+         * @param args Arguments to pass into the called function
+         */
         explicit FunctionCallNode(std::unique_ptr<CodeNode> value, std::vector<std::unique_ptr<CodeNode>> args);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
         std::string toString() override;
@@ -234,14 +241,16 @@ namespace GobLang::Codegen
     class FunctionPrototypeNode : public CodeNode
     {
     public:
-        explicit FunctionPrototypeNode(size_t nameId, std::vector<size_t> args);
+        explicit FunctionPrototypeNode(std::string const &name, std::vector<size_t> args);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateFunction(builder); }
 
         std::unique_ptr<FunctionPrototypeCodeGenValue> generateFunction(Builder &builder);
         std::string toString() override;
 
+        std::vector<size_t> const &getArgumentNameStringIds() const { return m_argIds; }
+
     private:
-        size_t m_nameId;
+        std::string m_name;
         std::vector<size_t> m_argIds;
     };
 
@@ -274,15 +283,18 @@ namespace GobLang::Codegen
     class FunctionNode : public CodeNode
     {
     public:
-        explicit FunctionNode(std::unique_ptr<FunctionPrototypeNode> proto, std::unique_ptr<CodeNode> body);
-        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return generateFunction(builder); }
+        explicit FunctionNode() = default;
+        explicit FunctionNode(FunctionContext context, std::unique_ptr<FunctionPrototypeNode> proto, std::unique_ptr<CodeNode> body);
+        std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
 
-        std::unique_ptr<FunctionCodeGenValue> generateFunction(Builder &builder);
+        GobFunction const *generateFunction(Builder &builder, State &state);
         std::string toString() override;
 
     private:
         std::unique_ptr<FunctionPrototypeNode> m_proto;
         std::unique_ptr<CodeNode> m_body;
+
+        FunctionContext m_context;
     };
 
     class BranchNode : public CodeNode

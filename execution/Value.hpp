@@ -6,6 +6,7 @@
 #include <variant>
 #include <string>
 #include "Type.hpp"
+#include "../TypeSizes.hpp"
 
 namespace GobLang
 {
@@ -13,7 +14,7 @@ namespace GobLang
      * @brief Type used to store jump addresses in the code
      *
      */
-    using ProgramAddressType = uint32_t;
+   
     class State;
     class Object;
     using FunctionValue = void (*)(State &);
@@ -21,7 +22,7 @@ namespace GobLang
     class GobFunction;
     using NilType = std::monostate;
     static const NilType NilValue = NilType();
-    using Value = std::variant<NilType, bool, char, float, int32_t, uint32_t, Object *, Closure const *, GobFunction const *>;
+    using Value = std::variant<NilType, bool, char, NumberType, IntegerType, UIntegerType, Object *, Closure const *, GobFunction const *>;
 
     /**
      * @brief Compare two memory values and validate that both are equal
@@ -41,4 +42,12 @@ namespace GobLang
      * @return std::string
      */
     std::string valueToString(Value const &val);
+
+    /// @brief Increase reference count for value if value if refcounted, otherwise do nothing
+    /// @param v Value
+    void increaseValueRefCount(Value const &v);
+
+    /// @brief Decrease reference count for value if value if refcounted, otherwise do nothing
+    /// @param v Value
+    void decreaseValueRefCount(Value const &v);
 }

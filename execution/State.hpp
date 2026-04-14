@@ -14,14 +14,53 @@ namespace GobLang
     class State
     {
     public:
-        void execute_closure(Closure const &closure);
+        void executeClosure(Closure const &closure);
 
-        void run_bytes(GobFunction const *func);
+        void runBytes(GobFunction const *func);
 
         /// @brief Get "global" variable by name or throw error if no variable uses that name
         /// @param name Name of the variable
         /// @return Value of the variable
         Value getGlobalVariable(std::string const &name) const;
+
+        /**
+         * @brief Load and compiler code from the string into the interpreter
+         *
+         * @param str
+         */
+        Closure const *loadString(std::string const &str);
+
+        /**
+         * @brief Try to get global variable by name or return None if it's not present
+         *
+         * @tparam T Type to get
+         * @param name Name of the variable
+         * @return std::optional<T>
+         */
+        template <class T>
+        std::optional<T> getGlobalVariableAsType(std::string const &name) const
+        {
+            if (m_globals.contains(name))
+            {
+                if (!std::holds_alternative<T>(m_globals.at(name)))
+                {
+                    throw Errors::ExecutionError("Incorrect type in stack");
+                }
+                return std::get<T>(m_globals.at(name));
+            }
+            return {};
+        }
+
+        /// @brief Pop value from current stack frame or throw error if no stack frame exists or stack is empty
+        Value popFromStackOrError();
+
+        /**
+         * @brief Set the Variable Value objectSet value of a variable in a local block
+         *
+         * @param id Id of the variable
+         * @param val Value of the variable
+         */
+        void setVariableValue(size_t id, Value const &val);
 
         /// @brief Set "global" variable by name or throw error if no variable uses that name
         /// @param name Name of the variable
@@ -73,21 +112,38 @@ namespace GobLang
         StringObject *createString(std::string const &str);
 
         /**
-         * @brief Create a function object and put it into garbage collector to be used in closures
+         * @brief Create a closure from function data object and put it into garbage collector
          *
          * @param bytecode Bytecode to execute
          * @param strings Constant strings
          * @param name Name of the function for debugging purposes
          * @return GobFunction const* Pointer to the object
          */
-        GobFunction const *createFunction(std::vector<uint8_t> const &bytecode, std::vector<std::string> strings, std::string const &name = "?");
+        Closure const *createClosure(std::vector<uint8_t> const &bytecode, std::vector<std::string> strings, std::string const &name = "?");
 
-        Closure const *createCppFunction(FunctionValue const &f);
+        /**
+         * @brief Create a closure from c++ function and put it into garbage collector
+         *
+         * @param f Function
+         * @return Closure const*
+         */
+        Closure const *createClosure(FunctionValue const &f);
+
+        Closure const *createClosure(GobFunction const *f, Object *owner);
+
+        /**
+         * @brief Create new empty function and store it in memory
+         *
+         * @return GobFunction* Empty function to be filled through compilation
+         */
+        GobFunction *createFunction();
+
         void pushToStack(Value val);
         void collectGarbage();
 
     private:
         std::unordered_map<std::string, Value> m_globals;
+        std::vector<std::vector<Value>> m_variables;
         std::vector<std::vector<Value>> m_stack;
         std::vector<std::unique_ptr<Object>> m_objects;
     };

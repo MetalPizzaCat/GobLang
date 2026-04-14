@@ -11,7 +11,7 @@ namespace GobLang
         Float,
         Int,
         UnsignedInt,
-        MemoryObj,
+        Object,
         Closure,
         Prototype
     };

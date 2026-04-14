@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <cstdint>
+#include <string_view>
 #include "Lexems.hpp"
 
 namespace GobLang::Codegen
@@ -58,27 +59,31 @@ namespace GobLang::Codegen
     class IdToken : public Token
     {
     public:
-        explicit IdToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
+        explicit IdToken(size_t row, size_t column, std::string_view id) : Token(row, column), m_id(id) {}
 
         std::string toString() override;
 
-        size_t getId() const { return m_id; }
+        std::string_view const &getId() const { return m_id; }
 
     private:
-        size_t m_id;
+        std::string_view m_id;
     };
 
+    /**
+     * @brief Token that represents parsed contents of a quoted string 
+     * 
+     */
     class StringToken : public Token
     {
     public:
-        explicit StringToken(size_t row, size_t column, size_t id) : Token(row, column), m_id(id) {}
+        explicit StringToken(size_t row, size_t column, std::string const& id) : Token(row, column), m_str(id) {}
 
         std::string toString() override;
 
-        size_t getId() const { return m_id; }
+        std::string const &getString() const { return m_str; }
 
     private:
-        size_t m_id;
+        std::string m_str;
     };
 
     class CharToken : public Token

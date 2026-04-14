@@ -15,14 +15,14 @@ bool GobLang::areEqual(Value const &a, Value const &b)
     case Type::Bool:
         return std::get<bool>(a) == std::get<bool>(b);
     case Type::Float:
-        return std::get<float>(a) == std::get<float>(b);
+        return std::get<NumberType >(a) == std::get<NumberType >(b);
     case Type::Int:
-        return std::get<int32_t>(a) == std::get<int32_t>(b);
+        return std::get<IntegerType>(a) == std::get<IntegerType>(b);
     case Type::UnsignedInt:
-        return std::get<uint32_t>(a) == std::get<uint32_t>(b);
+        return std::get<UIntegerType>(a) == std::get<UIntegerType>(b);
     case Type::Char:
         return std::get<char>(a) == std::get<char>(b);
-    case Type::MemoryObj:
+    case Type::Object:
         return std::get<Object *>(a)->equalsTo(std::get<Object *>(b));
     default:
         // c++ has no equality check for std::function and it is easier to just assume things can't be comparef
@@ -41,12 +41,12 @@ std::string GobLang::valueToString(Value const &val)
     case Type::Bool:
         return std::get<bool>(val) ? "true" : "false";
     case Type::Float:
-        return std::to_string(std::get<float>(val));
+        return std::to_string(std::get<NumberType>(val));
     case Type::Int:
-        return std::to_string(std::get<int32_t>(val));
+        return std::to_string(std::get<IntegerType>(val));
     case Type::UnsignedInt:
-        return std::to_string(std::get<uint32_t>(val));
-    case Type::MemoryObj:
+        return std::to_string(std::get<UIntegerType>(val));
+    case Type::Object:
         return std::get<Object *>(val)->toString();
     case Type::Char:
         return std::string{std::get<char>(val)};
@@ -54,4 +54,20 @@ std::string GobLang::valueToString(Value const &val)
         return std::get<Closure const *>(val)->toString();
     }
     return "Invalid datatype";
+}
+
+void GobLang::increaseValueRefCount(Value const &v)
+{
+    if (v.index() == (size_t)Type::Object)
+    {
+        std::get<Object *>(v)->increaseRefCount();
+    }
+}
+
+void GobLang::decreaseValueRefCount(Value const &v)
+{
+    if (v.index() == (size_t)Type::Object)
+    {
+        std::get<Object *>(v)->decreaseRefCount();
+    }
 }

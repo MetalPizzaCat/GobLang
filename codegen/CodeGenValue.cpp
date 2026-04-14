@@ -13,33 +13,35 @@ GobLang::Codegen::VariableCodeGenValue::VariableCodeGenValue(size_t nameId, bool
 
 std::vector<uint8_t> GobLang::Codegen::VariableCodeGenValue::getGetOperationBytes()
 {
+    std::vector<uint8_t> res = parseToBytes(m_id);
     if (!m_local)
     {
-        return {(uint8_t)Instruction::PushConstString,
-                (uint8_t)m_id,
-                (uint8_t)Instruction::GetGlobal};
+        res.insert(res.begin(), (uint8_t)Instruction::GetGlobal);
+        return res;
     }
-    return {(uint8_t)Instruction::GetLocal, (uint8_t)m_id};
+    res.insert(res.begin(), (uint8_t)Instruction::GetLocal);
+    return res;
 }
 
 std::vector<uint8_t> GobLang::Codegen::VariableCodeGenValue::getSetOperationBytes()
 {
+    std::vector<uint8_t> res = parseToBytes(m_id);
     if (!m_local)
     {
-        return {(uint8_t)Instruction::PushConstString,
-                (uint8_t)m_id,
-                (uint8_t)Instruction::SetGlobal};
+        res.insert(res.begin(), (uint8_t)Instruction::SetGlobal);
+        return res;
     }
-    return {(uint8_t)Instruction::SetLocal, (uint8_t)m_id};
+    res.insert(res.begin(), (uint8_t)Instruction::SetLocal);
+    return res;
 }
 
 GobLang::Codegen::GeneratedCodeGenValue::GeneratedCodeGenValue(std::vector<uint8_t> val) : m_bytes(std::move(val))
 {
 }
 
-GobLang::Codegen::BlockContext::BlockContext(size_t funcId,
+GobLang::Codegen::BlockContext::BlockContext(bool isFunction,
                                              std::vector<size_t> const &initialVariables) : m_variables(initialVariables),
-                                                                                            m_funcId(funcId)
+                                                                                            m_isFunction(isFunction)
 {
 }
 
@@ -118,7 +120,7 @@ std::vector<uint8_t> GobLang::Codegen::BranchCodeGenValue::getGetOperationBytes(
     if (m_jumpAfter != -1)
     {
         bytes.push_back(m_backwards ? (uint8_t)Instruction::JumpBack : (uint8_t)Instruction::Jump);
-        std::vector<uint8_t> num = parseToBytes((uint32_t)m_jumpAfter);
+        std::vector<uint8_t> num = parseToBytes((ProgramAddressType)m_jumpAfter);
         bytes.insert(bytes.end(), num.begin(), num.end());
     }
     return bytes;
@@ -126,7 +128,7 @@ std::vector<uint8_t> GobLang::Codegen::BranchCodeGenValue::getGetOperationBytes(
 
 void GobLang::Codegen::BranchCodeGenValue::setConditionJumpOffset(size_t offset)
 {
-    std::vector<uint8_t> num = parseToBytes((uint32_t)offset);
+    std::vector<uint8_t> num = parseToBytes((ProgramAddressType)offset);
     std::copy(num.begin(), num.end(), m_condBytes.end() - sizeof(ProgramAddressType));
 }
 
@@ -165,16 +167,6 @@ std::vector<uint8_t> GobLang::Codegen::ArrayAccessCodeGenValue::getSetOperationB
     bytes.insert(bytes.end(), m_valueBytes.begin(), m_valueBytes.end());
     bytes.push_back((uint8_t)Instruction::SetArray);
     return bytes;
-}
-
-GobLang::Codegen::FunctionPrototypeCodeGenValue::FunctionPrototypeCodeGenValue(Function const *func) : m_func(func)
-{
-}
-
-GobLang::Codegen::FunctionCodeGenValue::FunctionCodeGenValue(Function const *func,
-                                                             std::unique_ptr<BlockContext> body) : m_body(std::move(body)),
-                                                                                                   m_func(func)
-{
 }
 
 std::vector<uint8_t> GobLang::Codegen::FunctionCodeGenValue::getGetOperationBytes()

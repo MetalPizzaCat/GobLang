@@ -6,14 +6,15 @@
 #include <algorithm>
 #include <bit>
 #include "../execution/Structure.hpp"
-#include "../execution/Function.hpp"
+#include "../execution/Closure.hpp"
+#include "../TypeSizes.hpp"
 
 namespace GobLang::Codegen
 {
     template <typename T>
     std::vector<uint8_t> parseToBytes(T val)
     {
-        uint32_t const v = std::bit_cast<uint32_t>(val);
+        uint32_t const v = std::bit_cast<UIntegerType>(val);
         std::vector<uint8_t> res;
         for (int32_t i = sizeof(T) - 1; i >= 0; i--)
         {
@@ -31,10 +32,10 @@ namespace GobLang::Codegen
     public:
         explicit BlockContext() = default;
 
-        /// @brief Create block context for a given function
-        /// @param funcId Id of a function
+        /// @brief Create block context for a given GobFunction
+        /// @param funcId Id of a GobFunction
         /// @param initialVariables Variables that should be added to the block
-        explicit BlockContext(size_t funcId, std::vector<size_t> const &initialVariables);
+        explicit BlockContext(bool isFunction, std::vector<size_t> const &initialVariables);
 
         size_t getVariableCount() const { return m_variables.size(); }
 
@@ -51,7 +52,7 @@ namespace GobLang::Codegen
         /// @brief Append instructions for clearing variable stack
         void appendMemoryClear();
 
-        bool isFunction() const { return m_funcId != -1; }
+        bool isFunction() const { return m_isFunction; }
 
         void addJump(bool isBreak);
 
@@ -69,9 +70,9 @@ namespace GobLang::Codegen
         std::map<size_t, bool> m_jumps;
         std::vector<size_t> m_variables;
         std::vector<uint8_t> m_bytes;
-        size_t m_baseJumpOffset = 0;
-        size_t m_funcId = -1;
         bool m_loopBlock;
+        bool m_isFunction;
+        size_t m_baseJumpOffset;
     };
 
     class TypeCodeGenInfo
@@ -112,27 +113,31 @@ namespace GobLang::Codegen
         std::unique_ptr<BlockContext> m_block;
     };
 
+    /**
+     * @brief Class that represents the primary execution block
+     * 
+     */
     class FunctionCodeGenValue : public CodeGenValue
     {
     public:
-        explicit FunctionCodeGenValue(Function const *func, std::unique_ptr<BlockContext> body);
+        explicit FunctionCodeGenValue(GobFunction const *func, std::unique_ptr<BlockContext> body);
         std::vector<uint8_t> getGetOperationBytes() override;
-        Function const *getFuncInfo() const { return m_func; }
+        GobFunction const *getFuncInfo() const { return m_func; }
 
     private:
         std::unique_ptr<BlockContext> m_body;
-        Function const *m_func;
+        GobFunction const *m_func;
     };
 
     class FunctionPrototypeCodeGenValue : public CodeGenValue
     {
     public:
-        explicit FunctionPrototypeCodeGenValue(Function const *func);
-        Function const *getFunc() const { return m_func; }
+        explicit FunctionPrototypeCodeGenValue(GobFunction const *func);
+        GobFunction const *getFunc() const { return m_func; }
         std::vector<uint8_t> getGetOperationBytes() override { return {}; }
 
     private:
-        Function const *m_func;
+        GobFunction const *m_func;
     };
 
     class GeneratedCodeGenValue : public CodeGenValue

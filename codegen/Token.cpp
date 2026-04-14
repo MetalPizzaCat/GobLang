@@ -57,7 +57,7 @@ std::string GobLang::Codegen::OperatorToken::toString()
 
 std::string GobLang::Codegen::IdToken::toString()
 {
-    return "W" + std::to_string(m_id);
+    return "W" + std::string{m_id};
 }
 
 std::string GobLang::Codegen::IntToken::toString()
@@ -78,7 +78,7 @@ std::string GobLang::Codegen::SeparatorToken::toString()
 
 std::string GobLang::Codegen::StringToken::toString()
 {
-    return "STR" + std::to_string(m_id);
+    return "STR" + std::string{m_str};
 }
 
 std::string GobLang::Codegen::GotoToken::toString()

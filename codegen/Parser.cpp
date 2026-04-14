@@ -38,7 +38,7 @@ void GobLang::Codegen::Parser::parse()
     {
         return;
     }
-    std::vector<std::function<std::unique_ptr<Token> (void)>> parsers = {
+    std::vector<std::function<std::unique_ptr<Token>(void)>> parsers = {
         std::bind(&Parser::parseBool, this),
         std::bind(&Parser::parseNullConst, this),
         std::bind(&Parser::parseKeywords, this),
@@ -64,7 +64,7 @@ void GobLang::Codegen::Parser::parse()
         }
 
         bool foundValidToken = false;
-        for (std::function<std::unique_ptr<Token>  (void)> const &f : parsers)
+        for (std::function<std::unique_ptr<Token>(void)> const &f : parsers)
         {
             std::unique_ptr<Token> token = f();
             if (token != nullptr)
@@ -122,7 +122,7 @@ std::unique_ptr<GobLang::Codegen::KeywordToken> GobLang::Codegen::Parser::parseK
             size_t row = getLineNumber();
             size_t column = getColumnNumber();
             advanceRowIterator(it->first.size());
-            return std::make_unique<KeywordToken>( 
+            return std::make_unique<KeywordToken>(
                 row,
                 column,
                 it->second);
@@ -141,9 +141,9 @@ std::unique_ptr<GobLang::Codegen::OperatorToken> GobLang::Codegen::Parser::parse
             size_t column = getColumnNumber();
             size_t offset = strnlen(it->symbol, 3);
             advanceRowIterator(offset);
-            return std::make_unique<OperatorToken>( row,
-                                     column,
-                                     &(*it));
+            return std::make_unique<OperatorToken>(row,
+                                                   column,
+                                                   &(*it));
         }
     }
     return nullptr;
@@ -163,21 +163,12 @@ std::unique_ptr<GobLang::Codegen::IdToken> GobLang::Codegen::Parser::parseId()
         id.push_back(*(m_rowIt + offset));
         offset++;
     }
-    std::vector<std::string>::iterator it = std::find(m_ids.begin(), m_ids.end(), id);
-    size_t index = std::string::npos;
-    if (it == m_ids.end())
-    {
-        m_ids.push_back(id);
-        index = m_ids.size() - 1;
-    }
-    else
-    {
-        index = it - m_ids.begin();
-    }
+
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
+    std::string_view sv{m_rowIt, m_rowIt + offset};
     advanceRowIterator(offset);
-    return std::make_unique<IdToken>( row, column, index);
+    return std::make_unique<IdToken>(row, column, sv);
 }
 
 std::unique_ptr<GobLang::Codegen::IntToken> GobLang::Codegen::Parser::parseInt()
@@ -215,7 +206,7 @@ std::unique_ptr<GobLang::Codegen::IntToken> GobLang::Codegen::Parser::parseInt()
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return std::make_unique<IntToken>( row, column, numVal);
+    return std::make_unique<IntToken>(row, column, numVal);
 }
 
 std::unique_ptr<GobLang::Codegen::IntToken> GobLang::Codegen::Parser::parseHexInt()
@@ -259,7 +250,7 @@ std::unique_ptr<GobLang::Codegen::IntToken> GobLang::Codegen::Parser::parseHexIn
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return std::make_unique<IntToken>( row, column, numVal);
+    return std::make_unique<IntToken>(row, column, numVal);
 }
 
 std::unique_ptr<GobLang::Codegen::UnsignedIntToken> GobLang::Codegen::Parser::parseUnsignedInt()
@@ -282,7 +273,7 @@ std::unique_ptr<GobLang::Codegen::UnsignedIntToken> GobLang::Codegen::Parser::pa
         // weird
         // but just throw an error ourselves then
         numVal = std::stoul(num);
-        if (numVal > (uint64_t)std::numeric_limits<uint32_t>::max() || numVal < (uint64_t)std::numeric_limits<uint32_t>::min())
+        if (numVal > (uint64_t)std::numeric_limits<uint32_t>::max())
         {
             throw std::out_of_range("Unsigned int constant out of range");
         }
@@ -304,7 +295,7 @@ std::unique_ptr<GobLang::Codegen::UnsignedIntToken> GobLang::Codegen::Parser::pa
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return std::make_unique<UnsignedIntToken>( row, column, (uint32_t)numVal);
+    return std::make_unique<UnsignedIntToken>(row, column, (uint32_t)numVal);
 }
 
 std::unique_ptr<GobLang::Codegen::UnsignedIntToken> GobLang::Codegen::Parser::parseHexUnsignedInt()
@@ -330,7 +321,7 @@ std::unique_ptr<GobLang::Codegen::UnsignedIntToken> GobLang::Codegen::Parser::pa
     try
     {
         numVal = std::stoul(num, nullptr, 16);
-        if (numVal > (uint64_t)std::numeric_limits<uint32_t>::max() || numVal < (uint64_t)std::numeric_limits<uint32_t>::min())
+        if (numVal > (uint64_t)std::numeric_limits<uint32_t>::max())
         {
             throw std::out_of_range("Unsigned int constant out of range");
         }
@@ -352,7 +343,7 @@ std::unique_ptr<GobLang::Codegen::UnsignedIntToken> GobLang::Codegen::Parser::pa
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return std::make_unique<UnsignedIntToken>( row, column, numVal);
+    return std::make_unique<UnsignedIntToken>(row, column, numVal);
 }
 
 std::unique_ptr<GobLang::Codegen::FloatToken> GobLang::Codegen::Parser::parseFloat()
@@ -407,7 +398,7 @@ std::unique_ptr<GobLang::Codegen::FloatToken> GobLang::Codegen::Parser::parseFlo
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset);
-    return std::make_unique<FloatToken>( row, column, numVal);
+    return std::make_unique<FloatToken>(row, column, numVal);
 }
 
 std::unique_ptr<GobLang::Codegen::SeparatorToken> GobLang::Codegen::Parser::parseSeparators()
@@ -420,7 +411,7 @@ std::unique_ptr<GobLang::Codegen::SeparatorToken> GobLang::Codegen::Parser::pars
             size_t row = getLineNumber();
             size_t column = getColumnNumber();
             advanceRowIterator(1);
-            return std::make_unique<SeparatorToken>( row, column, it->separator);
+            return std::make_unique<SeparatorToken>(row, column, it->separator);
         }
     }
     return nullptr;
@@ -449,21 +440,10 @@ std::unique_ptr<GobLang::Codegen::StringToken> GobLang::Codegen::Parser::parseSt
             str.push_back(*(m_rowIt + offset));
         }
     }
-    std::vector<std::string>::iterator it = std::find(m_ids.begin(), m_ids.end(), str);
-    size_t index = std::string::npos;
-    if (it == m_ids.end())
-    {
-        m_ids.push_back(str);
-        index = m_ids.size() - 1;
-    }
-    else
-    {
-        index = it - m_ids.begin();
-    }
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(offset + 1);
-    return std::make_unique<StringToken>( row, column, index);
+    return std::make_unique<StringToken>(row, column, str);
 }
 
 GobLang::Codegen::SpecialCharacter const *GobLang::Codegen::Parser::parseSpecialCharacter(std::string::iterator const &it)
@@ -504,7 +484,7 @@ std::unique_ptr<GobLang::Codegen::NullConstToken> GobLang::Codegen::Parser::pars
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(nullSize);
-    return std::make_unique<NullConstToken>( row, column);
+    return std::make_unique<NullConstToken>(row, column);
 }
 
 std::unique_ptr<GobLang::Codegen::BoolConstToken> GobLang::Codegen::Parser::parseBool()
@@ -530,7 +510,7 @@ std::unique_ptr<GobLang::Codegen::BoolConstToken> GobLang::Codegen::Parser::pars
     size_t row = getLineNumber();
     size_t column = getColumnNumber();
     advanceRowIterator(it->first.size());
-    return std::make_unique<BoolConstToken>( row, column, it->second);
+    return std::make_unique<BoolConstToken>(row, column, it->second);
 }
 
 std::unique_ptr<GobLang::Codegen::CharToken> GobLang::Codegen::Parser::parseChar()
@@ -560,7 +540,7 @@ std::unique_ptr<GobLang::Codegen::CharToken> GobLang::Codegen::Parser::parseChar
     size_t column = getColumnNumber();
     advanceRowIterator(offset + 1);
 
-    return std::make_unique<CharToken>( row, column, ch);
+    return std::make_unique<CharToken>(row, column, ch);
 }
 
 void GobLang::Codegen::Parser::advanceRowIterator(size_t offset, bool stopAtEndOfTheLine)
@@ -606,15 +586,12 @@ size_t GobLang::Codegen::Parser::getColumnNumber() const
 
 void GobLang::Codegen::Parser::printInfoTable()
 {
-    for (size_t i = 0; i < m_ids.size(); i++)
-    {
-        std::cout << "W" << i << ": " << m_ids[i] << std::endl;
-    }
+    // TODO: Remove this function?
 }
 
-void GobLang::Codegen::Parser::printCode()
+void GobLang::Codegen::Parser::printCode() const
 {
-    for(auto const& it : m_tokens)
+    for (auto const &it : m_tokens)
     {
         std::cout << it->toString() << " ";
     }

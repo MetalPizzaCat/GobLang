@@ -316,11 +316,11 @@ void GobLang::Machine::setLocalVariableValue(size_t id, Value const &val)
     {
         varFrame.resize(id + 1);
     }
-    if ((Type)val.index() == Type::MemoryObj)
+    if ((Type)val.index() == Type::Object)
     {
         std::get<Object *>(val)->increaseRefCount();
     }
-    if ((Type)varFrame[id].index() == Type::MemoryObj)
+    if ((Type)varFrame[id].index() == Type::Object)
     {
         std::get<Object *>(varFrame[id])->decreaseRefCount();
     }
@@ -341,7 +341,7 @@ void GobLang::Machine::shrinkLocalVariableStackBy(size_t size)
     size_t i = 0;
     for (std::vector<Value>::reverse_iterator it = m_variables.back().rbegin(); it != m_variables.back().rend() && i < size; it++, i++)
     {
-        if ((Type)it->index() == Type::MemoryObj)
+        if ((Type)it->index() == Type::Object)
         {
             std::get<Object *>((*it))->decreaseRefCount();
         }
@@ -358,7 +358,7 @@ void GobLang::Machine::removeFunctionFrame()
     std::vector<Value> &frame = m_variables.back();
     for (std::vector<Value>::const_iterator it = frame.begin(); it != frame.end(); it++)
     {
-        if ((Type)it->index() == Type::MemoryObj)
+        if ((Type)it->index() == Type::Object)
         {
             std::get<Object *>((*it))->decreaseRefCount();
         }
@@ -367,7 +367,7 @@ void GobLang::Machine::removeFunctionFrame()
     std::vector<Value> &stackFrame = m_operationStack.back();
     for (std::vector<Value>::const_iterator it = stackFrame.begin(); it != stackFrame.end(); it++)
     {
-        if ((Type)it->index() == Type::MemoryObj)
+        if ((Type)it->index() == Type::Object)
         {
             std::get<Object *>((*it))->decreaseRefCount();
         }
@@ -391,7 +391,7 @@ void GobLang::Machine::callLocalFunction(size_t funcId)
     {
         *it = _getFromTopAndPop();
         // for the entirety of the value being in the function we assume that it is in use so we can not delete it
-        if ((Type)it->index() == Type::MemoryObj)
+        if ((Type)it->index() == Type::Object)
         {
             std::get<Object *>((*it))->increaseRefCount();
         }
@@ -547,7 +547,7 @@ void GobLang::Machine::_add()
     case Type::Float:
         c = std::get<float>(a) + std::get<float>(b);
         break;
-    case Type::MemoryObj:
+    case Type::Object:
     {
         StringNode *str1 = dynamic_cast<StringNode *>(std::get<MemoryNode *>(a));
         StringNode *str2 = dynamic_cast<StringNode *>(std::get<MemoryNode *>(b));

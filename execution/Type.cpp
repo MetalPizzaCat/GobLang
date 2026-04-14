@@ -14,7 +14,7 @@ const char *GobLang::typeToString(Type type)
         return "Int";
     case Type::UnsignedInt:
         return "UnsignedInt";
-    case Type::MemoryObj:
+    case Type::Object:
         return "Object";
     case Type::Closure:
         return "Closure";

@@ -16,7 +16,11 @@ using namespace GobLang;
 
 void test_hello(State &state)
 {
-    std::cout << "hello world" << std::endl;
+    if (std::optional<Closure const *> f1 = state.getGlobalVariableAsType<Closure const *>("f1"); f1.has_value())
+    {
+        std::cout << "calling from c++" << std::endl;
+        state.executeClosure(*f1.value());
+    }
 }
 
 void print(State &state)
@@ -30,46 +34,46 @@ int main()
 {
     std::cout << "Indev language testing executable. Only used for testing out language features during development. DO NOT USE" << std::endl;
     State state;
-    state.setGlobalVariable("test_hello", state.createCppFunction(&test_hello));
-    state.setGlobalVariable("print", state.createCppFunction(&print));
+    // state.setGlobalVariable("test_hello", state.createClosure(&test_hello));
+    state.setGlobalVariable("print", state.createClosure(&print));
 
-    GobFunction const *main = state.createFunction(std::vector<uint8_t>{
-                                                       (uint8_t)Instruction::GetGlobal,
-                                                       (uint8_t)0,
-                                                       (uint8_t)0,
-                                                       (uint8_t)0,
-                                                       (uint8_t)0,
-                                                       (uint8_t)0,
-                                                       (uint8_t)0,
-                                                       (uint8_t)0,
-                                                       (uint8_t)0,
-                                                       (uint8_t)Instruction::Call,
-                                                   },
-                                                   {"test_hello"}, "main");
+    Closure const *main = state.createClosure(std::vector<uint8_t>{
+                                                  (uint8_t)Instruction::GetGlobal,
+                                                  (uint8_t)0,
+                                                  (uint8_t)0,
+                                                  (uint8_t)0,
+                                                  (uint8_t)0,
+                                                  (uint8_t)0,
+                                                  (uint8_t)0,
+                                                  (uint8_t)0,
+                                                  (uint8_t)0,
+                                                  (uint8_t)Instruction::Call,
+                                              },
+                                              {"test_hello"}, "main");
 
-    GobFunction const *f1 = state.createFunction(std::vector<uint8_t>{
-                                                     (uint8_t)Instruction::PushConstString,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)1,
-                                                     (uint8_t)Instruction::GetGlobal,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)0,
-                                                     (uint8_t)Instruction::Call,
-                                                 },
-                                                 {"print", "hello world"}, "f1");
-
-    state.execute_closure(Closure(main));
+    Closure const *f1 = state.createClosure(std::vector<uint8_t>{
+                                                (uint8_t)Instruction::PushConstString,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)1,
+                                                (uint8_t)Instruction::GetGlobal,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)0,
+                                                (uint8_t)Instruction::Call,
+                                            },
+                                            {"print", "hello world"}, "f1");
+    // state.setGlobalVariable("f1", f1);
+    state.executeClosure(*state.loadString("print(\"hello world\");"));
     return EXIT_SUCCESS;
 }

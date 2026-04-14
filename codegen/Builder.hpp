@@ -4,8 +4,8 @@
 #include <memory>
 #include "Lexems.hpp"
 #include "CodeGenValue.hpp"
-#include "../execution/Structure.hpp"
-#include "../execution/Function.hpp"
+#include "Function.hpp"
+#include "../TypeSizes.hpp"
 
 namespace GobLang::Codegen
 {
@@ -15,19 +15,17 @@ namespace GobLang::Codegen
         explicit Builder() = default;
 
         std::unique_ptr<CodeGenValue> createConstNull();
-        std::unique_ptr<CodeGenValue> createConstFloat(float val);
+        std::unique_ptr<CodeGenValue> createConstFloat(NumberType val);
 
-        std::unique_ptr<CodeGenValue> createConstInt(int32_t val);
+        std::unique_ptr<CodeGenValue> createConstInt(IntegerType val);
 
-        std::unique_ptr<CodeGenValue> createConstUnsignedInt(uint32_t val);
+        std::unique_ptr<CodeGenValue> createConstUnsignedInt(UIntegerType val);
 
         std::unique_ptr<CodeGenValue> createConstString(size_t strId);
 
         std::unique_ptr<CodeGenValue> createConstBool(bool val);
 
         std::unique_ptr<CodeGenValue> createConstChar(char ch);
-
-        Function const *addFunction(size_t nameId, std::vector<size_t> argIds);
 
         void addType(std::string const &name, std::vector<std::string> const &fieldNames, size_t nameId, std::vector<size_t> fieldIds);
 
@@ -74,7 +72,7 @@ namespace GobLang::Codegen
 
         void pushEmptyBlock();
 
-        void pushBlockForFunction(Function const *func);
+        void pushBlockForFunction(std::vector<size_t> const& argNameIds);
 
         std::unique_ptr<BlockContext> popBlock();
 

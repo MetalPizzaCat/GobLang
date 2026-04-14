@@ -3,6 +3,11 @@
 #include "CodeNode.hpp"
 #include "ByteCode.hpp"
 
+namespace GobLang
+{
+    class State;
+}
+
 namespace GobLang::Codegen
 {
 
@@ -12,9 +17,9 @@ namespace GobLang::Codegen
     public:
         explicit CodeGenerator(Parser const &parser);
 
-        void generate();
+        GobLang::GobFunction const *generate(State &state);
 
-        ByteCode getByteCode();
+        ByteCode getByteCode(State &state);
 
         std::unique_ptr<FunctionNode> parseFunctionDefinition();
 
@@ -158,6 +163,8 @@ namespace GobLang::Codegen
             return dynamic_cast<T const *>(getCurrent()) != nullptr;
         }
 
+        size_t getStringId(std::string const &str);
+
         void printTree();
         Token const *getCurrent() { return isAtTheEnd() ? nullptr : m_it->get(); }
 
@@ -170,6 +177,8 @@ namespace GobLang::Codegen
         std::unique_ptr<SequenceNode> m_rootSequence;
 
         std::vector<std::unique_ptr<FunctionNode>> m_functions;
+
+        std::vector<FunctionContext> m_functionContextStack;
 
         std::vector<std::unique_ptr<TypeDefinitionNode>> m_structs;
     };

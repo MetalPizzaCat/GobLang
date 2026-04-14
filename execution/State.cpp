@@ -1,6 +1,7 @@
 #include "State.hpp"
 #include "Instruction.hpp"
-void GobLang::State::execute_closure(Closure const &closure)
+#include "../codegen/CodeGenerator.hpp"
+void GobLang::State::executeClosure(Closure const &closure)
 {
     if (!closure.isLocal())
     {
@@ -8,15 +9,18 @@ void GobLang::State::execute_closure(Closure const &closure)
     }
     else
     {
-        run_bytes(closure.getGobFunction());
+        runBytes(closure.getGobFunction());
     }
 }
-void GobLang::State::run_bytes(GobFunction const *func)
+void GobLang::State::runBytes(GobFunction const *func)
 {
     size_t programCounter = 0;
-    // TODO: Create variable block
+    m_variables.emplace_back();
 
-    // TODO: Load arguments
+    for (size_t i = 0; i < func->getArgumentCount(); i++)
+    {
+        setVariableValue(i, popFromStackOrError());
+    }
 
     m_stack.emplace_back();
 
@@ -43,7 +47,7 @@ void GobLang::State::run_bytes(GobFunction const *func)
         case Instruction::Call:
         {
             Closure const *f = popFromStackAsType<Closure const *>("Expected callable object on stack");
-            execute_closure(*f);
+            executeClosure(*f);
             break;
         }
 
@@ -76,6 +80,48 @@ GobLang::Value GobLang::State::getGlobalVariable(std::string const &name) const
     return NilValue;
 }
 
+GobLang::Closure const *GobLang::State::loadString(std::string const &str)
+{
+    GobLang::Codegen::Parser comp(str);
+    comp.parse();
+    GobLang::Codegen::CodeGenerator gen(comp);
+    return createClosure(gen.generate(*this), nullptr);
+}
+
+GobLang::Value GobLang::State::popFromStackOrError()
+{
+    if (m_stack.empty() || m_stack.back().empty())
+    {
+        throw Errors::RuntimeMemoryError("Can not pop from stack because stack is empty");
+    }
+    Value r = m_stack.back().back();
+    m_stack.back().pop_back();
+    return r;
+}
+
+void GobLang::State::setVariableValue(size_t id, Value const &val)
+{
+    if (m_variables.empty())
+    {
+        throw Errors::RuntimeMemoryError("No variable block is present");
+    }
+    std::vector<Value> &frame = m_variables.back();
+    if (id >= frame.size())
+    {
+        // this should give us enough space
+        // fill it with nil values
+        frame.resize(id + 1, NilType());
+    }
+    else
+    {
+        // if we didn't have to resize that means we might have already used the slot
+        // so to prepare to override we mark the object in it as unused
+        decreaseValueRefCount(frame[id]);
+    }
+    frame[id] = val;
+    increaseValueRefCount(val);
+}
+
 void GobLang::State::setGlobalVariable(std::string const &name, Value const &v)
 {
     m_globals[name] = v;
@@ -98,16 +144,29 @@ GobLang::StringObject *GobLang::State::createString(std::string const &str)
     return (GobLang::StringObject *)m_objects.back().get();
 }
 
-GobLang::GobFunction const *GobLang::State::createFunction(std::vector<uint8_t> const &bytecode, std::vector<std::string> strings, std::string const &name)
+GobLang::Closure const *GobLang::State::createClosure(std::vector<uint8_t> const &bytecode, std::vector<std::string> strings, std::string const &name)
 {
     m_objects.push_back(std::make_unique<GobLang::GobFunction>(bytecode, strings, name));
-    return static_cast<GobLang::GobFunction *>(m_objects.back().get());
+    m_objects.push_back(std::make_unique<Closure>(static_cast<GobFunction const *>(m_objects.back().get()), nullptr));
+    return static_cast<Closure const *>(m_objects.back().get());
 }
 
-GobLang::Closure const *GobLang::State::createCppFunction(FunctionValue const &f)
+GobLang::Closure const *GobLang::State::createClosure(FunctionValue const &f)
 {
     m_objects.push_back(std::make_unique<GobLang::Closure>(f));
     return static_cast<GobLang::Closure *>(m_objects.back().get());
+}
+
+GobLang::Closure const *GobLang::State::createClosure(GobFunction const *f, Object *owner)
+{
+    m_objects.push_back(std::make_unique<GobLang::Closure>(f, owner));
+    return static_cast<GobLang::Closure *>(m_objects.back().get());
+}
+
+GobLang::GobFunction *GobLang::State::createFunction()
+{
+    m_objects.push_back(std::make_unique<GobLang::GobFunction>());
+    return static_cast<GobLang::GobFunction *>(m_objects.back().get());
 }
 
 void GobLang::State::pushToStack(Value val)

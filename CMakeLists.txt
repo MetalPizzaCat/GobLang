@@ -18,48 +18,29 @@ add_compile_definitions(LINES_AFTER_ERROR=3)
 
 add_compile_definitions(DEFAULT_MIN_RAND_INT=0)
 add_compile_definitions(DEFAULT_MAX_RAND_INT=2147483647)
-list(APPEND CODEGEN_FILES codegen/CodeGenerator.hpp
+list(APPEND CODEGEN_FILES
     codegen/CodeGenerator.cpp
-    codegen/CodeNode.hpp
     codegen/CodeNode.cpp
-    codegen/Disassembly.hpp
-    codegen/Parser.hpp
     codegen/Parser.cpp
-    codegen/Token.hpp
     codegen/Token.cpp
-    codegen/ByteCode.hpp
-    codegen/Lexems.hpp
-    codegen/SpecialCharacter.hpp
-    codegen/Builder.hpp
     codegen/Builder.cpp
-    codegen/CodeGenValue.hpp
     codegen/CodeGenValue.cpp
+    codegen/FunctionContext.cpp
 )
 
-list(APPEND COMMON_SOURCE_FILES execution/Type.hpp
+list(APPEND COMMON_SOURCE_FILES 
     execution/Type.cpp
-    execution/Instruction.hpp
-    execution/Value.hpp
     execution/Value.cpp
-    execution/State.hpp
     execution/State.cpp
-    execution/Memory.hpp
     execution/Memory.cpp
-    execution/Array.hpp
     execution/Array.cpp
-    execution/String.hpp
     execution/String.cpp
-    execution/Exception.hpp
     execution/Exception.cpp
-    execution/Function.hpp
     execution/Closure.cpp
     execution/Error.cpp
 )
 
 
-list(APPEND STD_SOURCE_FILES execution/Type.hpp
-
-)
 
 
 add_executable(goblang
@@ -67,7 +48,7 @@ add_executable(goblang
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
     ${CODEGEN_FILES}
-    ${STD_SOURCE_FILES}
+    #${STD_SOURCE_FILES}
 )
 
 add_executable(indev
@@ -75,13 +56,14 @@ add_executable(indev
     ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
     ${CODEGEN_FILES}
-    ${STD_SOURCE_FILES}
+    #${STD_SOURCE_FILES}
 )
 
 
 add_library(goblanglib SHARED GobLang.hpp ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
-    ${STD_SOURCE_FILES})
+    #${STD_SOURCE_FILES}
+    )
 
 target_include_directories(goblanglib PUBLIC .)
 

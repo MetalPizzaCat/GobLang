@@ -4,16 +4,6 @@
 #include "Type.hpp"
 namespace GobLang
 {
-    struct FunctionArgInfo
-    {
-        size_t nameId;
-        Type type;
-        /**
-         * @brief If true this argument should be wrapped into an object which would pass all data to the original value
-         *
-         */
-        bool reference;
-    };
 
     enum NativeType
     {
@@ -43,21 +33,4 @@ namespace GobLang
         NativeTypeData{.type = NativeType::String, .text = "string", .isValidArgumentType = true},
     };
 
-    /**
-     * @brief Data structure storing info for functions and procedures that are written by user and can be called in the code
-     *
-     */
-    struct Function
-    {
-        size_t nameId;
-        /**
-         * @brief Which type this function returns with Null meaning nothing
-         */
-        Type returnType;
-        std::vector<FunctionArgInfo> arguments;
-        /**
-         * @brief Which address to jump to when calling this function
-         */
-        size_t start;
-    };
 } // namespace GobLang
