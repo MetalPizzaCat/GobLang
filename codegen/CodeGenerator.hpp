@@ -17,7 +17,7 @@ namespace GobLang::Codegen
     public:
         explicit CodeGenerator(Parser const &parser);
 
-        GobLang::GobFunction const *generate(State &state);
+        GobLang::GobFunction *generate(State &state);
 
         ByteCode getByteCode(State &state);
 

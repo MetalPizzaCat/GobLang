@@ -249,6 +249,8 @@ namespace GobLang::Codegen
 
         std::vector<size_t> const &getArgumentNameStringIds() const { return m_argIds; }
 
+        std::string const &getName() const { return m_name; }
+
     private:
         std::string m_name;
         std::vector<size_t> m_argIds;
@@ -284,10 +286,24 @@ namespace GobLang::Codegen
     {
     public:
         explicit FunctionNode() = default;
+        /**
+         * @brief Construct a new function node
+         *
+         * @param context Information for the constant function object, such as constant strings
+         * @param proto Prototype of the function which stores details such as name and argument count
+         * @param body Node containing body of the function
+         */
         explicit FunctionNode(FunctionContext context, std::unique_ptr<FunctionPrototypeNode> proto, std::unique_ptr<CodeNode> body);
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override { return nullptr; }
 
-        GobFunction const *generateFunction(Builder &builder, State &state);
+        /**
+         * @brief Create new function instance from parsed code and store it in the state memory
+         *
+         * @param builder Builder for generating bytecode
+         * @param state State to save the function in
+         * @return GobFunction* Pointer to the function object MANAGED by the state
+         */
+        GobFunction *generateFunction(Builder &builder, State &state);
         std::string toString() override;
 
     private:

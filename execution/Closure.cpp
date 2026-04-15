@@ -1,8 +1,12 @@
 #include "Closure.hpp"
 #include <sstream>
 #include "Error.hpp"
-GobLang::Closure::Closure(GobFunction const *func, Object *owner) : m_owner(owner), m_func(func), m_nativeFunc(nullptr)
+GobLang::Closure::Closure(GobFunction *func, Object *owner) : m_owner(owner), m_func(func), m_nativeFunc(nullptr)
 {
+    if (m_func != nullptr)
+    {
+        m_func->increaseRefCount();
+    }
 }
 GobLang::Closure::Closure(FunctionValue const &f) : m_owner(nullptr), m_func(nullptr), m_nativeFunc(f)
 {
@@ -13,6 +17,14 @@ std::string GobLang::Closure::toString() const
     std::stringstream ss;
     ss << address;
     return std::string("function: ") + ss.str();
+}
+
+GobLang::Closure::~Closure()
+{
+    if (m_func != nullptr)
+    {
+        m_func->decreaseRefCount();
+    }
 }
 
 GobLang::GobFunction::GobFunction(std::vector<uint8_t> const &bytes,

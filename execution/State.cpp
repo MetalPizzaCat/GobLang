@@ -68,6 +68,25 @@ void GobLang::State::runBytes(GobFunction const *func)
 
             break;
         }
+        case Instruction::GetLocal:
+        {
+            size_t typeId = parseOperationConstant<int64_t>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter += sizeof(size_t);
+            if (std::optional<Value> v = getVariableValue(typeId); v.has_value())
+            {
+                pushToStack(v.value());
+            }
+            else
+            {
+                throw Errors::ExecutionError("Unable to get value of local variable because no variable uses this id");
+            }
+
+            break;
+        }
+        case Instruction::SetLocal:
+        {
+            break;
+        }
 
         default:
             throw Errors::ExecutionError(std::string("Not implemented instruction with value ") + std::to_string(byteCode[programCounter]));
@@ -78,6 +97,15 @@ void GobLang::State::runBytes(GobFunction const *func)
     m_stack.pop_back();
 
     // TODO: Pop variable block
+}
+
+std::optional<GobLang::Value> GobLang::State::getVariableValue(size_t id) const
+{
+    if (m_variables.empty() || id >= m_variables.back().size())
+    {
+        return {};
+    }
+    return m_variables.back().at(id);
 }
 
 GobLang::Value GobLang::State::getGlobalVariable(std::string const &name) const
@@ -156,7 +184,7 @@ GobLang::StringObject *GobLang::State::createString(std::string const &str)
 GobLang::Closure const *GobLang::State::createClosure(std::vector<uint8_t> const &bytecode, std::vector<std::string> strings, std::string const &name)
 {
     m_objects.push_back(std::make_unique<GobLang::GobFunction>(bytecode, strings, name));
-    m_objects.push_back(std::make_unique<Closure>(static_cast<GobFunction const *>(m_objects.back().get()), nullptr));
+    m_objects.push_back(std::make_unique<Closure>(static_cast<GobFunction *>(m_objects.back().get()), nullptr));
     return static_cast<Closure const *>(m_objects.back().get());
 }
 
@@ -166,7 +194,7 @@ GobLang::Closure const *GobLang::State::createClosure(FunctionValue const &f)
     return static_cast<GobLang::Closure *>(m_objects.back().get());
 }
 
-GobLang::Closure const *GobLang::State::createClosure(GobFunction const *f, Object *owner)
+GobLang::Closure const *GobLang::State::createClosure(GobFunction *f, Object *owner)
 {
     m_objects.push_back(std::make_unique<GobLang::Closure>(f, owner));
     return static_cast<GobLang::Closure *>(m_objects.back().get());

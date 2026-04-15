@@ -104,6 +104,13 @@ namespace GobLang
             return std::get<T>(v);
         }
 
+        /**
+         * @brief Get variable with given id in the current variable block
+         * 
+         * @param id Of the 
+         * @return std::optional<Value> 
+         */
+        std::optional<Value> getVariableValue(size_t id) const;
         std::optional<Value> popFromStack();
 
         /// @brief Create a new string object and store it in the memory list
@@ -129,7 +136,14 @@ namespace GobLang
          */
         Closure const *createClosure(FunctionValue const &f);
 
-        Closure const *createClosure(GobFunction const *f, Object *owner);
+        /**
+         * @brief Create create closure from function object and put it into garbage collector
+         * 
+         * @param f Function 
+         * @param owner 
+         * @return Closure const* 
+         */
+        Closure const *createClosure(GobFunction *f, Object *owner);
 
         /**
          * @brief Create new empty function and store it in memory

@@ -8,7 +8,7 @@ GobLang::Codegen::CodeGenerator::CodeGenerator(Parser const &parser) : m_parser(
     m_it = parser.getTokens().begin();
 }
 
-GobLang::GobFunction const *GobLang::Codegen::CodeGenerator::generate(State &state)
+GobLang::GobFunction  *GobLang::Codegen::CodeGenerator::generate(State &state)
 {
     while (isKeyword(Keyword::Function))
     {
@@ -32,10 +32,11 @@ GobLang::GobFunction const *GobLang::Codegen::CodeGenerator::generate(State &sta
     m_functionContextStack.pop_back();
 
     Builder builder;
-    std::vector<GobLang::GobFunction const *> functions;
+    std::vector<GobLang::GobFunction *> functions;
     for (std::vector<std::unique_ptr<FunctionNode>>::const_iterator it = m_functions.begin(); it != m_functions.end(); it++)
     {
         functions.push_back((*it)->generateFunction(builder, state));
+        state.setGlobalVariable(functions.back()->getName(), state.createClosure(functions.back(), nullptr));
     }
     return functions.back();
 }

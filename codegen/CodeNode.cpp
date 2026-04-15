@@ -573,7 +573,7 @@ GobLang::Codegen::FunctionNode::FunctionNode(FunctionContext context,
 {
 }
 
-GobLang::GobFunction const *GobLang::Codegen::FunctionNode::generateFunction(Builder &builder, State &state)
+GobLang::GobFunction *GobLang::Codegen::FunctionNode::generateFunction(Builder &builder, State &state)
 {
 
     m_proto->getArgumentNameStringIds();
@@ -583,6 +583,7 @@ GobLang::GobFunction const *GobLang::Codegen::FunctionNode::generateFunction(Bui
     std::vector<uint8_t> bodyBytes = m_body->generateCode(builder)->getGetOperationBytes();
     body->insert(bodyBytes);
     GobFunction *f = state.createFunction();
+    f->setName(m_proto->getName());
     f->setArgumentCount(m_proto->getArgumentNameStringIds().size());
     f->setStrings(m_context.getStrings());
     f->setByteCode(body->getBytes());

@@ -74,6 +74,7 @@ int main()
                                             },
                                             {"print", "hello world"}, "f1");
     // state.setGlobalVariable("f1", f1);
-    state.executeClosure(*state.loadString("a = print; a(\"hello world, this is awesome\");"));
+    state.executeClosure(*state.loadString("func a() {print(\"this is a function\" );} func caller(f) {f();}"));
+    state.executeClosure(*state.loadString("caller(a);"));
     return EXIT_SUCCESS;
 }

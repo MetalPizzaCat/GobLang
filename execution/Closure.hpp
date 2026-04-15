@@ -23,11 +23,15 @@ namespace GobLang
 
         size_t getArgumentCount() const { return m_argumentCount; }
 
-        void setByteCode(std::vector<uint8_t> const& bytes);
+        void setByteCode(std::vector<uint8_t> const &bytes);
 
-        void setStrings(std::vector<std::string> const& strings);
+        void setStrings(std::vector<std::string> const &strings);
 
         void setArgumentCount(size_t count);
+
+        std::string const &getName() const { return m_name; }
+
+        void setName(std::string const &name) { m_name = name; }
 
     private:
         std::vector<uint8_t> m_byteCode;
@@ -40,7 +44,7 @@ namespace GobLang
     class Closure : public Object
     {
     public:
-        explicit Closure(GobFunction const *func, Object *owner = nullptr);
+        explicit Closure(GobFunction *func, Object *owner = nullptr);
         explicit Closure(FunctionValue const &f);
         bool hasOwner() const { return m_owner != nullptr; }
         bool isLocal() const { return m_func != nullptr; }
@@ -51,9 +55,11 @@ namespace GobLang
 
         std::string toString() const override;
 
+        virtual ~Closure();
+
     private:
         Object *m_owner = nullptr;
-        GobFunction const *m_func;
+        GobFunction *m_func;
         FunctionValue m_nativeFunc;
 
         // TODO: way to store captured variables
