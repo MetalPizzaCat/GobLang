@@ -10,6 +10,10 @@
 
 namespace GobLang
 {
+    /**
+     * @brief Type used to store jump addresses in the code
+     *
+     */
 
     class State;
     class Object;
@@ -43,23 +47,11 @@ namespace GobLang
 
         /// @brief Increase reference count for value if value if refcounted, otherwise do nothing
         /// @param v Value
-        inline void increaseValueRefCount(Value const &v)
-        {
-            if (v.index() == (size_t)Type::Object)
-            {
-                std::get<Object *>(v)->increaseRefCount();
-            }
-        }
+        void increaseValueRefCount(Value const &v);
 
         /// @brief Decrease reference count for value if value if refcounted, otherwise do nothing
         /// @param v Value
-        inline void decreaseValueRefCount(Value const &v)
-        {
-            if (v.index() == (size_t)Type::Object)
-            {
-                std::get<Object *>(v)->decreaseRefCount();
-            }
-        }
+        void decreaseValueRefCount(Value const &v);
 
         bool less(Value const &a, Value const &b);
 

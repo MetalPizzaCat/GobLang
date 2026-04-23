@@ -58,6 +58,22 @@ std::string GobLang::ValueOperations::toString(Value const &val)
     return "Invalid datatype";
 }
 
+void GobLang::ValueOperations::increaseValueRefCount(Value const &v)
+{
+    if (v.index() == (size_t)Type::Object)
+    {
+        std::get<Object *>(v)->increaseRefCount();
+    }
+}
+
+void GobLang::ValueOperations::decreaseValueRefCount(Value const &v)
+{
+    if (v.index() == (size_t)Type::Object)
+    {
+        std::get<Object *>(v)->decreaseRefCount();
+    }
+}
+
 bool GobLang::ValueOperations::less(Value const &a, Value const &b)
 {
     if ((Type)a.index() == Type::Int && (Type)b.index() == Type::Int)
