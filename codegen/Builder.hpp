@@ -15,7 +15,7 @@ namespace GobLang::Codegen
         explicit Builder() = default;
 
         std::unique_ptr<CodeGenValue> createConstNull();
-        std::unique_ptr<CodeGenValue> createConstFloat(NumberType val);
+        std::unique_ptr<CodeGenValue> createConstNumber(NumberType val);
 
         std::unique_ptr<CodeGenValue> createConstInt(IntegerType val);
 

@@ -1,11 +1,12 @@
 #include "Array.hpp"
 #include "Value.hpp"
 #include "Exception.hpp"
-GobLang::ArrayNode::ArrayNode(size_t size)
+#include <format>
+GobLang::ArrayObject::ArrayObject(size_t size)
 {
     m_data = std::vector<Value>(size);
 }
-void GobLang::ArrayNode::setItem(size_t i, Value const &item)
+void GobLang::ArrayObject::setItem(size_t i, Value const &item)
 {
     if (i >= m_data.size())
     {
@@ -27,30 +28,26 @@ void GobLang::ArrayNode::setItem(size_t i, Value const &item)
     m_data[i] = item;
 }
 
-GobLang::Value *GobLang::ArrayNode::getItem(size_t i)
+std::optional<GobLang::Value> GobLang::ArrayObject::getItem(size_t i)
 {
 
     if (i < m_data.size())
     {
-        return &m_data[i];
+        return m_data[i];
     }
     else
     {
-        throw RuntimeException(
-            std::string("Attempted to read out of bounds of the array. i = ") +
-            std::to_string(i) +
-            " in array of size " +
-            std::to_string(m_data.size()));
-        return nullptr;
+        throw RuntimeException(std::format("Attempted to read out of bounds of the array. i = {} in array of size {}", i, m_data.size()));
+        return {};
     }
 }
 
-std::string GobLang::ArrayNode::toString() const
+std::string GobLang::ArrayObject::toString() const
 {
     std::string text = "[";
     for (size_t i = 0; i < m_data.size(); i++)
     {
-        text += valueToString(m_data[i]);
+        text += ValueOperations::toString(m_data[i]);
         if (i != m_data.size() - 1)
         {
             text += ",";
@@ -59,7 +56,7 @@ std::string GobLang::ArrayNode::toString() const
     return text + "]";
 }
 
-void GobLang::ArrayNode::append(Value const &item)
+void GobLang::ArrayObject::append(Value const &item)
 {
     // check if object that we are setting is itself to avoid creating a ref cycle
     if ((Type)item.index() == Type::Object && std::get<Object *>(item) != this)
@@ -69,13 +66,10 @@ void GobLang::ArrayNode::append(Value const &item)
     m_data.push_back(item);
 }
 
-GobLang::ArrayNode::~ArrayNode()
+GobLang::ArrayObject::~ArrayObject()
 {
     for (std::vector<Value>::iterator it = m_data.begin(); it != m_data.end(); it++)
     {
-        if ((Type)it->index() == Type::Object)
-        {
-            std::get<Object *>((*it))->decreaseRefCount();
-        }
+        ValueOperations::decreaseValueRefCount(*it);
     }
 }

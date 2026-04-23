@@ -53,7 +53,7 @@ namespace GobLang::Codegen
 
         std::unique_ptr<NullNode> parseNull();
 
-        std::unique_ptr<FloatNode> parseFloat();
+        std::unique_ptr<NumberNode> parseFloat();
 
         std::unique_ptr<StringNode> parseString();
 

@@ -9,7 +9,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 {
     return std::make_unique<GeneratedCodeGenValue>(std::vector<uint8_t>{(uint8_t)Instruction::PushNull});
 }
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstFloat(double val)
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstNumber(NumberType val)
 {
 
     std::vector<uint8_t> res{(uint8_t)Instruction::PushConstFloat};
@@ -155,10 +155,11 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
 std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createVariableInit(size_t id, std::unique_ptr<CodeGenValue> init)
 {
     std::vector<uint8_t> bytes;
+    std::vector<uint8_t> idBytes = parseToBytes(id);
     std::vector<uint8_t> initBytes = init->getGetOperationBytes();
     bytes.insert(bytes.end(), initBytes.begin(), initBytes.end());
     bytes.push_back((uint8_t)Instruction::SetLocal);
-    bytes.push_back((uint8_t)id);
+    bytes.insert(bytes.end(), idBytes.begin(), idBytes.end());
     return std::make_unique<GeneratedCodeGenValue>(std::move(bytes));
 }
 

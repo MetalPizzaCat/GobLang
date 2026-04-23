@@ -10,11 +10,7 @@
 
 namespace GobLang
 {
-    /**
-     * @brief Type used to store jump addresses in the code
-     *
-     */
-   
+
     class State;
     class Object;
     using FunctionValue = void (*)(State &);
@@ -24,30 +20,48 @@ namespace GobLang
     static const NilType NilValue = NilType();
     using Value = std::variant<NilType, bool, char, NumberType, IntegerType, UIntegerType, Object *, Closure const *, GobFunction const *>;
 
-    /**
-     * @brief Compare two memory values and validate that both are equal
-     *
-     * @param a
-     * @param b
-     * @return true
-     * @return false
-     */
-    bool areEqual(Value const &a, Value const &b);
+    namespace ValueOperations
+    {
+        /**
+         * @brief Compare two memory values and validate that both are equal
+         *
+         * @param a
+         * @param b
+         * @return true
+         * @return false
+         */
+        bool areEqual(Value const &a, Value const &b);
 
-    /**
-     * @brief Create a string representation of a given value
-     *
-     * @param val Value to convert to string
-     * @param pretty Whether to add decorators. Only is relevant for strings during printing
-     * @return std::string
-     */
-    std::string valueToString(Value const &val);
+        /**
+         * @brief Create a string representation of a given value
+         *
+         * @param val Value to convert to string
+         * @param pretty Whether to add decorators. Only is relevant for strings during printing
+         * @return std::string
+         */
+        std::string toString(Value const &val);
 
-    /// @brief Increase reference count for value if value if refcounted, otherwise do nothing
-    /// @param v Value
-    void increaseValueRefCount(Value const &v);
+        /// @brief Increase reference count for value if value if refcounted, otherwise do nothing
+        /// @param v Value
+        inline void increaseValueRefCount(Value const &v)
+        {
+            if (v.index() == (size_t)Type::Object)
+            {
+                std::get<Object *>(v)->increaseRefCount();
+            }
+        }
 
-    /// @brief Decrease reference count for value if value if refcounted, otherwise do nothing
-    /// @param v Value
-    void decreaseValueRefCount(Value const &v);
+        /// @brief Decrease reference count for value if value if refcounted, otherwise do nothing
+        /// @param v Value
+        inline void decreaseValueRefCount(Value const &v)
+        {
+            if (v.index() == (size_t)Type::Object)
+            {
+                std::get<Object *>(v)->decreaseRefCount();
+            }
+        }
+
+        bool less(Value const &a, Value const &b);
+
+    }
 }

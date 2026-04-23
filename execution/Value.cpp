@@ -1,8 +1,10 @@
 #include "Value.hpp"
 #include "Memory.hpp"
 #include "Closure.hpp"
+#include "Error.hpp"
+#include <format>
 #include <iostream>
-bool GobLang::areEqual(Value const &a, Value const &b)
+bool GobLang::ValueOperations::areEqual(Value const &a, Value const &b)
 {
     if (a.index() != b.index())
     {
@@ -15,7 +17,7 @@ bool GobLang::areEqual(Value const &a, Value const &b)
     case Type::Bool:
         return std::get<bool>(a) == std::get<bool>(b);
     case Type::Float:
-        return std::get<NumberType >(a) == std::get<NumberType >(b);
+        return std::get<NumberType>(a) == std::get<NumberType>(b);
     case Type::Int:
         return std::get<IntegerType>(a) == std::get<IntegerType>(b);
     case Type::UnsignedInt:
@@ -32,7 +34,7 @@ bool GobLang::areEqual(Value const &a, Value const &b)
     return false;
 }
 
-std::string GobLang::valueToString(Value const &val)
+std::string GobLang::ValueOperations::toString(Value const &val)
 {
     switch ((Type)val.index())
     {
@@ -56,18 +58,23 @@ std::string GobLang::valueToString(Value const &val)
     return "Invalid datatype";
 }
 
-void GobLang::increaseValueRefCount(Value const &v)
+bool GobLang::ValueOperations::less(Value const &a, Value const &b)
 {
-    if (v.index() == (size_t)Type::Object)
+    if ((Type)a.index() == Type::Int && (Type)b.index() == Type::Int)
     {
-        std::get<Object *>(v)->increaseRefCount();
+        return std::get<IntegerType>(a) < std::get<IntegerType>(b);
     }
-}
-
-void GobLang::decreaseValueRefCount(Value const &v)
-{
-    if (v.index() == (size_t)Type::Object)
+    if ((Type)a.index() == Type::Int && (Type)b.index() == Type::Float)
     {
-        std::get<Object *>(v)->decreaseRefCount();
+        return std::get<IntegerType>(a) < (IntegerType)std::get<NumberType>(b);
     }
+    if ((Type)a.index() == Type::Float && (Type)b.index() == Type::Float)
+    {
+        return std::get<NumberType>(a) < std::get<NumberType>(b);
+    }
+    if ((Type)a.index() == Type::Float && (Type)b.index() == Type::Int)
+    {
+        return std::get<NumberType>(a) < (NumberType)std::get<NumberType>(b);
+    }
+    throw Errors::ExecutionError(std::format("Tried compare {} with {}", typeToString((Type)a.index()), typeToString((Type)b.index())));
 }

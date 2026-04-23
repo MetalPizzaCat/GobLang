@@ -1,6 +1,27 @@
 #include "State.hpp"
 #include "Instruction.hpp"
 #include "../codegen/CodeGenerator.hpp"
+#include <format>
+
+/**
+ * @brief Macro for performing operations on two values converting to correct types when needed. Macros aren't the best
+ * But it's a lot better than a bunch of duplicated code
+ *
+ */
+#define ARITH_OP(a, b, op)                                                                \
+    if (std::holds_alternative<IntegerType>(a) && std::holds_alternative<IntegerType>(b)) \
+    {                                                                                     \
+        pushToStack(std::get<IntegerType>(a) op std::get<IntegerType>(b));                \
+    }                                                                                     \
+    if (std::holds_alternative<IntegerType>(a) && std::holds_alternative<NumberType>(b))  \
+    {                                                                                     \
+        pushToStack(std::get<IntegerType>(a) op(IntegerType) std::get<NumberType>(b));    \
+    }                                                                                     \
+    if (std::holds_alternative<NumberType>(a) && std::holds_alternative<NumberType>(b))   \
+    {                                                                                     \
+        pushToStack(std::get<NumberType>(a) op(IntegerType) std::get<NumberType>(b));     \
+    }
+
 void GobLang::State::executeClosure(Closure const &closure)
 {
     if (!closure.isLocal())
@@ -14,10 +35,10 @@ void GobLang::State::executeClosure(Closure const &closure)
 }
 void GobLang::State::runBytes(GobFunction const *func)
 {
-    size_t programCounter = 0;
+    ProgramAddressType programCounter = 0;
     m_variables.emplace_back();
 
-    for (size_t i = 0; i < func->getArgumentCount(); i++)
+    for (ProgramAddressType i = 0; i < func->getArgumentCount(); i++)
     {
         setVariableValue(i, popFromStackOrError());
     }
@@ -32,18 +53,11 @@ void GobLang::State::runBytes(GobFunction const *func)
         {
         case Instruction::Add:
         {
-
+            Value b = popFromStackOrError();
+            Value a = popFromStackOrError();
+            ARITH_OP(a, b, +);
             break;
         }
-
-        case Instruction::PushConstString:
-        {
-            size_t typeId = parseOperationConstant<int64_t>(byteCode.begin() + (programCounter + 1), byteCode.end());
-            programCounter += sizeof(size_t);
-            pushToStack(createString(func->getConstantStringByidOrError(typeId)));
-            break;
-        }
-
         case Instruction::Call:
         {
             Closure const *f = popFromStackAsType<Closure const *>("Expected callable object on stack");
@@ -53,8 +67,8 @@ void GobLang::State::runBytes(GobFunction const *func)
 
         case Instruction::SetGlobal:
         {
-            size_t typeId = parseOperationConstant<int64_t>(byteCode.begin() + (programCounter + 1), byteCode.end());
-            programCounter += sizeof(size_t);
+            ProgramAddressType typeId = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter += sizeof(ProgramAddressType);
             setGlobalVariable(func->getConstantStringByidOrError(typeId), popFromStackOrError());
 
             break;
@@ -62,16 +76,16 @@ void GobLang::State::runBytes(GobFunction const *func)
 
         case Instruction::GetGlobal:
         {
-            size_t typeId = parseOperationConstant<int64_t>(byteCode.begin() + (programCounter + 1), byteCode.end());
-            programCounter += sizeof(size_t);
+            ProgramAddressType typeId = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter += sizeof(ProgramAddressType);
             pushToStack(getGlobalVariable(func->getConstantStringByidOrError(typeId)));
 
             break;
         }
         case Instruction::GetLocal:
         {
-            size_t typeId = parseOperationConstant<int64_t>(byteCode.begin() + (programCounter + 1), byteCode.end());
-            programCounter += sizeof(size_t);
+            ProgramAddressType typeId = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter += sizeof(ProgramAddressType);
             if (std::optional<Value> v = getVariableValue(typeId); v.has_value())
             {
                 pushToStack(v.value());
@@ -85,11 +99,159 @@ void GobLang::State::runBytes(GobFunction const *func)
         }
         case Instruction::SetLocal:
         {
+            ProgramAddressType typeId = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter += sizeof(ProgramAddressType);
+            setVariableValue(typeId, popFromStackOrError());
+            break;
+        }
+
+        case Instruction::PushConstInt:
+        {
+            pushToStack(parseOperationConstant<IntegerType>(byteCode.begin() + (programCounter + 1), byteCode.end()));
+            programCounter += sizeof(IntegerType);
+            break;
+        }
+
+        case Instruction::PushConstFloat:
+        {
+            pushToStack(parseOperationConstant<NumberType>(byteCode.begin() + (programCounter + 1), byteCode.end()));
+            programCounter += sizeof(NumberType);
+            break;
+        }
+        case Instruction::PushConstChar:
+        {
+            pushToStack((char)byteCode[++programCounter]);
+            break;
+        }
+        case Instruction::PushConstString:
+        {
+            ProgramAddressType typeId = parseOperationConstantAndAdvance<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end(), programCounter);
+            pushToStack(createString(func->getConstantStringByidOrError(typeId)));
+            break;
+        }
+
+        case Instruction::Equals:
+        {
+            Value a = popFromStackOrError();
+            Value b = popFromStackOrError();
+            pushToStack(ValueOperations::areEqual(a, b));
+            break;
+        }
+        case Instruction::Less:
+        {
+            Value b = popFromStackOrError();
+            Value a = popFromStackOrError();
+
+            pushToStack(ValueOperations::less(a, b));
+            break;
+        }
+        case Instruction::More:
+        {
+            break;
+        }
+        case Instruction::LessOrEq:
+        {
+            break;
+        }
+        case Instruction::MoreOrEq:
+        {
+            break;
+        }
+        case Instruction::NotEq:
+        {
+            break;
+        }
+        case Instruction::And:
+        {
+            break;
+        }
+        case Instruction::Or:
+        {
+            break;
+        }
+        case Instruction::Not:
+        {
+            break;
+        }
+        case Instruction::Jump:
+        {
+            ProgramAddressType addr = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter += addr;
+            continue;
+        }
+        case Instruction::JumpBack:
+        {
+            ProgramAddressType addr = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter -= addr;
+            continue;
+        }
+        case Instruction::JumpIfNot:
+        {
+
+            if (Value cond = popFromStackOrError(); std::holds_alternative<bool>(cond))
+            {
+                ProgramAddressType addr = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+                if (!std::get<bool>(cond))
+                {
+                    programCounter += addr;
+                    continue;
+                }
+                else
+                {
+                    programCounter += sizeof(ProgramAddressType);
+                }
+            }
+            else
+            {
+                throw Errors::ExecutionError("Expected boolean value on stack");
+            }
+            break;
+        }
+        case Instruction::JumpIf:
+        {
+
+            if (Value cond = popFromStackOrError(); std::holds_alternative<bool>(cond))
+            {
+                ProgramAddressType addr = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+                if (std::get<bool>(cond))
+                {
+                    programCounter += addr;
+                    continue;
+                }
+                else
+                {
+                    programCounter += sizeof(ProgramAddressType);
+                }
+            }
+            else
+            {
+                throw Errors::ExecutionError("Expected boolean value on stack");
+            }
+            break;
+        }
+        case Instruction::ShrinkLocal:
+        {
+            ProgramAddressType size = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());
+            programCounter += sizeof(ProgramAddressType);
+            shrinkVariableFrameBy(size);
+            break;
+        }
+
+        case Instruction::CreateArray:
+        {
+            programCounter++;
+            int32_t arraySize = byteCode[programCounter];
+            ArrayObject *array = createArray(arraySize);
+            for (int32_t i = arraySize - 1; i >= 0; i--)
+            {
+                array->setItem(i, popFromStackOrError());
+            }
+            pushToStack(Value(array));
             break;
         }
 
         default:
-            throw Errors::ExecutionError(std::string("Not implemented instruction with value ") + std::to_string(byteCode[programCounter]));
+            throw Errors::ExecutionError(std::format("Not implemented instruction with value {}", byteCode[programCounter]));
         }
         programCounter++;
     }
@@ -99,7 +261,7 @@ void GobLang::State::runBytes(GobFunction const *func)
     // TODO: Pop variable block
 }
 
-std::optional<GobLang::Value> GobLang::State::getVariableValue(size_t id) const
+std::optional<GobLang::Value> GobLang::State::getVariableValue(ProgramAddressType id) const
 {
     if (m_variables.empty() || id >= m_variables.back().size())
     {
@@ -136,6 +298,22 @@ GobLang::Value GobLang::State::popFromStackOrError()
     return r;
 }
 
+void GobLang::State::setGlobalVariable(std::string const &name, Value const &v)
+{
+    m_globals[name] = v;
+}
+
+void GobLang::State::shrinkVariableFrameBy(size_t size)
+{
+    size_t i = 0;
+    for (std::vector<Value>::reverse_iterator it = m_variables.back().rbegin(); it != m_variables.back().rend() && i < size; it++, i++)
+    {
+        ValueOperations::decreaseValueRefCount(*it);
+    }
+    // TODO: Consider not always shrinking the frame to save on performance?
+    m_variables.back().resize(m_variables.back().size() - size);
+}
+
 void GobLang::State::setVariableValue(size_t id, Value const &val)
 {
     if (m_variables.empty())
@@ -153,15 +331,10 @@ void GobLang::State::setVariableValue(size_t id, Value const &val)
     {
         // if we didn't have to resize that means we might have already used the slot
         // so to prepare to override we mark the object in it as unused
-        decreaseValueRefCount(frame[id]);
+        ValueOperations::decreaseValueRefCount(frame[id]);
     }
     frame[id] = val;
-    increaseValueRefCount(val);
-}
-
-void GobLang::State::setGlobalVariable(std::string const &name, Value const &v)
-{
-    m_globals[name] = v;
+    ValueOperations::increaseValueRefCount(val);
 }
 
 std::optional<GobLang::Value> GobLang::State::popFromStack()
@@ -178,7 +351,13 @@ std::optional<GobLang::Value> GobLang::State::popFromStack()
 GobLang::StringObject *GobLang::State::createString(std::string const &str)
 {
     m_objects.push_back(std::make_unique<StringObject>(str));
-    return (GobLang::StringObject *)m_objects.back().get();
+    return static_cast<StringObject *>(m_objects.back().get());
+}
+
+GobLang::ArrayObject *GobLang::State::createArray(size_t size)
+{
+    m_objects.push_back(std::make_unique<ArrayObject>(size));
+    return static_cast<ArrayObject *>(m_objects.back().get());
 }
 
 GobLang::Closure const *GobLang::State::createClosure(std::vector<uint8_t> const &bytecode, std::vector<std::string> strings, std::string const &name)

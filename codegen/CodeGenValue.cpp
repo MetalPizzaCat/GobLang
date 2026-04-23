@@ -78,7 +78,8 @@ void GobLang::Codegen::BlockContext::appendMemoryClear()
     if (!m_variables.empty())
     {
         m_bytes.push_back((uint8_t)Instruction::ShrinkLocal);
-        m_bytes.push_back((uint8_t)m_variables.size());
+        std::vector<uint8_t> size = parseToBytes(m_variables.size());
+        m_bytes.insert(m_bytes.end(), size.begin(), size.end());
     }
 }
 

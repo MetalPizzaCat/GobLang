@@ -1,15 +1,15 @@
 #pragma once
 #include "Memory.hpp"
-
+#include <optional>
 namespace GobLang
 {
-    class ArrayNode : public Object
+    class ArrayObject : public Object
     {
     public:
-        explicit ArrayNode(size_t size);
+        explicit ArrayObject(size_t size);
 
         void setItem(size_t i, Value const &item);
-        Value *getItem(size_t i);
+        std::optional<Value> getItem(size_t i);
 
         std::string toString() const override;
 
@@ -17,7 +17,7 @@ namespace GobLang
 
         void append(Value const &item);
 
-        virtual ~ArrayNode();
+        virtual ~ArrayObject();
 
     private:
         std::vector<Value> m_data;

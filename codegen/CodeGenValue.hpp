@@ -14,7 +14,7 @@ namespace GobLang::Codegen
     template <typename T>
     std::vector<uint8_t> parseToBytes(T val)
     {
-        uint32_t const v = std::bit_cast<UIntegerType>(val);
+        UIntegerType const v = std::bit_cast<UIntegerType>(val);
         std::vector<uint8_t> res;
         for (int32_t i = sizeof(T) - 1; i >= 0; i--)
         {

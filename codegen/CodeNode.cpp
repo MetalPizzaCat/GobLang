@@ -21,16 +21,16 @@ std::string GobLang::Codegen::IdNode::toString()
     return "{\"id\": " + std::to_string(m_id) + "}";
 }
 
-GobLang::Codegen::FloatNode::FloatNode(float val) : m_val(val)
+GobLang::Codegen::NumberNode::NumberNode(NumberType val) : m_val(val)
 {
 }
 
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::FloatNode::generateCode(Builder &builder)
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::NumberNode::generateCode(Builder &builder)
 {
-    return builder.createConstFloat(m_val);
+    return builder.createConstNumber(m_val);
 }
 
-std::string GobLang::Codegen::FloatNode::toString()
+std::string GobLang::Codegen::NumberNode::toString()
 {
     return std::to_string(m_val);
 }
@@ -97,6 +97,7 @@ std::unique_ptr<GobLang::Codegen::BlockCodeGenValue> GobLang::Codegen::SequenceN
     {
         block->insert((*it)->generateCode(builder)->getGetOperationBytes());
     }
+    // TODO: Evaluate benefits of dynamically shrinking the
     block->appendMemoryClear();
     std::unique_ptr<BlockContext> generatedBlock = builder.popBlock();
     if (!generatedBlock->isLoopBlock())

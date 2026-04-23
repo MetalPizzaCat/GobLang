@@ -29,17 +29,17 @@ namespace GobLang::Codegen
         size_t m_id;
     };
 
-    class FloatNode : public CodeNode
+    class NumberNode : public CodeNode
     {
     public:
-        explicit FloatNode(float val);
+        explicit NumberNode(NumberType val);
 
         std::unique_ptr<CodeGenValue> generateCode(Builder &builder) override;
 
         std::string toString() override;
 
     private:
-        float m_val;
+        NumberType m_val;
     };
 
     class IntNode : public CodeNode

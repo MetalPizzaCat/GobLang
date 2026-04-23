@@ -27,7 +27,7 @@ void print(State &state)
 {
     if (std::optional<Value> v = state.popFromStack(); v.has_value())
     {
-        std::cout << valueToString(v.value()) << std::endl;
+        std::cout << ValueOperations::toString(v.value()) << std::endl;
     }
 }
 int main()
@@ -74,7 +74,6 @@ int main()
                                             },
                                             {"print", "hello world"}, "f1");
     // state.setGlobalVariable("f1", f1);
-    state.executeClosure(*state.loadString("func a() {print(\"this is a function\" );} func caller(f) {f();}"));
-    state.executeClosure(*state.loadString("caller(a);"));
+    state.executeClosure(*state.loadString("let i = 0; while(i < 10) {print([1337,\"a\", 173.7]); i += 1;} print(\"done!\");"));
     return EXIT_SUCCESS;
 }

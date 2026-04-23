@@ -298,11 +298,11 @@ std::unique_ptr<NullNode> GobLang::Codegen::CodeGenerator::parseNull()
     return std::make_unique<NullNode>();
 }
 
-std::unique_ptr<FloatNode> GobLang::Codegen::CodeGenerator::parseFloat()
+std::unique_ptr<NumberNode> GobLang::Codegen::CodeGenerator::parseFloat()
 {
     FloatToken const *t = getTokenOrError<FloatToken>("Expected a number");
     advance();
-    return std::make_unique<FloatNode>(t->getValue());
+    return std::make_unique<NumberNode>(t->getValue());
 }
 
 std::unique_ptr<StringNode> GobLang::Codegen::CodeGenerator::parseString()
