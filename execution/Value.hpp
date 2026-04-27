@@ -21,6 +21,7 @@ namespace GobLang
     class Closure;
     class GobFunction;
     using NilType = std::monostate;
+    using UserObject = void *;
     static const NilType NilValue = NilType();
     using Value = std::variant<NilType, bool, char, NumberType, IntegerType, UIntegerType, Object *, Closure const *, GobFunction const *>;
 
@@ -54,6 +55,8 @@ namespace GobLang
         void decreaseValueRefCount(Value const &v);
 
         bool less(Value const &a, Value const &b);
+
+        bool lessEqual(Value const &a, Value const &b);
 
     }
 }

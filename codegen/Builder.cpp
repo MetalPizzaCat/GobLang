@@ -78,12 +78,13 @@ void GobLang::Codegen::Builder::addType(
     size_t nameId,
     std::vector<size_t> fieldIds)
 {
-    Struct::Structure type = Struct::Structure{.name = name};
-    for (std::string const &field : fieldNames)
-    {
-        type.fields.push_back(Struct::Field{.name = field});
-    }
-    m_types.push_back(std::make_unique<TypeCodeGenInfo>(nameId, std::move(fieldIds), std::move(type)));
+    //TODO: Update to use new struct systems
+    // Struct::Structure type = Struct::Structure{.name = name};
+    // for (std::string const &field : fieldNames)
+    // {
+    //     type.fields.push_back(Struct::Field{.name = field});
+    // }
+    // m_types.push_back(std::make_unique<TypeCodeGenInfo>(nameId, std::move(fieldIds), std::move(type)));
 }
 
 bool GobLang::Codegen::Builder::hasTypeWithName(size_t nameId)
@@ -263,8 +264,10 @@ std::unique_ptr<GobLang::Codegen::VariableCodeGenValue> GobLang::Codegen::Builde
 //         (uint8_t)(funcIt - m_functions.begin())});
 // }
 
+
 GobLang::Codegen::BlockContext *GobLang::Codegen::Builder::getCurrentBlock()
 {
+    //TODO: Change to std::optional<> as return type for safety
     if (m_blocks.empty())
     {
         return nullptr;

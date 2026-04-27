@@ -187,9 +187,13 @@ namespace GobLang::Codegen
         std::vector<uint8_t> m_bodyBytes;
     };
 
+    /// @brief Class that represents access to the variable that uses a given slot in the local variable frame
     class VariableCodeGenValue : public CodeGenValue
     {
     public:
+        /// @brief Create new instance of the variable value
+        /// @param nameId Id of the string that represents variable name
+        /// @param local 
         explicit VariableCodeGenValue(size_t nameId, bool local);
 
         std::vector<uint8_t> getGetOperationBytes() override;

@@ -74,6 +74,14 @@ int main()
                                             },
                                             {"print", "hello world"}, "f1");
     // state.setGlobalVariable("f1", f1);
-    state.executeClosure(*state.loadString("let i = 0; while(i < 10) {print([1337,\"a\", 173.7]); i += 1;} print(\"done!\");"));
+    state.executeClosure(*state.loadString(R"CODE(        
+func fib(n){
+   if(n <= 1){
+      return n;
+   }
+   return fib(n - 1) + fib(n - 2);
+}
+
+print(fib(20));)CODE"));
     return EXIT_SUCCESS;
 }

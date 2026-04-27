@@ -40,7 +40,7 @@ void GobLang::State::runBytes(GobFunction const *func)
 
     for (ProgramAddressType i = 0; i < func->getArgumentCount(); i++)
     {
-        setVariableValue(i, popFromStackOrError());
+        setVariableValue(func->getArgumentCount() -  i - 1, popFromStackOrError());
     }
 
     m_stack.emplace_back();
@@ -56,6 +56,13 @@ void GobLang::State::runBytes(GobFunction const *func)
             Value b = popFromStackOrError();
             Value a = popFromStackOrError();
             ARITH_OP(a, b, +);
+            break;
+        }
+        case Instruction::Sub:
+        {
+            Value b = popFromStackOrError();
+            Value a = popFromStackOrError();
+            ARITH_OP(a, b, -);
             break;
         }
         case Instruction::Call:
@@ -151,6 +158,10 @@ void GobLang::State::runBytes(GobFunction const *func)
         }
         case Instruction::LessOrEq:
         {
+            Value b = popFromStackOrError();
+            Value a = popFromStackOrError();
+
+            pushToStack(ValueOperations::lessEqual(a, b));
             break;
         }
         case Instruction::MoreOrEq:
@@ -237,6 +248,24 @@ void GobLang::State::runBytes(GobFunction const *func)
             break;
         }
 
+        case Instruction::Return:
+        {
+            m_stack.pop_back();
+            m_variables.pop_back();
+            return;
+        }
+
+        case Instruction::ReturnValue:
+        {
+            Value v = popFromStackOrError();
+            ValueOperations::increaseValueRefCount(v);
+            m_stack.pop_back();
+            m_variables.pop_back();
+            pushToStack(v);
+
+            return;
+        }
+
         case Instruction::CreateArray:
         {
             programCounter++;
@@ -257,7 +286,7 @@ void GobLang::State::runBytes(GobFunction const *func)
     }
 
     m_stack.pop_back();
-
+    m_variables.pop_back();
     // TODO: Pop variable block
 }
 

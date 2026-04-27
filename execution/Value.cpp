@@ -4,6 +4,25 @@
 #include "Error.hpp"
 #include <format>
 #include <iostream>
+
+#define OPERATION_RETURN(a, b, op)                                               \
+    if ((Type)a.index() == Type::Int && (Type)b.index() == Type::Int)            \
+    {                                                                            \
+        return std::get<IntegerType>(a) op std::get<IntegerType>(b);             \
+    }                                                                            \
+    if ((Type)a.index() == Type::Int && (Type)b.index() == Type::Float)          \
+    {                                                                            \
+        return std::get<IntegerType>(a) op(IntegerType) std::get<NumberType>(b); \
+    }                                                                            \
+    if ((Type)a.index() == Type::Float && (Type)b.index() == Type::Float)        \
+    {                                                                            \
+        return std::get<NumberType>(a) op std::get<NumberType>(b);               \
+    }                                                                            \
+    if ((Type)a.index() == Type::Float && (Type)b.index() == Type::Int)          \
+    {                                                                            \
+        return std::get<NumberType>(a) op(NumberType) std::get<NumberType>(b);   \
+    }
+
 bool GobLang::ValueOperations::areEqual(Value const &a, Value const &b)
 {
     if (a.index() != b.index())
@@ -76,21 +95,12 @@ void GobLang::ValueOperations::decreaseValueRefCount(Value const &v)
 
 bool GobLang::ValueOperations::less(Value const &a, Value const &b)
 {
-    if ((Type)a.index() == Type::Int && (Type)b.index() == Type::Int)
-    {
-        return std::get<IntegerType>(a) < std::get<IntegerType>(b);
-    }
-    if ((Type)a.index() == Type::Int && (Type)b.index() == Type::Float)
-    {
-        return std::get<IntegerType>(a) < (IntegerType)std::get<NumberType>(b);
-    }
-    if ((Type)a.index() == Type::Float && (Type)b.index() == Type::Float)
-    {
-        return std::get<NumberType>(a) < std::get<NumberType>(b);
-    }
-    if ((Type)a.index() == Type::Float && (Type)b.index() == Type::Int)
-    {
-        return std::get<NumberType>(a) < (NumberType)std::get<NumberType>(b);
-    }
+    OPERATION_RETURN(a, b, <)
     throw Errors::ExecutionError(std::format("Tried compare {} with {}", typeToString((Type)a.index()), typeToString((Type)b.index())));
+}
+
+bool GobLang::ValueOperations::lessEqual(Value const &a, Value const &b)
+{
+    OPERATION_RETURN(a, b, <=)
+    return false;
 }

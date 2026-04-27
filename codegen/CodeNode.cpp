@@ -588,6 +588,8 @@ GobLang::GobFunction *GobLang::Codegen::FunctionNode::generateFunction(Builder &
     f->setArgumentCount(m_proto->getArgumentNameStringIds().size());
     f->setStrings(m_context.getStrings());
     f->setByteCode(body->getBytes());
+    builder.popBlock();
+    //TODO: FIX BLOCK NOT BEING POPPED
     return f;
     // return std::make_unique<FunctionCodeGenValue>(func->getFunc(), builder.popBlock());
 }

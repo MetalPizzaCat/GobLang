@@ -5,6 +5,7 @@
 namespace GobLang
 {
 
+    /// @brief Class that represents a string in GobLang. Strings in goblang are mutable and consist of 8 bit characters
     class StringObject : public Object
     {
     public:

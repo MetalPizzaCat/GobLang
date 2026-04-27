@@ -9,6 +9,7 @@
 
 namespace GobLang::Codegen
 {
+    /// @brief Class responsible for handling generation of the bytecode that can be interpreted by the state
     class Builder
     {
     public:
@@ -44,10 +45,18 @@ namespace GobLang::Codegen
 
         std::unique_ptr<CodeGenValue> createVariableInit(size_t id, std::unique_ptr<CodeGenValue> init);
 
+        /// @brief Create call to a variable with name with given string id and provided argument values
+        /// @param nameId Id of the string containing function name
+        /// @param args Data for the argument value code
+        /// @return 
         std::unique_ptr<CodeGenValue> createCall(size_t nameId, std::vector<std::unique_ptr<CodeGenValue>> args);
 
         std::unique_ptr<CodeGenValue> createConstructorCall(size_t typeId, std::vector<std::unique_ptr<CodeGenValue>> args);
 
+        /// @brief Create call to a function from value access object with given arguments
+        /// @param value Data for the value retrieval operation 
+        /// @param args Data for the argument value code
+        /// @return 
         std::unique_ptr<CodeGenValue> createCallFromValue(
             std::unique_ptr<CodeGenValue> value,
             std::vector<std::unique_ptr<CodeGenValue>> args);

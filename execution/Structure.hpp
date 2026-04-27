@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <optional>
 #include <map>
 #include "Value.hpp"
 #include "Type.hpp"
@@ -29,9 +30,21 @@ namespace GobLang::Struct
         size_t customStructureTypeId;
     };
 
-    struct Structure
+    class Structure
     {
-        std::string name;
-        std::vector<Field> fields;
+    public:
+        std::optional<Value> getField(std::string const &name) const;
+
+    private:
+        std::string m_name;
+        /// @brief Base fields present in every instance of this stucture. Although this could be used for anything, this is primarily meant for methods
+        std::unordered_map<std::string, Value> m_baseFields;
+        /// @brief Methods that would be called if instance of this struct is used with `()` operator
+        Closure const *m_callable = nullptr;
+        /// @brief Method that is called on each instantiation
+        Closure const *m_constructor = nullptr;
+        /// @brief Structure that this one inherits from
+        Structure const *m_parent = nullptr;
     };
+
 }
