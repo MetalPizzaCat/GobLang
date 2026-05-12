@@ -13,6 +13,8 @@ namespace GobLang
 
         std::string toString() const override;
 
+        /// @brief Get array length
+        /// @return 
         size_t getSize() const { return m_data.size(); }
 
         void append(Value const &item);

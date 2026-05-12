@@ -40,7 +40,7 @@ void GobLang::State::runBytes(GobFunction const *func)
 
     for (ProgramAddressType i = 0; i < func->getArgumentCount(); i++)
     {
-        setVariableValue(func->getArgumentCount() -  i - 1, popFromStackOrError());
+        setVariableValue(func->getArgumentCount() - i - 1, popFromStackOrError());
     }
 
     m_stack.emplace_back();
@@ -112,6 +112,16 @@ void GobLang::State::runBytes(GobFunction const *func)
             break;
         }
 
+        case Instruction::GetArray:
+        {
+            Object const *array = popFromStackAsType<Object *>("Expected array object on stack");
+            IntegerType index = popFromStackAsType<IntegerType>("Expected array index on stack");
+
+            // TODO: Replace Object* with separate points for UserData, Array, String and Structure
+            pushToStack(((ArrayObject *)array)->getItem(index).value_or(NilValue));
+            break;
+        }
+
         case Instruction::PushConstInt:
         {
             pushToStack(parseOperationConstant<IntegerType>(byteCode.begin() + (programCounter + 1), byteCode.end()));
@@ -154,6 +164,10 @@ void GobLang::State::runBytes(GobFunction const *func)
         }
         case Instruction::More:
         {
+            Value b = popFromStackOrError();
+            Value a = popFromStackOrError();
+
+            pushToStack(ValueOperations::more(a, b));
             break;
         }
         case Instruction::LessOrEq:
@@ -164,26 +178,26 @@ void GobLang::State::runBytes(GobFunction const *func)
             pushToStack(ValueOperations::lessEqual(a, b));
             break;
         }
-        case Instruction::MoreOrEq:
-        {
-            break;
-        }
-        case Instruction::NotEq:
-        {
-            break;
-        }
-        case Instruction::And:
-        {
-            break;
-        }
-        case Instruction::Or:
-        {
-            break;
-        }
-        case Instruction::Not:
-        {
-            break;
-        }
+        // case Instruction::MoreOrEq:
+        // {
+        //     break;
+        // }
+        // case Instruction::NotEq:
+        // {
+        //     break;
+        // }
+        // case Instruction::And:
+        // {
+        //     break;
+        // }
+        // case Instruction::Or:
+        // {
+        //     break;
+        // }
+        // case Instruction::Not:
+        // {
+        //     break;
+        // }
         case Instruction::Jump:
         {
             ProgramAddressType addr = parseOperationConstant<ProgramAddressType>(byteCode.begin() + (programCounter + 1), byteCode.end());

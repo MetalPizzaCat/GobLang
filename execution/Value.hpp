@@ -55,6 +55,7 @@ namespace GobLang
         void decreaseValueRefCount(Value const &v);
 
         bool less(Value const &a, Value const &b);
+        bool more(Value const &a, Value const &b);
 
         bool lessEqual(Value const &a, Value const &b);
 

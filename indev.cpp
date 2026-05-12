@@ -30,58 +30,42 @@ void print(State &state)
         std::cout << ValueOperations::toString(v.value()) << std::endl;
     }
 }
+
+void len(State &state)
+{
+    if (std::optional<Value> v = state.popFromStack(); v.has_value())
+    {
+        if (std::holds_alternative<GobLang::Object *>(v.value()))
+        {
+            ArrayObject const *obj = (ArrayObject *)std::get<Object *>(v.value());
+            state.pushToStack(obj->getSize());
+        }
+    }
+}
 int main()
 {
     std::cout << "Indev language testing executable. Only used for testing out language features during development. DO NOT USE" << std::endl;
     State state;
     // state.setGlobalVariable("test_hello", state.createClosure(&test_hello));
     state.setGlobalVariable("print", state.createClosure(&print));
+    state.setGlobalVariable("len", state.createClosure(&len));
 
-    Closure const *main = state.createClosure(std::vector<uint8_t>{
-                                                  (uint8_t)Instruction::GetGlobal,
-                                                  (uint8_t)0,
-                                                  (uint8_t)0,
-                                                  (uint8_t)0,
-                                                  (uint8_t)0,
-                                                  (uint8_t)0,
-                                                  (uint8_t)0,
-                                                  (uint8_t)0,
-                                                  (uint8_t)0,
-                                                  (uint8_t)Instruction::Call,
-                                              },
-                                              {"test_hello"}, "main");
-
-    Closure const *f1 = state.createClosure(std::vector<uint8_t>{
-                                                (uint8_t)Instruction::PushConstString,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)1,
-                                                (uint8_t)Instruction::GetGlobal,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)0,
-                                                (uint8_t)Instruction::Call,
-                                            },
-                                            {"print", "hello world"}, "f1");
     // state.setGlobalVariable("f1", f1);
     state.executeClosure(*state.loadString(R"CODE(        
-func fib(n){
-   if(n <= 1){
-      return n;
-   }
-   return fib(n - 1) + fib(n - 2);
+func for_each(array, f){
+    let i = 0;
+    while(i < len(array)){
+        f(array[i]);
+        i += 1;
+    }}
+
+func cond(a){
+    print(a);
 }
 
-print(fib(20));)CODE"));
+let test = [1,2,3,4,5,6,7];
+
+for_each(test,cond);)CODE"));
+
     return EXIT_SUCCESS;
 }
