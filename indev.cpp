@@ -35,11 +35,17 @@ void len(State &state)
 {
     if (std::optional<Value> v = state.popFromStack(); v.has_value())
     {
-        if (std::holds_alternative<GobLang::Object *>(v.value()))
+        if (std::holds_alternative<GobLang::ArrayObject *>(v.value()))
         {
-            ArrayObject const *obj = (ArrayObject *)std::get<Object *>(v.value());
+            ArrayObject const *obj = (ArrayObject *)std::get<ArrayObject *>(v.value());
             state.pushToStack(obj->getSize());
         }
+        else if (std::holds_alternative<GobLang::StringObject *>(v.value()))
+        {
+            ArrayObject const *obj = (ArrayObject *)std::get<StringObject *>(v.value());
+            state.pushToStack(obj->getSize());
+        }
+        
     }
 }
 int main()

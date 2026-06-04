@@ -5,7 +5,9 @@
 namespace GobLang
 {
     /**
-     * @brief Information for the executable function within programming language
+     * @brief Information for the executable function within programming language.
+     * 
+     * Functions are the key executable unit in the language and contain their own constant value data
      *
      */
     class GobFunction : public Object
@@ -41,6 +43,10 @@ namespace GobLang
         std::string m_name;
     };
 
+    /**
+     * @brief Closure represents a callable object that could contain a native or interpreted code
+     * 
+     */
     class Closure : public Object
     {
     public:

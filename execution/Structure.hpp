@@ -10,30 +10,35 @@
 namespace GobLang::Struct
 {
 
-    enum class StructureFieldType
-    {
-        Char,
-        Bool,
-        Float,
-        Int,
-        UnsignedInt,
-        MemoryObj,
-        Array,
-        String
-    };
+    // enum class StructureFieldType
+    // {
+    //     Char,
+    //     Bool,
+    //     Float,
+    //     Int,
+    //     UnsignedInt,
+    //     MemoryObj,
+    //     Array,
+    //     String
+    // };
 
-    struct Field
-    {
-        std::string name;
-        StructureFieldType type;
-        /// @brief Reference to the custom type if type is MemoryObj
-        size_t customStructureTypeId;
-    };
+    // struct Field
+    // {
+    //     std::string name;
+    //     StructureFieldType type;
+    //     /// @brief Reference to the custom type if type is MemoryObj
+    //     size_t customStructureTypeId;
+    // };
 
+    /**
+     * @brief Class that describes
+     *
+     */
     class Structure
     {
     public:
         std::optional<Value> getField(std::string const &name) const;
+        std::string const &getName() const { return m_name; }
 
     private:
         std::string m_name;

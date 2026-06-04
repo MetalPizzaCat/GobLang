@@ -35,6 +35,7 @@ list(APPEND COMMON_SOURCE_FILES
     execution/Memory.cpp
     execution/Array.cpp
     execution/String.cpp
+    execution/StructureObject.cpp
     execution/Exception.cpp
     execution/Closure.cpp
     execution/Error.cpp

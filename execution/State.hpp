@@ -6,6 +6,7 @@
 #include "Error.hpp"
 #include "String.hpp"
 #include "Array.hpp"
+#include "StructureObject.hpp"
 namespace GobLang
 {
     /**

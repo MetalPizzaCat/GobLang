@@ -9,7 +9,7 @@ namespace GobLang
         explicit ArrayObject(size_t size);
 
         void setItem(size_t i, Value const &item);
-        std::optional<Value> getItem(size_t i);
+        std::optional<Value> getItem(size_t i) const;
 
         std::string toString() const override;
 

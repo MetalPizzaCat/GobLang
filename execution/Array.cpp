@@ -10,30 +10,26 @@ void GobLang::ArrayObject::setItem(size_t i, Value const &item)
 {
     if (i >= m_data.size())
     {
-        throw RuntimeException(
-            std::string("Attempted to read out of bounds of the array. i = ") +
-            std::to_string(i) +
-            " in array of size " +
-            std::to_string(m_data.size()));
+        throw RuntimeException(std::format("Attempted to read out of bounds of the array. i = {} in array of size {}", i, m_data.size()));
     }
     // check if object that we are setting is itself to avoid creating a ref cycle
-    if ((Type)item.index() == Type::Object && std::get<Object *>(item) != this)
+    if ((Type)item.index() == Type::Array && std::get<ArrayObject *>(item) != this)
     {
-        std::get<Object *>(item)->increaseRefCount();
+        ValueOperations::increaseValueRefCount(item);
     }
-    if ((Type)m_data[i].index() == Type::Object && std::get<Object *>(m_data[i]) != this)
+    if ((Type)m_data[i].index() == Type::Array && std::get<ArrayObject *>(m_data[i]) != this)
     {
-        std::get<Object *>(m_data[i])->decreaseRefCount();
+        ValueOperations::decreaseValueRefCount(m_data[i]);
     }
     m_data[i] = item;
 }
 
-std::optional<GobLang::Value> GobLang::ArrayObject::getItem(size_t i)
+std::optional<GobLang::Value> GobLang::ArrayObject::getItem(size_t i) const
 {
 
     if (i < m_data.size())
     {
-        return m_data[i];
+        return m_data.at(i);
     }
     else
     {
@@ -59,9 +55,9 @@ std::string GobLang::ArrayObject::toString() const
 void GobLang::ArrayObject::append(Value const &item)
 {
     // check if object that we are setting is itself to avoid creating a ref cycle
-    if ((Type)item.index() == Type::Object && std::get<Object *>(item) != this)
+    if ((Type)item.index() == Type::Array && std::get<ArrayObject *>(item) != this)
     {
-        std::get<Object *>(item)->increaseRefCount();
+        ValueOperations::decreaseValueRefCount(item);
     }
     m_data.push_back(item);
 }

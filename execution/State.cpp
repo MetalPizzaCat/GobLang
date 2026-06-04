@@ -114,11 +114,11 @@ void GobLang::State::runBytes(GobFunction const *func)
 
         case Instruction::GetArray:
         {
-            Object const *array = popFromStackAsType<Object *>("Expected array object on stack");
+            ArrayObject const *array = popFromStackAsType<ArrayObject *>("Expected array object on stack");
             IntegerType index = popFromStackAsType<IntegerType>("Expected array index on stack");
 
             // TODO: Replace Object* with separate points for UserData, Array, String and Structure
-            pushToStack(((ArrayObject *)array)->getItem(index).value_or(NilValue));
+            pushToStack(array->getItem(index).value_or(NilValue));
             break;
         }
 

@@ -16,14 +16,28 @@ namespace GobLang
      */
 
     class State;
-    class Object;
     using FunctionValue = void (*)(State &);
     class Closure;
     class GobFunction;
+    class ArrayObject;
+    class StringObject;
+    class StructureObject;
     using NilType = std::monostate;
-    using UserObject = void *;
+    using UserData = void *;
     static const NilType NilValue = NilType();
-    using Value = std::variant<NilType, bool, char, NumberType, IntegerType, UIntegerType, Object *, Closure const *, GobFunction const *>;
+    // TODO: Add structure object to represent custom types
+    using Value = std::variant<NilType,
+                               bool,
+                               char,
+                               NumberType,
+                               IntegerType,
+                               UIntegerType,
+                               StringObject *,
+                               ArrayObject *,
+                               StructureObject *,
+                               Closure const *,
+                               GobFunction const *,
+                               UserData>;
 
     namespace ValueOperations
     {
