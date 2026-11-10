@@ -1,5 +1,6 @@
 #include "CodeGenerator.hpp"
-
+#include <iostream>
+#include "../execution/State.hpp"
 using namespace GobLang::Codegen;
 
 GobLang::Codegen::CodeGenerator::CodeGenerator(Parser const &parser) : m_parser(parser)
@@ -7,53 +8,56 @@ GobLang::Codegen::CodeGenerator::CodeGenerator(Parser const &parser) : m_parser(
     m_it = parser.getTokens().begin();
 }
 
-void GobLang::Codegen::CodeGenerator::generate()
+GobLang::GobFunction  *GobLang::Codegen::CodeGenerator::generate(State &state)
 {
-    while (isKeyword(Keyword::Function) || isKeyword(Keyword::Struct))
+    while (isKeyword(Keyword::Function))
     {
         if (isKeyword(Keyword::Function))
         {
+            m_functionContextStack.emplace_back();
             m_functions.push_back(parseFunctionDefinition());
+            m_functionContextStack.pop_back();
         }
-        else if (isKeyword(Keyword::Struct))
-        {
-            m_structs.push_back(parseStructureDefinition());
-        }
+        // else if (isKeyword(Keyword::Struct))
+        // {
+        //     m_structs.push_back(parseStructureDefinition());
+        // }
     }
-    m_rootSequence = parseBody();
-}
+    // we treat code outside of any functions as "main" function
+    m_functionContextStack.emplace_back();
+    m_functions.push_back(std::make_unique<FunctionNode>(
+        m_functionContextStack.back(),
+        std::make_unique<FunctionPrototypeNode>("main", std::vector<size_t>{}),
+        parseBody()));
+    m_functionContextStack.pop_back();
 
-ByteCode GobLang::Codegen::CodeGenerator::getByteCode()
-{
-    generate();
     Builder builder;
-    ByteCode result;
-    result.ids = m_parser.getIds();
-
-    for (std::vector<std::unique_ptr<TypeDefinitionNode>>::const_iterator it = m_structs.begin(); it != m_structs.end(); it++)
-    {
-        (*it)->generateType(builder, m_parser.getIds());
-    }
-    std::vector<uint8_t> funcBytes;
+    std::vector<GobLang::GobFunction *> functions;
     for (std::vector<std::unique_ptr<FunctionNode>>::const_iterator it = m_functions.begin(); it != m_functions.end(); it++)
     {
-        std::unique_ptr<FunctionCodeGenValue> func = (*it)->generateFunction(builder);
-        std::vector<uint8_t> bytes = func->getGetOperationBytes();
-        result.functions.push_back(*func->getFuncInfo());
-        result.functions.back().start = funcBytes.size();
-
-        funcBytes.insert(funcBytes.end(), bytes.begin(), bytes.end());
+        functions.push_back((*it)->generateFunction(builder, state));
+        state.setGlobalVariable(functions.back()->getName(), state.createClosure(functions.back(), nullptr));
     }
+    return functions.back();
+}
 
-    result.operations = m_rootSequence->generateCode(builder)->getGetOperationBytes();
-    result.operations.push_back((uint8_t)Operation::End);
+ByteCode GobLang::Codegen::CodeGenerator::getByteCode(State &state)
+{
+    // generate();
+    Builder builder;
+    ByteCode result;
 
-    for (std::vector<Function>::iterator it = result.functions.begin(); it != result.functions.end(); it++)
+    // for (std::vector<std::unique_ptr<TypeDefinitionNode>>::const_iterator it = m_structs.begin(); it != m_structs.end(); it++)
+    // {
+    //     (*it)->generateType(builder, m_parser.getIds());
+    // }
+
+    for (std::vector<std::unique_ptr<FunctionNode>>::const_iterator it = m_functions.begin(); it != m_functions.end(); it++)
     {
-        it->start += result.operations.size();
+        // GobFunction const* f = (*it)->generateFunction(builder, state);
+        // std::unique_ptr<FunctionCodeGenValue> func = (*it)->generateFunction(builder, state);
+        // std::vector<uint8_t> bytes = func->getGetOperationBytes();
     }
-    result.operations.insert(result.operations.end(), funcBytes.begin(), funcBytes.end());
-    result.structures = builder.getTypes();
     return result;
 }
 
@@ -68,7 +72,7 @@ std::unique_ptr<FunctionNode> GobLang::Codegen::CodeGenerator::parseFunctionDefi
         error("Expected function body");
     }
     consumeSeparator(Separator::BlockClose, "Expected '}'");
-    return std::make_unique<FunctionNode>(std::move(proto), std::move(body));
+    return std::make_unique<FunctionNode>(m_functionContextStack.back(), std::move(proto), std::move(body));
 }
 
 std::unique_ptr<FunctionPrototypeNode> GobLang::Codegen::CodeGenerator::parseFunctionPrototype()
@@ -80,7 +84,7 @@ std::unique_ptr<FunctionPrototypeNode> GobLang::Codegen::CodeGenerator::parseFun
     IdToken const *argTok = nullptr;
     while ((argTok = dynamic_cast<IdToken const *>(getCurrent())) != nullptr)
     {
-        args.push_back(argTok->getId());
+        args.push_back(m_functionContextStack.back().getStringId(std::string{argTok->getId()}));
         advance();
         if (isSeparator(Separator::Comma))
         {
@@ -88,11 +92,12 @@ std::unique_ptr<FunctionPrototypeNode> GobLang::Codegen::CodeGenerator::parseFun
         }
     }
     consumeSeparator(Separator::BracketClose, "Expected '('");
-    return std::make_unique<FunctionPrototypeNode>(name->getId(), std::move(args));
+    return std::make_unique<FunctionPrototypeNode>(std::string{name->getId()}, std::move(args));
 }
 
 std::unique_ptr<GobLang::Codegen::TypeDefinitionNode> GobLang::Codegen::CodeGenerator::parseStructureDefinition()
 {
+    throw std::runtime_error("NOT IMPLEMENTED FOR NEW INTERPRETER");
     consumeKeyword(Keyword::Struct, "Expected 'type'");
 
     IdToken const *name = getTokenOrError<IdToken>("Expected type name");
@@ -102,7 +107,8 @@ std::unique_ptr<GobLang::Codegen::TypeDefinitionNode> GobLang::Codegen::CodeGene
     std::vector<size_t> fields;
     while ((fieldTok = dynamic_cast<IdToken const *>(getCurrent())) != nullptr)
     {
-        fields.push_back(fieldTok->getId());
+        // TODO: CHANGE THIS TO MAKE IT WORK
+        // fields.push_back(fieldTok->getId());
         advance();
         if (isSeparator(Separator::Comma))
         {
@@ -110,7 +116,7 @@ std::unique_ptr<GobLang::Codegen::TypeDefinitionNode> GobLang::Codegen::CodeGene
         }
     }
     consumeSeparator(Separator::BlockClose, "Expected '}'");
-    return std::make_unique<TypeDefinitionNode>(name->getId(), std::move(fields));
+    return std::make_unique<TypeDefinitionNode>(-1, std::move(fields));
 }
 
 std::unique_ptr<SequenceNode> GobLang::Codegen::CodeGenerator::parseBody()
@@ -170,14 +176,17 @@ std::unique_ptr<VariableCreationNode> GobLang::Codegen::CodeGenerator::parseVarC
         error("Expected value");
     }
     consumeSeparator(Separator::End, "Expected ';'");
-    return std::make_unique<VariableCreationNode>(id->getId(), std::move(body));
+    return std::make_unique<VariableCreationNode>(
+        m_functionContextStack.back().getStringId(std::string{id->getId()}),
+        std::move(body));
 }
 
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseStandaloneExpression()
 {
     IdToken const *t = getTokenOrError<IdToken>("Expected an identifier");
     advance();
-    std::unique_ptr<CodeNode> expr = parseIdExpression(std::make_unique<IdNode>(t->getId()));
+    std::unique_ptr<CodeNode> expr = parseIdExpression(
+        std::make_unique<IdNode>(m_functionContextStack.back().getStringId(std::string{t->getId()})));
     if (isAssignment())
     {
         std::unique_ptr<CodeNode> val = parseBinaryOperationRightSide(0, std::move(expr));
@@ -289,18 +298,18 @@ std::unique_ptr<NullNode> GobLang::Codegen::CodeGenerator::parseNull()
     return std::make_unique<NullNode>();
 }
 
-std::unique_ptr<FloatNode> GobLang::Codegen::CodeGenerator::parseFloat()
+std::unique_ptr<NumberNode> GobLang::Codegen::CodeGenerator::parseFloat()
 {
     FloatToken const *t = getTokenOrError<FloatToken>("Expected a number");
     advance();
-    return std::make_unique<FloatNode>(t->getValue());
+    return std::make_unique<NumberNode>(t->getValue());
 }
 
 std::unique_ptr<StringNode> GobLang::Codegen::CodeGenerator::parseString()
 {
     StringToken const *t = getTokenOrError<StringToken>("Expected a string");
     advance();
-    return std::make_unique<StringNode>(t->getId());
+    return std::make_unique<StringNode>(m_functionContextStack.back().getStringId(t->getString()));
 }
 
 std::unique_ptr<IntNode> GobLang::Codegen::CodeGenerator::parseInt()
@@ -312,7 +321,7 @@ std::unique_ptr<IntNode> GobLang::Codegen::CodeGenerator::parseInt()
 
 std::unique_ptr<UnsignedIntNode> GobLang::Codegen::CodeGenerator::parseUnsignedInt()
 {
-   
+
     UnsignedIntToken const *t = getTokenOrError<UnsignedIntToken>("Expected a number");
     advance();
     return std::make_unique<UnsignedIntNode>(t->getValue());
@@ -335,7 +344,7 @@ std::unique_ptr<CharacterNode> GobLang::Codegen::CodeGenerator::parseChar()
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseId()
 {
     IdToken const *t = getTokenOrError<IdToken>("Expected an identifier");
-    std::unique_ptr<CodeNode> id = std::make_unique<IdNode>(t->getId());
+    std::unique_ptr<CodeNode> id = std::make_unique<IdNode>(m_functionContextStack.back().getStringId(std::string{t->getId()}));
     advance();
     return parseIdExpression(std::move(id));
 }
@@ -361,7 +370,7 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseIdExpression(std
         {
             advance();
             IdToken const *t = getTokenOrError<IdToken>("Expected an identifier");
-            std::unique_ptr<CodeNode> id = std::make_unique<StringNode>(t->getId());
+            std::unique_ptr<CodeNode> id = std::make_unique<StringNode>(m_functionContextStack.back().getStringId(std::string{t->getId()}));
             advance();
             value = std::make_unique<FieldAccessNode>(std::move(value), std::move(id));
         }
@@ -403,7 +412,7 @@ std::vector<std::unique_ptr<CodeNode>> GobLang::Codegen::CodeGenerator::parseFun
 
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parsePrimary()
 {
-    if(isOfType<NullConstToken>())
+    if (isOfType<NullConstToken>())
     {
         return parseNull();
     }
@@ -528,12 +537,15 @@ std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseReturn()
 
 std::unique_ptr<ConstructorCallNode> GobLang::Codegen::CodeGenerator::parseConstructor()
 {
+    throw std::runtime_error("NOT IMPLEMENTED FOR NEW INTERPRETER");
+
     consumeKeyword(Keyword::New, "Expected 'new'");
     IdToken const *typeNameTok = getTokenOrError<IdToken>("Expected an identifier");
     advance();
     consumeSeparator(Separator::BracketOpen, "Expected '('");
     std::vector<std::unique_ptr<CodeNode>> args = parseFunctionCallArguments();
-    return std::make_unique<ConstructorCallNode>(typeNameTok->getId(), std::move(args));
+    return nullptr;
+    // return std::make_unique<ConstructorCallNode>(typeNameTok->getId(), std::move(args));
 }
 
 std::unique_ptr<CodeNode> GobLang::Codegen::CodeGenerator::parseBinaryOperationRightSide(int32_t priority, std::unique_ptr<CodeNode> leftSide)
@@ -674,40 +686,5 @@ bool GobLang::Codegen::CodeGenerator::isAssignment()
 
 void GobLang::Codegen::CodeGenerator::printTree()
 {
-    if (m_rootSequence)
-    {
-        std::string out = R"({"strings" : [)";
-        std::string strings;
-        for (std::vector<std::string>::const_iterator it = m_parser.getIds().begin(); it != m_parser.getIds().end(); it++)
-        {
-            out += "\"" + (*it) + "\"";
-            if (it + 1 != m_parser.getIds().end())
-            {
-                out += ",";
-            }
-        }
-        out += R"(], "types" : [)";
-
-        for (std::vector<std::unique_ptr<TypeDefinitionNode>>::const_iterator it = m_structs.begin(); it != m_structs.end(); it++)
-        {
-            out += (*it)->toString();
-            if (it + 1 != m_structs.end())
-            {
-                out += ",";
-            }
-        }
-
-        out += R"(], "functions" : [)";
-
-        for (std::vector<std::unique_ptr<FunctionNode>>::const_iterator it = m_functions.begin(); it != m_functions.end(); it++)
-        {
-            out += (*it)->toString();
-            if (it + 1 != m_functions.end())
-            {
-                out += ",";
-            }
-        }
-        out += "], \"code\" : " + m_rootSequence->toString() + "}";
-        std::cout << out << std::endl;
-    }
+    // TODO: Either update or remove entirely, i don't have the debug tool i made this for anymore so it's not that useful
 }

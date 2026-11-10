@@ -6,38 +6,72 @@
 #include <variant>
 #include <string>
 #include "Type.hpp"
+#include "../TypeSizes.hpp"
 
 namespace GobLang
 {
-     /**
+    /**
      * @brief Type used to store jump addresses in the code
      *
      */
-    using ProgramAddressType = uint32_t;
-    static size_t MAX_PRINT_RECURSION_DEPTH = MAX_PRINT_DEPTH;
-    class Machine;
-    class MemoryNode;
-    using FunctionValue = void (*)(Machine *);
-    using Value = std::variant<nullptr_t, bool, char, float, int32_t, uint32_t, MemoryNode *, FunctionValue>;
 
+    class State;
+    using FunctionValue = void (*)(State &);
+    class Closure;
+    class GobFunction;
+    class ArrayObject;
+    class StringObject;
+    class StructureObject;
+    using NilType = std::monostate;
+    using UserData = void *;
+    static const NilType NilValue = NilType();
+    // TODO: Add structure object to represent custom types
+    using Value = std::variant<NilType,
+                               bool,
+                               char,
+                               NumberType,
+                               IntegerType,
+                               UIntegerType,
+                               StringObject *,
+                               ArrayObject *,
+                               StructureObject *,
+                               Closure const *,
+                               GobFunction const *,
+                               UserData>;
 
+    namespace ValueOperations
+    {
+        /**
+         * @brief Compare two memory values and validate that both are equal
+         *
+         * @param a
+         * @param b
+         * @return true
+         * @return false
+         */
+        bool areEqual(Value const &a, Value const &b);
 
-    /**
-     * @brief Compare two memory values and validate that both are equal
-     *
-     * @param a
-     * @param b
-     * @return true
-     * @return false
-     */
-    bool areEqual(Value const &a, Value const &b);
+        /**
+         * @brief Create a string representation of a given value
+         *
+         * @param val Value to convert to string
+         * @param pretty Whether to add decorators. Only is relevant for strings during printing
+         * @return std::string
+         */
+        std::string toString(Value const &val);
 
-    /**
-     * @brief Create a string representation of a given value
-     *
-     * @param val Value to convert to string
-     * @param pretty Whether to add decorators. Only is relevant for strings during printing
-     * @return std::string
-     */
-    std::string valueToString(Value const &val, bool pretty, size_t depth);
+        /// @brief Increase reference count for value if value if refcounted, otherwise do nothing
+        /// @param v Value
+        void increaseValueRefCount(Value const &v);
+
+        /// @brief Decrease reference count for value if value if refcounted, otherwise do nothing
+        /// @param v Value
+        void decreaseValueRefCount(Value const &v);
+
+        bool less(Value const &a, Value const &b);
+        bool more(Value const &a, Value const &b);
+
+        bool lessEqual(Value const &a, Value const &b);
+
+    }
 }

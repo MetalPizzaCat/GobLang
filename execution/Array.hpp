@@ -1,23 +1,25 @@
 #pragma once
 #include "Memory.hpp"
-
+#include <optional>
 namespace GobLang
 {
-    class ArrayNode : public MemoryNode
+    class ArrayObject : public Object
     {
     public:
-        explicit ArrayNode(size_t size);
+        explicit ArrayObject(size_t size);
 
         void setItem(size_t i, Value const &item);
-        Value *getItem(size_t i);
+        std::optional<Value> getItem(size_t i) const;
 
-        std::string toString(bool pretty, size_t depth) override;
+        std::string toString() const override;
 
+        /// @brief Get array length
+        /// @return 
         size_t getSize() const { return m_data.size(); }
 
-        void append(Value const& item);
+        void append(Value const &item);
 
-        virtual ~ArrayNode();
+        virtual ~ArrayObject();
 
     private:
         std::vector<Value> m_data;

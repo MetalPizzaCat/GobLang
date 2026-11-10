@@ -1,7 +1,5 @@
 #pragma once
 #include <fstream>
-#include "../execution/Machine.hpp"
-#include "../execution/NativeStructure.hpp"
 
 namespace MachineFunctions::File
 {

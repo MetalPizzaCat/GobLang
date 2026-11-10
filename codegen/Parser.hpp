@@ -134,14 +134,13 @@ namespace GobLang::Codegen
          * @brief Prints the parsed sequence using the token data
          *
          */
-        void printCode();
+        void printCode() const;
 
         explicit Parser(std::vector<std::string> const &code);
 
         explicit Parser(std::string const &code);
 
         std::vector<std::unique_ptr<Token>> const &getTokens() const { return m_tokens; }
-        std::vector<std::string> const &getIds() const { return m_ids; }
 
         size_t getTotalLineCount() const { return m_code.size(); }
         size_t getFinalLineRowCount() const { return m_code.rbegin()->size(); }
@@ -149,7 +148,6 @@ namespace GobLang::Codegen
 
     private:
         std::vector<std::unique_ptr<Token>> m_tokens;
-        std::vector<std::string> m_ids;
         std::vector<std::string> m_code;
         /**
          * @brief Pointer to the current character in the row

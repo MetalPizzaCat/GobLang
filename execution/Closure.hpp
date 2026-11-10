@@ -1,0 +1,73 @@
+#pragma once
+#include "Memory.hpp"
+#include "Value.hpp"
+#include <optional>
+namespace GobLang
+{
+    /**
+     * @brief Information for the executable function within programming language.
+     * 
+     * Functions are the key executable unit in the language and contain their own constant value data
+     *
+     */
+    class GobFunction : public Object
+    {
+    public:
+        explicit GobFunction(std::vector<uint8_t> const &bytes, std::vector<std::string> const &strings, std::string const &name = "?");
+
+        explicit GobFunction() = default;
+
+        std::optional<std::string> getConstantString(size_t id) const;
+
+        std::string const &getConstantStringByidOrError(size_t id, std::string const &errorMessage = "No string under given id") const;
+
+        std::vector<uint8_t> const &getByteCode() const { return m_byteCode; }
+
+        size_t getArgumentCount() const { return m_argumentCount; }
+
+        void setByteCode(std::vector<uint8_t> const &bytes);
+
+        void setStrings(std::vector<std::string> const &strings);
+
+        void setArgumentCount(size_t count);
+
+        std::string const &getName() const { return m_name; }
+
+        void setName(std::string const &name) { m_name = name; }
+
+    private:
+        std::vector<uint8_t> m_byteCode;
+        std::vector<std::string> m_strings;
+        size_t m_argumentCount;
+
+        std::string m_name;
+    };
+
+    /**
+     * @brief Closure represents a callable object that could contain a native or interpreted code
+     * 
+     */
+    class Closure : public Object
+    {
+    public:
+        explicit Closure(GobFunction *func, Object *owner = nullptr);
+        explicit Closure(FunctionValue const &f);
+        bool hasOwner() const { return m_owner != nullptr; }
+        bool isLocal() const { return m_func != nullptr; }
+        Object *getOwner() { return m_owner; }
+
+        FunctionValue const &getNativeFunction() const { return m_nativeFunc; }
+        GobFunction const *getGobFunction() const { return m_func; }
+
+        std::string toString() const override;
+
+        virtual ~Closure();
+
+    private:
+        Object *m_owner = nullptr;
+        GobFunction *m_func;
+        FunctionValue m_nativeFunc;
+
+        // TODO: way to store captured variables
+    };
+}
