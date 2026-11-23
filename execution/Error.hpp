@@ -1,7 +1,7 @@
 #pragma once
 #include <exception>
 #include <string>
-#include "common/Error.hpp"
+#include "../common/Error.hpp"
 namespace GobLang::Errors
 {
 

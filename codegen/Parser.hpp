@@ -8,7 +8,7 @@
 
 #include "Token.hpp"
 #include "SpecialCharacter.hpp"
-#include <common/Error.hpp>
+#include "../common/Error.hpp"
 
 namespace GobLang::Codegen
 {
