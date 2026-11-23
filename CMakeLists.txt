@@ -63,6 +63,8 @@ add_executable(indev
 
 add_library(goblanglib SHARED GobLang.hpp ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
+	${COMPILER_SOURCE_FILES}
+    ${CODEGEN_FILES}
     #${STD_SOURCE_FILES}
     )
 
