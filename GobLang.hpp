@@ -6,42 +6,40 @@
 #include "codegen/CodeGenerator.hpp"
 
 #include "codegen/Disassembly.hpp"
-
-#include "standard/MachineFunctions.hpp"
 #include "execution/State.hpp"
-
-using namespace GobLang;
-
-void print(State &state)
+namespace GobLang::Exec
 {
-	if (std::optional<Value> v = state.popFromStack(); v.has_value())
+	void print(State &state)
 	{
-		std::cout << ValueOperations::toString(v.value()) << std::endl;
-	}
-}
-
-void len(State &state)
-{
-	if (std::optional<Value> v = state.popFromStack(); v.has_value())
-	{
-		if (std::holds_alternative<GobLang::ArrayObject *>(v.value()))
+		if (std::optional<Value> v = state.popFromStack(); v.has_value())
 		{
-			ArrayObject const *obj = (ArrayObject *)std::get<ArrayObject *>(v.value());
-			state.pushToStack(obj->getSize());
-		}
-		else if (std::holds_alternative<GobLang::StringObject *>(v.value()))
-		{
-			ArrayObject const *obj = (ArrayObject *)std::get<StringObject *>(v.value());
-			state.pushToStack(obj->getSize());
+			std::cout << ValueOperations::toString(v.value()) << std::endl;
 		}
 	}
-}
 
-void executeCode(std::string const &code)
-{
-	State state;
-	state.setGlobalVariable("print", state.createClosure(&print));
-	state.setGlobalVariable("len", state.createClosure(&len));
+	void len(State &state)
+	{
+		if (std::optional<Value> v = state.popFromStack(); v.has_value())
+		{
+			if (std::holds_alternative<GobLang::ArrayObject *>(v.value()))
+			{
+				ArrayObject const *obj = (ArrayObject *)std::get<ArrayObject *>(v.value());
+				state.pushToStack(obj->getSize());
+			}
+			else if (std::holds_alternative<GobLang::StringObject *>(v.value()))
+			{
+				ArrayObject const *obj = (ArrayObject *)std::get<StringObject *>(v.value());
+				state.pushToStack(obj->getSize());
+			}
+		}
+	}
 
-	state.executeClosure(*state.loadString(code));
+	void executeCode(std::string const &code)
+	{
+		State state;
+		state.setGlobalVariable("print", state.createClosure(&print));
+		state.setGlobalVariable("len", state.createClosure(&len));
+
+		state.executeClosure(*state.loadString(code));
+	}
 }
