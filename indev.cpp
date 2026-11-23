@@ -58,6 +58,25 @@ int main()
 
     // state.setGlobalVariable("f1", f1);
     state.executeClosure(*state.loadString(R"CODE(        
+func for_each(arr, val){
+    let i = 0;
+    while(i < len(arr)){
+        arr[i] = val;
+        i += 1;
+    }}
+
+
+let test = [1,2,3,4,5,6,7];
+
+for_each(test,2);
+print(test);
+)CODE"));
+
+    return EXIT_SUCCESS;
+}
+
+/*
+
 func for_each(array, f){
     let i = 0;
     while(i < len(array)){
@@ -71,7 +90,5 @@ func cond(a){
 
 let test = [1,2,3,4,5,6,7];
 
-for_each(test,cond);)CODE"));
-
-    return EXIT_SUCCESS;
-}
+for_each(test,cond);
+*/

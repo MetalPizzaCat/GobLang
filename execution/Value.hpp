@@ -10,68 +10,69 @@
 
 namespace GobLang
 {
-    /**
-     * @brief Type used to store jump addresses in the code
-     *
-     */
+	/**
+	 * @brief Type used to store jump addresses in the code
+	 *
+	 */
 
-    class State;
-    using FunctionValue = void (*)(State &);
-    class Closure;
-    class GobFunction;
-    class ArrayObject;
-    class StringObject;
-    class StructureObject;
-    using NilType = std::monostate;
-    using UserData = void *;
-    static const NilType NilValue = NilType();
-    // TODO: Add structure object to represent custom types
-    using Value = std::variant<NilType,
-                               bool,
-                               char,
-                               NumberType,
-                               IntegerType,
-                               UIntegerType,
-                               StringObject *,
-                               ArrayObject *,
-                               StructureObject *,
-                               Closure const *,
-                               GobFunction const *,
-                               UserData>;
+	class State;
+	using FunctionValue = void (*)(State &);
+	class Closure;
+	class GobFunction;
+	class ArrayObject;
+	class StringObject;
+	class StructureObject;
+	using NilType = std::monostate;
+	using UserData = void *;
+	static const NilType NilValue = NilType();
+	// TODO: Add structure object to represent custom types
+	using Value = std::variant<NilType,
+							   bool,
+							   char,
+							   NumberType,
+							   IntegerType,
+							   UIntegerType,
+							   StringObject *,
+							   ArrayObject *,
+							   StructureObject *,
+							   Closure const *,
+							   GobFunction const *,
+							   UserData>;
 
-    namespace ValueOperations
-    {
-        /**
-         * @brief Compare two memory values and validate that both are equal
-         *
-         * @param a
-         * @param b
-         * @return true
-         * @return false
-         */
-        bool areEqual(Value const &a, Value const &b);
+	namespace ValueOperations
+	{
+		/**
+		 * @brief Compare two memory values and validate that both are equal
+		 *
+		 * @param a
+		 * @param b
+		 * @return true
+		 * @return false
+		 */
+		bool areEqual(Value const &a, Value const &b);
 
-        /**
-         * @brief Create a string representation of a given value
-         *
-         * @param val Value to convert to string
-         * @param pretty Whether to add decorators. Only is relevant for strings during printing
-         * @return std::string
-         */
-        std::string toString(Value const &val);
+		/**
+		 * @brief Create a string representation of a given value
+		 *
+		 * @param val Value to convert to string
+		 * @param pretty Whether to add decorators. Only is relevant for strings during printing
+		 * @return std::string
+		 */
+		std::string toString(Value const &val);
 
-        /// @brief Increase reference count for value if value if refcounted, otherwise do nothing
-        /// @param v Value
-        void increaseValueRefCount(Value const &v);
+		/// @brief Increase reference count for value if value if refcounted, otherwise do nothing
+		/// @param v Value
+		void increaseValueRefCount(Value const &v);
 
-        /// @brief Decrease reference count for value if value if refcounted, otherwise do nothing
-        /// @param v Value
-        void decreaseValueRefCount(Value const &v);
+		/// @brief Decrease reference count for value if value if refcounted, otherwise do nothing
+		/// @param v Value
+		void decreaseValueRefCount(Value const &v);
 
-        bool less(Value const &a, Value const &b);
-        bool more(Value const &a, Value const &b);
+		bool less(Value const &a, Value const &b);
+		bool more(Value const &a, Value const &b);
 
-        bool lessEqual(Value const &a, Value const &b);
+		bool lessEqual(Value const &a, Value const &b);
+		bool moreEqual(Value const &a, Value const &b);
 
-    }
+	}
 }
