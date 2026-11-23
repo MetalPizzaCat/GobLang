@@ -39,6 +39,7 @@ list(APPEND COMMON_SOURCE_FILES
     execution/Exception.cpp
     execution/Closure.cpp
     execution/Error.cpp
+	common/Error.cpp
 )
 
 
@@ -61,7 +62,7 @@ add_executable(indev
 )
 
 
-add_library(goblanglib SHARED GobLang.hpp ${COMPILER_SOURCE_FILES}
+add_library(goblanglib STATIC GobLang.hpp ${COMPILER_SOURCE_FILES}
     ${COMMON_SOURCE_FILES}
 	${COMPILER_SOURCE_FILES}
     ${CODEGEN_FILES}

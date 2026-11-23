@@ -8,6 +8,7 @@
 
 #include "Token.hpp"
 #include "SpecialCharacter.hpp"
+#include <common/Error.hpp>
 
 namespace GobLang::Codegen
 {
@@ -161,7 +162,7 @@ namespace GobLang::Codegen
         std::vector<std::string>::iterator m_lineIt;
     };
 
-    class ParsingError : public std::exception
+    class ParsingError : public Errors::GobError
     {
     public:
         const char *what() const throw() override;
@@ -174,6 +175,5 @@ namespace GobLang::Codegen
         std::string m_full;
         size_t m_row;
         size_t m_column;
-        std::string m_message;
     };
 }

@@ -99,11 +99,11 @@ namespace GobLang
         {
             if (m_stack.empty() || m_stack.back().empty())
             {
-                throw Errors::RuntimeMemoryError("Can not pop from stack because stack is empty");
+                throw Errors::ExecutionError("Can not pop from stack because stack is empty");
             }
             if (!std::holds_alternative<T>(m_stack.back().back()))
             {
-                throw Errors::RuntimeMemoryError(errorMessage);
+                throw Errors::ExecutionError(errorMessage);
             }
             Value v = m_stack.back().back();
             m_stack.back().pop_back();

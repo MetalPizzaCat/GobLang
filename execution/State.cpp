@@ -334,7 +334,7 @@ GobLang::Value GobLang::State::popFromStackOrError()
 {
     if (m_stack.empty() || m_stack.back().empty())
     {
-        throw Errors::RuntimeMemoryError("Can not pop from stack because stack is empty");
+        throw Errors::ExecutionError("Can not pop from stack because stack is empty");
     }
     Value r = m_stack.back().back();
     m_stack.back().pop_back();
@@ -361,7 +361,7 @@ void GobLang::State::setVariableValue(size_t id, Value const &val)
 {
     if (m_variables.empty())
     {
-        throw Errors::RuntimeMemoryError("No variable block is present");
+        throw Errors::ExecutionError("No variable block is present");
     }
     std::vector<Value> &frame = m_variables.back();
     if (id >= frame.size())
