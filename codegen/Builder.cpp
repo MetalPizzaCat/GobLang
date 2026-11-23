@@ -19,7 +19,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     return std::make_unique<GeneratedCodeGenValue>(std::move(res));
 }
 
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstInt(int64_t val)
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstInt(IntegerType val)
 {
     std::vector<uint8_t> res{(uint8_t)Instruction::PushConstInt};
     std::vector<uint8_t> num = parseToBytes(val);
@@ -28,7 +28,7 @@ std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::creat
     return std::make_unique<GeneratedCodeGenValue>(std::move(res));
 }
 
-std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstUnsignedInt(uint64_t val)
+std::unique_ptr<GobLang::Codegen::CodeGenValue> GobLang::Codegen::Builder::createConstUnsignedInt(UIntegerType val)
 {
     std::vector<uint8_t> res{(uint8_t)Instruction::PushConstUnsignedInt};
     std::vector<uint8_t> num = parseToBytes(val);
